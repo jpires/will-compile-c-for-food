@@ -1,0 +1,8 @@
+#Intellij idea
+.idea
+
+# CLion default build location
+cmake-build-*/
+
+#Build folders. e.g. build-debug for testing
+build*/
