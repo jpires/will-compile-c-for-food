@@ -3,9 +3,23 @@
 #include <fmt/core.h>
 #include <iostream>
 
+std::filesystem::path get_preprocessor_path(const std::filesystem::path &source_file)
+{
+    return source_file.parent_path() / fmt::format("{}.i", source_file.filename().stem().c_str());
+}
+std::filesystem::path get_assembly_path(const std::filesystem::path &source_file)
+{
+    return source_file.parent_path() / fmt::format("{}.s", source_file.filename().stem().c_str());
+}
+std::filesystem::path get_binary_path(const std::filesystem::path &source_file)
+{
+    return source_file.parent_path() / fmt::format("{}", source_file.filename().stem().c_str());
+}
 int run_preprocessor(const std::filesystem::path &source_file)
 {
-    auto cmd = fmt::format("gcc -E -P {}.c -o {}.i", source_file.stem().c_str(), source_file.stem().c_str());
+    auto dst_file = get_preprocessor_path(source_file);
+
+    auto cmd = fmt::format("gcc -E -P {} -o {}", source_file.c_str(), dst_file.c_str());
     std::cout << cmd << std::endl;
 
     auto result = system(cmd.c_str());
@@ -19,7 +33,10 @@ int run_preprocessor(const std::filesystem::path &source_file)
 
 int run_compiler(const std::filesystem::path &source_file)
 {
-    auto cmd = fmt::format("gcc -S {}.i -o {}.s", source_file.stem().c_str(), source_file.stem().c_str());
+    auto src_file = get_preprocessor_path(source_file);
+    auto dst_file = get_assembly_path(source_file);
+
+    auto cmd = fmt::format("gcc -S {} -o {}", src_file.c_str(), dst_file.c_str());
     std::cout << cmd << std::endl;
 
     auto result = system(cmd.c_str());
@@ -28,14 +45,16 @@ int run_compiler(const std::filesystem::path &source_file)
         std::cerr << "Error while running the compiler" << std::endl;
     }
 
-    std::filesystem::remove_all(fmt::format("{}.i", source_file.stem().c_str()));
+    std::filesystem::remove_all(src_file);
 
     return result;
 }
 
 int run_assembler_and_linker(const std::filesystem::path &source_file)
 {
-    auto cmd = fmt::format("gcc {}.s -o {}", source_file.stem().c_str(), source_file.stem().c_str());
+    auto src_file = get_assembly_path(source_file);
+    auto dst_file = get_binary_path(source_file);
+    auto cmd = fmt::format("gcc {} -o {}", src_file.c_str(), dst_file.c_str());
     std::cout << cmd << std::endl;
 
     auto result = system(cmd.c_str());
@@ -44,7 +63,7 @@ int run_assembler_and_linker(const std::filesystem::path &source_file)
         std::cerr << "Error while running the assembler" << std::endl;
     }
 
-    std::filesystem::remove_all(fmt::format("{}.s", source_file.stem().c_str()));
+    std::filesystem::remove_all(src_file);
     return result;
 }
 
