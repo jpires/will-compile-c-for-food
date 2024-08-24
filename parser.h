@@ -9,6 +9,34 @@
 
 namespace wccff {
 
+/**
+ * Abstract a list of tokens.
+ * Makes it easier for the parser to navigate said list.
+ */
+class tokens
+{
+  public:
+    explicit tokens(std::vector<token> tokens_)
+      : m_tokens(std::move(tokens_))
+    {
+    }
+
+    [[nodiscard]] std::size_t remaining_tokens() const { return m_tokens.size() - m_index; }
+    token get_next_token_safe() { return m_tokens.at(m_index++); }
+    std::optional<token> get_next_token()
+    {
+        if (m_index >= m_tokens.size())
+        {
+            return std::nullopt;
+        }
+        return m_tokens[m_index++];
+    }
+
+  private:
+    std::vector<token> m_tokens;
+    std::size_t m_index{ 0 };
+};
+
 struct parser_error
 {
     std::string message;

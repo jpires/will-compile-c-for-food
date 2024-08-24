@@ -4,11 +4,11 @@
 #include <cstdint>
 #include <expected>
 #include <filesystem>
+#include <fmt/format.h>
 #include <optional>
 #include <ostream>
 #include <string>
 #include <string_view>
-#include <system_error>
 #include <vector>
 
 namespace wccff {
@@ -101,27 +101,61 @@ std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, fil
 
 std::expected<std::string, std::error_code> read_file(const std::filesystem::path &file_name);
 
-class tokens
+} // namespace wccff
+
+template<>
+struct fmt::formatter<wccff::token_type> : formatter<string_view>
 {
-  public:
-    explicit tokens(std::vector<token> tokens_)
-      : m_tokens(std::move(tokens_))
+    template<typename FormatContext>
+    auto format(wccff::token_type c, FormatContext &ctx) const
     {
-    }
-
-    std::optional<token> get_next_token()
-    {
-        if (m_index >= m_tokens.size())
+        using wccff::token_type;
+        string_view str = "wccff::token_type::invalid";
+        switch (c)
         {
-            return std::nullopt;
+            case token_type::identifier:
+                str = "Identifier";
+                break;
+            case token_type::constant:
+                str = "Constant";
+                break;
+            case token_type::int_keyword:
+                str = "Int Keyword";
+                break;
+            case token_type::void_keyword:
+                str = "Void Keyword";
+                break;
+            case token_type::return_keyword:
+                str = "Return Keyword";
+                break;
+            case token_type::open_parenthesis:
+                str = "Open Parenthesis";
+                break;
+            case token_type::close_parenthesis:
+                str = "Close Parenthesis";
+                break;
+            case token_type::open_brace:
+                str = "Open Brace";
+                break;
+            case token_type::close_brace:
+                str = "Close Brace";
+                break;
+            case token_type::semicolon:
+                str = "Semicolon";
+                break;
         }
-        return m_tokens[m_index++];
+        return formatter<string_view>::format(str, ctx);
     }
-
-  private:
-    std::vector<token> m_tokens;
-    std::size_t m_index{ 0 };
 };
 
-} // namespace wccff
+template<>
+struct fmt::formatter<wccff::file_location> : formatter<string_view>
+{
+    template<typename FormatContext>
+    auto format(wccff::file_location loc, FormatContext &ctx) const
+    {
+        auto str = fmt::format("{}:{}", loc.line, loc.column);
+        return formatter<string_view>::format(str, ctx);
+    }
+};
 #endif // LEXER_H

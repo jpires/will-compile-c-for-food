@@ -22,51 +22,47 @@ std::expected<function, parser_error> parse_function(wccff::tokens &tokens)
     }
     if (t1->t != token_type::int_keyword)
     {
-        auto msg = fmt::format("Parse failure at: {}:{}. Expected int keyword found {}",
-                               t1->loc.line,
-                               t1->loc.column,
-                               static_cast<int>(t1->t));
+        auto msg = fmt::format("Parse failure at: {}. Expected int keyword found {}", t1->loc, t1->t);
         return std::unexpected{ parser_error{ msg } };
     }
     auto function_name = parse_identifier(tokens);
+    if (function_name.has_value() == false)
+    {
+        return std::unexpected{ function_name.error() };
+    }
 
-    t1 = tokens.get_next_token();
+    // At this point, we need at least 4 tokens until we get to the statement.
+    if (tokens.remaining_tokens() < 4)
+    {
+        auto msg = fmt::format("Parse failure at: Unexpected end of tokens");
+        return std::unexpected{ parser_error{ msg } };
+    }
+
+    t1 = tokens.get_next_token_safe();
     if (t1->t != token_type::open_parenthesis)
     {
-        auto msg = fmt::format("Parse failure at: {}:{}. Expected '(' found {}",
-                               t1->loc.line,
-                               t1->loc.column,
-                               static_cast<int>(t1->t));
+        auto msg = fmt::format("Parse failure at: {}. Expected '(' found {}", t1->loc, t1->t);
         return std::unexpected{ parser_error{ msg } };
     }
 
-    t1 = tokens.get_next_token();
+    t1 = tokens.get_next_token_safe();
     if (t1->t != token_type::void_keyword)
     {
-        auto msg = fmt::format("Parse failure at: {}:{}. Expected void keyword found {}",
-                               t1->loc.line,
-                               t1->loc.column,
-                               static_cast<int>(t1->t));
+        auto msg = fmt::format("Parse failure at: {}. Expected void keyword found {}", t1->loc, t1->t);
         return std::unexpected{ parser_error{ msg } };
     }
 
-    t1 = tokens.get_next_token();
+    t1 = tokens.get_next_token_safe();
     if (t1->t != token_type::close_parenthesis)
     {
-        auto msg = fmt::format("Parse failure at: {}:{}. Expected ')' found {}",
-                               t1->loc.line,
-                               t1->loc.column,
-                               static_cast<int>(t1->t));
+        auto msg = fmt::format("Parse failure at: {}. Expected ')' found {}", t1->loc, t1->t);
         return std::unexpected{ parser_error{ msg } };
     }
 
-    t1 = tokens.get_next_token();
+    t1 = tokens.get_next_token_safe();
     if (t1->t != token_type::open_brace)
     {
-        auto msg = fmt::format("Parse failure at: {}:{}. Expected '{{' found {}",
-                               t1->loc.line,
-                               t1->loc.column,
-                               static_cast<int>(t1->t));
+        auto msg = fmt::format("Parse failure at: {}. Expected '{{' found {}", t1->loc, t1->t);
         return std::unexpected{ parser_error{ msg } };
     }
 
@@ -76,23 +72,23 @@ std::expected<function, parser_error> parse_function(wccff::tokens &tokens)
         return std::unexpected{ statement.error() };
     }
 
-    t1 = tokens.get_next_token();
+    // At this point, we need two more tokens
+    if (tokens.remaining_tokens() < 2)
+    {
+        auto msg = fmt::format("Parse failure at: Unexpected end of tokens");
+        return std::unexpected{ parser_error{ msg } };
+    }
+    t1 = tokens.get_next_token_safe();
     if (t1->t != token_type::semicolon)
     {
-        auto msg = fmt::format("Parse failure at: {}:{}. Expected ';' found {}",
-                               t1->loc.line,
-                               t1->loc.column,
-                               static_cast<int>(t1->t));
+        auto msg = fmt::format("Parse failure at: {}. Expected ';' found {}", t1->loc, t1->t);
         return std::unexpected{ parser_error{ msg } };
     }
 
-    t1 = tokens.get_next_token();
+    t1 = tokens.get_next_token_safe();
     if (t1->t != token_type::close_brace)
     {
-        auto msg = fmt::format("Parse failure at: {}:{}. Expected '}}' found {}",
-                               t1->loc.line,
-                               t1->loc.column,
-                               static_cast<int>(t1->t));
+        auto msg = fmt::format("Parse failure at: {}. Expected '}}' found {}", t1->loc, t1->t);
         return std::unexpected{ parser_error{ msg } };
     }
 
@@ -122,10 +118,7 @@ std::expected<return_node, parser_error> parse_return_node(wccff::tokens &tokens
 
     if (t1->t != token_type::return_keyword)
     {
-        auto msg = fmt::format("Parse failure at: {}:{}. Expected return keyword found {}",
-                               t1->loc.line,
-                               t1->loc.column,
-                               static_cast<int>(t1->t));
+        auto msg = fmt::format("Parse failure at: {}. Expected return keyword found {}", t1->loc, t1->t);
         return std::unexpected{ parser_error{ msg } };
     }
     auto e = parse_expression(tokens);
@@ -164,10 +157,7 @@ std::expected<identifier, parser_error> parse_identifier(wccff::tokens &tokens)
 
     if (token->t != token_type::identifier)
     {
-        auto msg = fmt::format("Parse failure at: {}:{}. Expected Identifier found {}",
-                               token->loc.line,
-                               token->loc.column,
-                               static_cast<int>(token->t));
+        auto msg = fmt::format("Parse failure at: {}. Expected Identifier found {}", token->loc, token->t);
         return std::unexpected{ parser_error{ msg } };
     }
 
@@ -187,10 +177,7 @@ std::expected<int_constant, parser_error> parse_constant(wccff::tokens &tokens)
 
     if (token->t != token_type::constant)
     {
-        auto msg = fmt::format("Parse failure at: {}:{}. Expected Constant found {}",
-                               token->loc.line,
-                               token->loc.column,
-                               static_cast<int>(token->t));
+        auto msg = fmt::format("Parse failure at: {}. Expected Constant found {}", token->loc, token->t);
         return std::unexpected{ parser_error{ msg } };
     }
 
@@ -201,7 +188,7 @@ std::expected<program, parser_error> parse(wccff::tokens &tokens)
 {
     auto p = parse_program(tokens);
 
-    if (tokens.get_next_token().has_value())
+    if (tokens.remaining_tokens() != 0)
     {
         // There are more tokens at the end of the program.
         // Which is invalid
