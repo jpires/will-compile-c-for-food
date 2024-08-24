@@ -11,7 +11,7 @@
 #include <string_view>
 #include <vector>
 
-namespace wccff {
+namespace wccff::lexer {
 
 struct file_location
 {
@@ -101,15 +101,15 @@ std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, fil
 
 std::expected<std::string, std::error_code> read_file(const std::filesystem::path &file_name);
 
-} // namespace wccff
+} // namespace wccff::lexer
 
 template<>
-struct fmt::formatter<wccff::token_type> : formatter<string_view>
+struct fmt::formatter<wccff::lexer::token_type> : formatter<string_view>
 {
     template<typename FormatContext>
-    auto format(wccff::token_type c, FormatContext &ctx) const
+    auto format(wccff::lexer::token_type c, FormatContext &ctx) const
     {
-        using wccff::token_type;
+        using wccff::lexer::token_type;
         string_view str = "wccff::token_type::invalid";
         switch (c)
         {
@@ -149,10 +149,10 @@ struct fmt::formatter<wccff::token_type> : formatter<string_view>
 };
 
 template<>
-struct fmt::formatter<wccff::file_location> : formatter<string_view>
+struct fmt::formatter<wccff::lexer::file_location> : formatter<string_view>
 {
     template<typename FormatContext>
-    auto format(wccff::file_location loc, FormatContext &ctx) const
+    auto format(wccff::lexer::file_location loc, FormatContext &ctx) const
     {
         auto str = fmt::format("{}:{}", loc.line, loc.column);
         return formatter<string_view>::format(str, ctx);

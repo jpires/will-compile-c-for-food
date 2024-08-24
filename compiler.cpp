@@ -10,7 +10,7 @@ bool compile(const std::filesystem::path &source_filename,
              const std::filesystem::path &output_filename,
              stop_phase stop)
 {
-    auto r = read_file(source_filename);
+    auto r = lexer::read_file(source_filename);
 
     if (r.has_value() == false)
     {
@@ -18,7 +18,7 @@ bool compile(const std::filesystem::path &source_filename,
         return false;
     }
 
-    auto le = lexer(r.value());
+    auto le = lexer::lexer(r.value());
     if (le.has_value() == false)
     {
         auto error = le.error();
@@ -41,7 +41,7 @@ bool compile(const std::filesystem::path &source_filename,
     // Parser
     //
 
-    tokens tokens{ le.value() };
+    parser::tokens tokens{ le.value() };
     auto parse_result = parse(tokens);
     if (parse_result.has_value() == false)
     {

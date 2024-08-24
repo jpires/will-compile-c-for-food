@@ -3,7 +3,7 @@
 #include <fstream>
 #include <iostream>
 
-namespace wccff {
+namespace wccff::lexer {
 /*constexpr auto get_pattern()
 {
     static constexpr auto identifier_pattern = R"(([a-zA-Z_]\w*\b))";
@@ -149,4 +149,4 @@ std::expected<std::string, std::error_code> read_file(const std::filesystem::pat
 
     return content;
 }
-} // namespace wccff
+} // namespace wccff::lexer

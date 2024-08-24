@@ -7,7 +7,7 @@
 #include <variant>
 #include <vector>
 
-namespace wccff {
+namespace wccff::parser {
 
 /**
  * Abstract a list of tokens.
@@ -16,14 +16,14 @@ namespace wccff {
 class tokens
 {
   public:
-    explicit tokens(std::vector<token> tokens_)
+    explicit tokens(std::vector<wccff::lexer::token> tokens_)
       : m_tokens(std::move(tokens_))
     {
     }
 
     [[nodiscard]] std::size_t remaining_tokens() const { return m_tokens.size() - m_index; }
-    token get_next_token_safe() { return m_tokens.at(m_index++); }
-    std::optional<token> get_next_token()
+    wccff::lexer::token get_next_token_safe() { return m_tokens.at(m_index++); }
+    std::optional<wccff::lexer::token> get_next_token()
     {
         if (m_index >= m_tokens.size())
         {
@@ -33,7 +33,7 @@ class tokens
     }
 
   private:
-    std::vector<token> m_tokens;
+    std::vector<wccff::lexer::token> m_tokens;
     std::size_t m_index{ 0 };
 };
 
@@ -71,13 +71,13 @@ struct program
     function f;
 };
 
-std::expected<int_constant, parser_error> parse_constant(wccff::tokens &tokens);
-std::expected<identifier, parser_error> parse_identifier(wccff::tokens &tokens);
-std::expected<expression, parser_error> parse_expression(wccff::tokens &tokens);
-std::expected<statement, parser_error> parse_statement(wccff::tokens &tokens);
+std::expected<int_constant, parser_error> parse_constant(tokens &tokens);
+std::expected<identifier, parser_error> parse_identifier(tokens &tokens);
+std::expected<expression, parser_error> parse_expression(tokens &tokens);
+std::expected<statement, parser_error> parse_statement(tokens &tokens);
 
-std::expected<program, parser_error> parse(wccff::tokens &tokens);
+std::expected<program, parser_error> parse(tokens &tokens);
 
-} // namespace wccff
+} // namespace wccff::parser
 
 #endif // PARSER_H
