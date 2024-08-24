@@ -3,6 +3,14 @@
   "builtin-baseline": "3508985146f1b1d248c67ead13f8f54be5b4f5da",
   "dependencies": [
     {
+      "name": "catch2",
+      "version>=": "3.7.0"
+    },
+    {
+      "name": "ctre",
+      "version>=": "3.9.0"
+    },
+    {
       "name": "cxxopts",
       "version>=": "3.2.1"
     },
