@@ -10,8 +10,10 @@ find_package(fmt CONFIG REQUIRED)
 
 add_executable(wccff
         compiler.cpp
+        compiler.h
         driver.cpp
         lexer.cpp
+        lexer.h
 )
 target_link_libraries(wccff PRIVATE
         ctre::ctre

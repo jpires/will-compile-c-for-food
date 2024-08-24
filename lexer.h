@@ -1,6 +1,7 @@
 #ifndef LEXER_H
 #define LEXER_H
 
+#include <cstdint>
 #include <expected>
 #include <filesystem>
 #include <ostream>
@@ -10,6 +11,13 @@
 #include <vector>
 
 namespace wccff {
+
+struct file_location
+{
+    int32_t line{ 0 };
+    int32_t column{ 0 };
+};
+
 enum class token_type
 {
     identifier,
@@ -63,16 +71,18 @@ inline std::ostream &operator<<(std::ostream &os, const token_type &t)
 
 struct token
 {
-    token(token_type t_, std::string_view v_)
+    token(token_type t_, std::string_view v_, file_location loc_)
       : t(t_)
       , c(v_)
+      , loc(loc_)
     {
     }
     token_type t;
     std::string_view c;
+    file_location loc;
 };
 
-std::expected<std::vector<token>, std::error_code> lexer(std::string_view input) noexcept;
+std::expected<std::vector<token>, std::error_code> lexer(std::string_view input, file_location location = {}) noexcept;
 
 std::expected<std::string, std::error_code> read_file(const std::filesystem::path &file_name);
 

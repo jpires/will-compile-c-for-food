@@ -27,7 +27,7 @@ namespace wccff {
     return ctll::fixed_string("12");
 }*/
 
-std::expected<std::vector<token>, std::error_code> lexer(std::string_view input) noexcept
+std::expected<std::vector<token>, std::error_code> lexer(std::string_view input, file_location location) noexcept
 {
     static constexpr auto pattern = ctll::fixed_string{ R"(([a-zA-Z_]\w*\b)|([0-9]+\b)|(\()|(\))|(\{)|(\})|(;))" };
 
@@ -38,6 +38,12 @@ std::expected<std::vector<token>, std::error_code> lexer(std::string_view input)
     // Remove trimming white spaces
     while (std::isspace(input[0]))
     {
+        location.column++;
+        if (input[0] == '\n')
+        {
+            location.line++;
+            location.column = 0;
+        }
         input = input.substr(1);
     }
 
@@ -51,56 +57,56 @@ std::expected<std::vector<token>, std::error_code> lexer(std::string_view input)
             if (m == "int")
             {
                 std::cout << "int keyword" << '\n';
-                result.emplace_back(token_type::int_keyword, m);
+                result.emplace_back(token_type::int_keyword, m, location);
             }
             else if (m == "void")
             {
                 std::cout << "void keyword" << '\n';
-                result.emplace_back(token_type::void_keyword, m);
+                result.emplace_back(token_type::void_keyword, m, location);
             }
             else if (m == "return")
             {
                 std::cout << "return keyword" << '\n';
-                result.emplace_back(token_type::return_keyword, m);
+                result.emplace_back(token_type::return_keyword, m, location);
             }
             else
             {
                 std::cout << "Found identifier" << '\n';
-                result.emplace_back(token_type::identifier, m);
+                result.emplace_back(token_type::identifier, m, location);
             }
         }
 
         if (ctre::get<2>(m))
         {
             std::cout << "Found Constan" << '\n';
-            result.emplace_back(token_type::constant, m);
+            result.emplace_back(token_type::constant, m, location);
         }
 
         if (ctre::get<3>(m))
         {
             std::cout << "Found Open Parenthesis" << '\n';
-            result.emplace_back(token_type::open_parenthesis, m);
+            result.emplace_back(token_type::open_parenthesis, m, location);
         }
 
         if (ctre::get<4>(m))
         {
             std::cout << "Found Close Parenthesis" << '\n';
-            result.emplace_back(token_type::close_parenthesis, m);
+            result.emplace_back(token_type::close_parenthesis, m, location);
         }
         if (ctre::get<5>(m))
         {
             std::cout << "Found Open Brace" << '\n';
-            result.emplace_back(token_type::open_brace, m);
+            result.emplace_back(token_type::open_brace, m, location);
         }
         if (ctre::get<6>(m))
         {
             std::cout << "Found Close Brace" << '\n';
-            result.emplace_back(token_type::close_brace, m);
+            result.emplace_back(token_type::close_brace, m, location);
         }
         if (ctre::get<7>(m))
         {
             std::cout << "Found Semicolon" << '\n';
-            result.emplace_back(token_type::semicolon, m);
+            result.emplace_back(token_type::semicolon, m, location);
         }
 
         if (result.empty())
@@ -109,7 +115,9 @@ std::expected<std::vector<token>, std::error_code> lexer(std::string_view input)
             return std::unexpected(std::make_error_code(std::errc::address_family_not_supported));
         }
 
-        auto tail = lexer({ input.substr(m.size()) });
+        location.column += m.size();
+
+        auto tail = lexer({ input.substr(m.size()) }, location);
         if (tail.has_value() == false)
         {
             return std::unexpected(tail.error());
@@ -121,6 +129,8 @@ std::expected<std::vector<token>, std::error_code> lexer(std::string_view input)
 
     if (input.empty() == false)
     {
+        std::cout << "Failed to match: " << input << " Line: " << location.line << " Column: " << location.column
+                  << '\n';
         return std::unexpected(std::make_error_code(std::errc::address_family_not_supported));
     }
 

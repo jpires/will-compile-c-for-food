@@ -8,14 +8,14 @@
 namespace wccff {
 enum class stop_phase
 {
-  no_stop,
-  lexer,
-  parser,
-  codegen
+    no_stop,
+    lexer,
+    parser,
+    codegen
 };
 
 std::error_code compile(const std::filesystem::path &source_filename,
                         const std::filesystem::path &output_filename,
                         stop_phase stop);
-}
+} // namespace wccff
 #endif // COMPILER_H
