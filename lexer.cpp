@@ -27,14 +27,10 @@ namespace wccff {
     return ctll::fixed_string("12");
 }*/
 
-std::expected<std::vector<token>, std::error_code> lexer(std::string_view input, file_location location) noexcept
+std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, file_location location) noexcept
 {
     static constexpr auto pattern = ctll::fixed_string{ R"(([a-zA-Z_]\w*\b)|([0-9]+\b)|(\()|(\))|(\{)|(\})|(;))" };
 
-    if (input.empty())
-    {
-        return {};
-    }
     // Remove trimming white spaces
     while (std::isspace(input[0]))
     {
@@ -45,6 +41,11 @@ std::expected<std::vector<token>, std::error_code> lexer(std::string_view input,
             location.column = 0;
         }
         input = input.substr(1);
+    }
+
+    if (input.empty())
+    {
+        return {};
     }
 
     std::cout << "Input: " << input << '\n';
@@ -111,8 +112,7 @@ std::expected<std::vector<token>, std::error_code> lexer(std::string_view input,
 
         if (result.empty())
         {
-            std::cout << "No match for: " << m << '\n';
-            return std::unexpected(std::make_error_code(std::errc::address_family_not_supported));
+            return std::unexpected(lexer_error{ location, m, "Unhandled match" });
         }
 
         location.column += m.size();
@@ -127,14 +127,7 @@ std::expected<std::vector<token>, std::error_code> lexer(std::string_view input,
         return result;
     }
 
-    if (input.empty() == false)
-    {
-        std::cout << "Failed to match: " << input << " Line: " << location.line << " Column: " << location.column
-                  << '\n';
-        return std::unexpected(std::make_error_code(std::errc::address_family_not_supported));
-    }
-
-    return {};
+    return std::unexpected(lexer_error{ location, input, "Failed to find a match" });
 }
 
 std::expected<std::string, std::error_code> read_file(const std::filesystem::path &file_name)

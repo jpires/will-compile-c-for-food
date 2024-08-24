@@ -37,11 +37,9 @@ int run_compiler(const std::filesystem::path &source_file, wccff::stop_phase sto
     auto src_file = get_preprocessor_path(source_file);
     auto dst_file = get_assembly_path(source_file);
 
-    auto ec = wccff::compile(src_file, dst_file, stop_phase);
-    if (ec)
+    if (wccff::compile(src_file, dst_file, stop_phase) == false)
     {
-        std::filesystem::remove_all(fmt::format("{}.i", source_file.stem().c_str()));
-        std::cerr << "Error while running the compiler: " << ec.message() << std::endl;
+        std::filesystem::remove_all(src_file);
         return 1;
     }
     std::filesystem::remove_all(src_file);

@@ -69,6 +69,20 @@ inline std::ostream &operator<<(std::ostream &os, const token_type &t)
     }
 }
 
+struct lexer_error
+{
+    lexer_error(file_location location_, std::string_view input_, std::string message_ = "")
+      : location(location_)
+      , input(input_)
+      , message(std::move(message_))
+    {
+    }
+
+    file_location location;
+    std::string_view input;
+    std::string message;
+};
+
 struct token
 {
     token(token_type t_, std::string_view v_, file_location loc_)
@@ -82,7 +96,7 @@ struct token
     file_location loc;
 };
 
-std::expected<std::vector<token>, std::error_code> lexer(std::string_view input, file_location location = {}) noexcept;
+std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, file_location location = {}) noexcept;
 
 std::expected<std::string, std::error_code> read_file(const std::filesystem::path &file_name);
 
