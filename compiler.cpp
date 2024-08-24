@@ -1,4 +1,7 @@
 #include "compiler.h"
+
+#include "assembly_generation.h"
+#include "code_emission.h"
 #include "lexer.h"
 #include "parser.h"
 #include <filesystem>
@@ -53,8 +56,24 @@ bool compile(const std::filesystem::path &source_filename,
     {
         return true;
     }
-    // Add next steps
+
+    //
     // Codegen
+    //
+
+    auto codegen_result = assembly_generation::process(parse_result.value());
+
+    if (stop == stop_phase::codegen)
+    {
+        return true;
+    }
+
+    //
+    // Emit Assembly code
+    //
+
+    code_emission::process(output_filename, codegen_result);
+
     return true;
 }
 } // namespace wccff

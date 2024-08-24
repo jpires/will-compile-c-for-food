@@ -9,6 +9,10 @@ find_package(cxxopts CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 
 add_executable(wccff
+        assembly_generation.cpp
+        assembly_generation.h
+        code_emission.cpp
+        code_emission.h
         compiler.cpp
         compiler.h
         driver.cpp
