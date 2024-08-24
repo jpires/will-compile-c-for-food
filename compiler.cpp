@@ -1,5 +1,6 @@
 #include "compiler.h"
 #include "lexer.h"
+#include "parser.h"
 #include <filesystem>
 #include <fmt/core.h>
 #include <iostream>
@@ -35,8 +36,24 @@ bool compile(const std::filesystem::path &source_filename,
     {
         return true;
     }
+
+    //
+    // Parser
+    //
+
+    tokens tokens{ le.value() };
+    auto parse_result = parse(tokens);
+    if (parse_result.has_value() == false)
+    {
+        fmt::print("Failed to parse file {}\n", parse_result.error().message);
+        return false;
+    }
+
+    if (stop == stop_phase::parser)
+    {
+        return true;
+    }
     // Add next steps
-    // Parse
     // Codegen
     return true;
 }

@@ -14,6 +14,8 @@ add_executable(wccff
         driver.cpp
         lexer.cpp
         lexer.h
+        parser.cpp
+        parser.h
 )
 target_link_libraries(wccff PRIVATE
         ctre::ctre

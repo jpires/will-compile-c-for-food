@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <expected>
 #include <filesystem>
+#include <optional>
 #include <ostream>
 #include <string>
 #include <string_view>
@@ -99,6 +100,28 @@ struct token
 std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, file_location location = {}) noexcept;
 
 std::expected<std::string, std::error_code> read_file(const std::filesystem::path &file_name);
+
+class tokens
+{
+  public:
+    explicit tokens(std::vector<token> tokens_)
+      : m_tokens(std::move(tokens_))
+    {
+    }
+
+    std::optional<token> get_next_token()
+    {
+        if (m_index >= m_tokens.size())
+        {
+            return std::nullopt;
+        }
+        return m_tokens[m_index++];
+    }
+
+  private:
+    std::vector<token> m_tokens;
+    std::size_t m_index{ 0 };
+};
 
 } // namespace wccff
 #endif // LEXER_H
