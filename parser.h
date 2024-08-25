@@ -32,6 +32,8 @@ class tokens
         return m_tokens[m_index++];
     }
 
+    [[nodiscard]] wccff::lexer::token peek() const { return m_tokens.at(m_index); }
+
   private:
     std::vector<wccff::lexer::token> m_tokens;
     std::size_t m_index{ 0 };
@@ -47,11 +49,32 @@ struct identifier
     std::string name;
 };
 
+struct bitwise_complement_operator
+{
+};
+struct negate_operator
+{
+};
+using unary_operator = std::variant<bitwise_complement_operator, negate_operator>;
+
+struct unary_node;
+
 struct int_constant
 {
     int32_t value;
 };
-using expression = std::variant<int_constant>;
+using expression = std::variant<int_constant, std::unique_ptr<unary_node>>;
+
+struct unary_node
+{
+    unary_node(unary_operator op_, expression expression_)
+      : op(op_)
+      , exp(std::move(expression_))
+    {
+    }
+    unary_operator op;
+    expression exp;
+};
 
 struct return_node
 {
@@ -75,6 +98,7 @@ std::expected<int_constant, parser_error> parse_constant(tokens &tokens);
 std::expected<identifier, parser_error> parse_identifier(tokens &tokens);
 std::expected<expression, parser_error> parse_expression(tokens &tokens);
 std::expected<statement, parser_error> parse_statement(tokens &tokens);
+std::expected<std::unique_ptr<unary_node>, parser_error> parse_unary_node(tokens &tokens);
 
 std::expected<program, parser_error> parse(tokens &tokens);
 
