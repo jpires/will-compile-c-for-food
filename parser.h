@@ -33,6 +33,7 @@ class tokens
     }
 
     [[nodiscard]] wccff::lexer::token peek() const { return m_tokens.at(m_index); }
+    [[nodiscard]] wccff::lexer::token previous_token() const { return m_tokens.at(m_index - 1); }
 
   private:
     std::vector<wccff::lexer::token> m_tokens;

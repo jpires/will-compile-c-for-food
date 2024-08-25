@@ -4,6 +4,13 @@
 
 namespace wccff::parser {
 
+static parser_error generate_unexpected_end_of_tokens(const tokens &tokens)
+{
+    auto previous = tokens.previous_token();
+    auto msg = fmt::format("{}: Error: Unexpected end of tokens after '{}'", previous.loc, previous.c);
+    return { msg };
+}
+
 int32_t int32_t_from_string(std::string_view str)
 {
     int32_t value = 0;
@@ -17,8 +24,7 @@ std::expected<function, parser_error> parse_function(tokens &tokens)
     auto t1 = tokens.get_next_token();
     if (t1.has_value() == false)
     {
-        auto msg = fmt::format("Parse failure at: Unexpected end of tokens");
-        return std::unexpected{ parser_error{ msg } };
+        return std::unexpected{ generate_unexpected_end_of_tokens(tokens) };
     }
     if (t1->t != lexer::token_type::int_keyword)
     {
@@ -34,8 +40,7 @@ std::expected<function, parser_error> parse_function(tokens &tokens)
     // At this point, we need at least 4 tokens until we get to the statement.
     if (tokens.remaining_tokens() < 4)
     {
-        auto msg = fmt::format("Parse failure at: Unexpected end of tokens");
-        return std::unexpected{ parser_error{ msg } };
+        return std::unexpected{ generate_unexpected_end_of_tokens(tokens) };
     }
 
     t1 = tokens.get_next_token_safe();
@@ -75,8 +80,7 @@ std::expected<function, parser_error> parse_function(tokens &tokens)
     // At this point, we need two more tokens
     if (tokens.remaining_tokens() < 2)
     {
-        auto msg = fmt::format("Parse failure at: Unexpected end of tokens");
-        return std::unexpected{ parser_error{ msg } };
+        return std::unexpected{ generate_unexpected_end_of_tokens(tokens) };
     }
     t1 = tokens.get_next_token_safe();
     if (t1->t != lexer::token_type::semicolon)
@@ -112,8 +116,7 @@ std::expected<return_node, parser_error> parse_return_node(tokens &tokens)
     auto t1 = tokens.get_next_token();
     if (t1.has_value() == false)
     {
-        auto msg = fmt::format("Parse failure at: Unexpected end of tokens");
-        return std::unexpected{ parser_error{ msg } };
+        return std::unexpected{ generate_unexpected_end_of_tokens(tokens) };
     }
 
     if (t1->t != lexer::token_type::return_keyword)
@@ -139,8 +142,7 @@ std::expected<std::unique_ptr<unary_node>, parser_error> parse_unary_node(tokens
     auto t = tokens.get_next_token();
     if (t.has_value() == false)
     {
-        auto msg = fmt::format("Parse failure at: Unexpected end of tokens");
-        return std::unexpected{ parser_error{ msg } };
+        return std::unexpected{ generate_unexpected_end_of_tokens(tokens) };
     }
     unary_operator op;
     switch (t->t)
@@ -200,8 +202,7 @@ std::expected<expression, parser_error> parse_expression(tokens &tokens)
             auto n_t = tokens.get_next_token();
             if (n_t.has_value() == false)
             {
-                auto msg = fmt::format("Parse failure at: Unexpected end of tokens");
-                return std::unexpected{ parser_error{ msg } };
+                return std::unexpected{ generate_unexpected_end_of_tokens(tokens) };
             }
             if (n_t->t != lexer::token_type::close_parenthesis)
             {
@@ -223,8 +224,7 @@ std::expected<identifier, parser_error> parse_identifier(tokens &tokens)
     auto token = tokens.get_next_token();
     if (token.has_value() == false)
     {
-        auto msg = fmt::format("Parse failure at: Unexpected end of tokens");
-        return std::unexpected{ parser_error{ msg } };
+        return std::unexpected{ generate_unexpected_end_of_tokens(tokens) };
     }
 
     if (token->t != lexer::token_type::identifier)
@@ -243,8 +243,7 @@ std::expected<int_constant, parser_error> parse_constant(tokens &tokens)
     auto token = tokens.get_next_token();
     if (token.has_value() == false)
     {
-        auto msg = fmt::format("Parse failure at: Unexpected end of tokens");
-        return std::unexpected{ parser_error{ msg } };
+        return std::unexpected{ generate_unexpected_end_of_tokens(tokens) };
     }
 
     if (token->t != lexer::token_type::constant)
