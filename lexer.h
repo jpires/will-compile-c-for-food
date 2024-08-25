@@ -33,6 +33,9 @@ enum class token_type
     open_brace,
     close_brace,
     semicolon,
+    negation_operator,
+    decrement_operator,
+    bitwise_complement_operator,
 };
 
 inline std::ostream &operator<<(std::ostream &os, const token_type &t)
@@ -68,6 +71,15 @@ inline std::ostream &operator<<(std::ostream &os, const token_type &t)
             return os;
         case token_type::semicolon:
             os << "Semicolon";
+            return os;
+        case token_type::negation_operator:
+            os << "Negation Operator";
+            return os;
+        case token_type::decrement_operator:
+            os << "Decrment Operator";
+            return os;
+        case token_type::bitwise_complement_operator:
+            os << "Bitwise Complement Operator";
             return os;
     }
 }
@@ -144,6 +156,15 @@ struct fmt::formatter<wccff::lexer::token_type> : formatter<string_view>
                 break;
             case token_type::semicolon:
                 str = "Semicolon";
+                break;
+            case token_type::negation_operator:
+                str = "Negation Operator";
+                break;
+            case token_type::decrement_operator:
+                str = "Decrment Operator";
+                break;
+            case token_type::bitwise_complement_operator:
+                str = "Bitwise Complement Operator";
                 break;
         }
         return formatter<string_view>::format(str, ctx);

@@ -234,28 +234,37 @@ TEST_CASE("Constants", "[lexer]")
         REQUIRE(result.value().at(0).t == wccff::lexer::token_type::constant);
         REQUIRE(result.value().at(0).c == "1234");
     }
+}
 
-    SECTION("four digit Followed by semicolon")
+TEST_CASE("Operators", "[lexer]")
+{
+    SECTION("Negation Operator")
     {
-        std::string_view input{ "1234;" };
+        std::string_view input{ "-" };
         auto result = wccff::lexer::lexer(input);
         REQUIRE(result.has_value());
-        REQUIRE(result.value().size() == 2);
-        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::constant);
-        REQUIRE(result.value().at(0).c == "1234");
-        REQUIRE(result.value().at(1).t == wccff::lexer::token_type::semicolon);
-        REQUIRE(result.value().at(1).c == ";");
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::negation_operator);
+        REQUIRE(result.value().at(0).c == "-");
     }
 
-    SECTION("four digit Followed by close parenthesis")
+    SECTION("Decrement Operator")
     {
-        std::string_view input{ "1234)" };
+        std::string_view input{ "--" };
         auto result = wccff::lexer::lexer(input);
         REQUIRE(result.has_value());
-        REQUIRE(result.value().size() == 2);
-        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::constant);
-        REQUIRE(result.value().at(0).c == "1234");
-        REQUIRE(result.value().at(1).t == wccff::lexer::token_type::close_parenthesis);
-        REQUIRE(result.value().at(1).c == ")");
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::decrement_operator);
+        REQUIRE(result.value().at(0).c == "--");
+    }
+
+    SECTION("Bitwise Complement Operator")
+    {
+        std::string_view input{ "~" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::bitwise_complement_operator);
+        REQUIRE(result.value().at(0).c == "~");
     }
 }

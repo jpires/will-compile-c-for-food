@@ -29,7 +29,9 @@ namespace wccff::lexer {
 
 std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, file_location location) noexcept
 {
-    static constexpr auto pattern = ctll::fixed_string{ R"(([a-zA-Z_]\w*\b)|([0-9]+\b)|(\()|(\))|(\{)|(\})|(;))" };
+    static constexpr auto pattern = ctll::fixed_string{
+        R"(([a-zA-Z_]\w*\b)|([0-9]+\b)|(\()|(\))|(\{)|(\})|(;)|(--)|(-)|(~))"
+    };
 
     // Remove trimming white spaces
     while ((input.empty() == false) && std::isspace(input[0]))
@@ -108,6 +110,21 @@ std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, fil
         {
             std::cout << "Found Semicolon" << '\n';
             result.emplace_back(token_type::semicolon, m, location);
+        }
+        if (ctre::get<8>(m))
+        {
+            std::cout << "Found decrement Operator" << '\n';
+            result.emplace_back(token_type::decrement_operator, m, location);
+        }
+        if (ctre::get<9>(m))
+        {
+            std::cout << "Found Negation Operator" << '\n';
+            result.emplace_back(token_type::negation_operator, m, location);
+        }
+        if (ctre::get<10>(m))
+        {
+            std::cout << "Found Bitwise Complement Operator" << '\n';
+            result.emplace_back(token_type::bitwise_complement_operator, m, location);
         }
 
         if (result.empty())
