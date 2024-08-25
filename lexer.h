@@ -1,6 +1,7 @@
 #ifndef LEXER_H
 #define LEXER_H
 
+#include <compare>
 #include <cstdint>
 #include <expected>
 #include <filesystem>
@@ -17,6 +18,7 @@ struct file_location
 {
     int32_t line{ 0 };
     int32_t column{ 0 };
+    bool operator==(const file_location &) const = default;
 };
 
 enum class token_type

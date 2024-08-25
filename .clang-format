@@ -32,7 +32,7 @@ FixNamespaceComments: true
 IndentWidth: 4
 InsertNewlineAtEOF: true
 Language: Cpp
-Standard: c++17
+Standard: c++20
 TabWidth: 4
 PenaltyBreakAssignment: 100
 PointerAlignment: Right

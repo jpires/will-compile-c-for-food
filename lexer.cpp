@@ -32,7 +32,7 @@ std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, fil
     static constexpr auto pattern = ctll::fixed_string{ R"(([a-zA-Z_]\w*\b)|([0-9]+\b)|(\()|(\))|(\{)|(\})|(;))" };
 
     // Remove trimming white spaces
-    while (std::isspace(input[0]))
+    while ((input.empty() == false) && std::isspace(input[0]))
     {
         location.column++;
         if (input[0] == '\n')
