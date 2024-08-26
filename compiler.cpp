@@ -1,9 +1,9 @@
 #include "compiler.h"
-
 #include "assembly_generation.h"
 #include "code_emission.h"
 #include "lexer.h"
 #include "parser.h"
+#include "tacky.h"
 #include <filesystem>
 #include <fmt/core.h>
 #include <iostream>
@@ -53,6 +53,16 @@ bool compile(const std::filesystem::path &source_filename,
     }
 
     if (stop == stop_phase::parser)
+    {
+        return true;
+    }
+
+    //
+    // TACKY
+    //
+    auto tacky_result = tacky::process(parse_result.value());
+    fmt::print("{}", pretty_print(tacky_result));
+    if (stop == stop_phase::tacky)
     {
         return true;
     }

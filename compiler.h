@@ -11,6 +11,7 @@ enum class stop_phase
     no_stop,
     lexer,
     parser,
+    tacky,
     codegen
 };
 
