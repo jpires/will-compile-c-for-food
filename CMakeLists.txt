@@ -20,6 +20,8 @@ add_executable(wccff
         lexer.h
         parser.cpp
         parser.h
+        tacky.cpp
+        tacky.h
 )
 target_link_libraries(wccff PRIVATE
         ctre::ctre

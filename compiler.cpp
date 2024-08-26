@@ -71,7 +71,17 @@ bool compile(const std::filesystem::path &source_filename,
     // Codegen
     //
 
-    auto codegen_result = assembly_generation::process(parse_result.value());
+    fmt::print("\nStart Assembly Generation\n");
+    auto codegen_result = assembly_generation::process(tacky_result);
+    fmt::print("{}\n", pretty_print(codegen_result));
+    fmt::print("Stop Assembly Generation");
+    fmt::print("\nReplace Pseudo Register\n");
+    replace_pseudo_registers(codegen_result);
+    fmt::print("{}\n", pretty_print(codegen_result));
+
+    fmt::print("Fixup instructions\n");
+    fixing_up_instructions(codegen_result);
+    fmt::print("{}\n", pretty_print(codegen_result));
 
     if (stop == stop_phase::codegen)
     {
