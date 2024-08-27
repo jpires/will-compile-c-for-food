@@ -82,15 +82,33 @@ struct program
     function function;
 };
 
-program process(const wccff::parser::program &program);
+std::vector<instruction> process_statement(const wccff::tacky::return_statement &stmt);
+std::vector<instruction> process_statement(const wccff::tacky::unary_statement &stmt);
+std::vector<instruction> process_statement(const tacky::instruction &i);
+std::vector<instruction> process_statement(const std::vector<tacky::instruction> &s);
+function process_function(const wccff::tacky::function_definition &f);
 program process(const wccff::tacky::program &program);
+
+void replace_pseudo_registers(program &node);
 
 void fixing_up_instructions(std::vector<instruction> &node);
 void fixing_up_instructions(function &node);
-void replace_pseudo_registers(program &node);
-
 void fixing_up_instructions(program &program);
 
+std::string pretty_print(const identifier &node);
+std::string pretty_print(const unary_operator &node);
+std::string pretty_print(const immediate &node);
+std::string pretty_print(const reg &node);
+std::string pretty_print(const pseudo &node);
+std::string pretty_print(const stack &node);
+std::string pretty_print(const operand &node);
+std::string pretty_print(const mov_instruction &node);
+std::string pretty_print(const unary &node);
+std::string pretty_print(const allocate_stack &node);
+std::string pretty_print(const ret_instruction &node);
+std::string pretty_print(const instruction &node);
+std::string pretty_print(const std::vector<instruction> &node);
+std::string pretty_print(const function &node);
 std::string pretty_print(const program &program);
 } // namespace wccff::assembly_generation
 

@@ -1,4 +1,5 @@
 #include "assembly_generation.h"
+#include "visitor.h"
 
 namespace wccff::assembly_generation {
 
@@ -32,55 +33,6 @@ struct symbol_table
 
 symbol_table table;
 
-template<class... Ts>
-struct visitor : Ts...
-{
-    using Ts::operator()...;
-};
-template<class... Ts>
-visitor(Ts...) -> visitor<Ts...>;
-
-identifier process_identifier(const wccff::parser::identifier &id)
-{
-    return { id.name };
-}
-
-immediate process_int_constant(const wccff::parser::int_constant &c)
-{
-    return { c.value };
-}
-
-operand process_expression(const wccff::parser::expression &e)
-{
-    return process_int_constant(std::get<parser::int_constant>(e));
-}
-
-std::vector<instruction> process_return_node(const wccff::parser::return_node &return_)
-{
-    mov_instruction mov{ process_expression(return_.e), ax{} };
-    ret_instruction ret{};
-
-    return { mov, ret };
-}
-
-std::vector<instruction> process_statement(const wccff::parser::statement &s)
-{
-    return process_return_node(std::get<wccff::parser::return_node>(s));
-}
-
-function process_function(const wccff::parser::function &f)
-{
-    function asm_f;
-    asm_f.name = process_identifier(f.function_name);
-    asm_f.instructions = process_statement(f.body);
-    return asm_f;
-}
-
-program process(const wccff::parser::program &program)
-{
-    return { process_function(program.f) };
-}
-
 identifier process_identifier(const wccff::tacky::identifier &id)
 {
     return { id.name };
@@ -94,7 +46,7 @@ operand process_val(const wccff::tacky::val &v)
                       },
                       v);
 }
-std::vector<instruction> process_return_node(const wccff::tacky::return_statement &stmt)
+std::vector<instruction> process_statement(const wccff::tacky::return_statement &stmt)
 {
     mov_instruction mov{ process_val(stmt.val), ax{} };
     ret_instruction ret{};
@@ -109,7 +61,7 @@ unary_operator process_unary_operator(const wccff::tacky::unary_operator &op)
                       op);
 }
 
-std::vector<instruction> process_unary_statement(const wccff::tacky::unary_statement &stmt)
+std::vector<instruction> process_statement(const wccff::tacky::unary_statement &stmt)
 {
     mov_instruction mov{ process_val(stmt.src), process_val(stmt.dst) };
     unary ret{ process_unary_operator(stmt.op), process_val(stmt.dst) };
@@ -117,10 +69,10 @@ std::vector<instruction> process_unary_statement(const wccff::tacky::unary_state
     return { mov, ret };
 }
 
-std::vector<instruction> process_instruction(const tacky::instruction &i)
+std::vector<instruction> process_statement(const tacky::instruction &i)
 {
-    return std::visit(visitor{ [](const tacky::return_statement &n) { return process_return_node(n); },
-                               [](const tacky::unary_statement &n) { return process_unary_statement(n); } },
+    return std::visit(visitor{ [](const tacky::return_statement &n) { return process_statement(n); },
+                               [](const tacky::unary_statement &n) { return process_statement(n); } },
                       i);
 }
 
@@ -129,7 +81,7 @@ std::vector<instruction> process_statement(const std::vector<tacky::instruction>
     std::vector<instruction> ret_insts;
     for (const auto &i : s)
     {
-        ret_insts.append_range(process_instruction(i));
+        ret_insts.append_range(process_statement(i));
     }
     return ret_insts;
 }
@@ -224,10 +176,12 @@ void fixing_up_instructions(std::vector<instruction> &node)
     }
     node.swap(tmp);
 }
+
 void fixing_up_instructions(function &node)
 {
     fixing_up_instructions(node.instructions);
 }
+
 void fixing_up_instructions(program &node)
 {
     fixing_up_instructions(node.function);
@@ -248,14 +202,17 @@ std::string pretty_print(const immediate &node)
 {
     return fmt::format("Imm({})", node.value);
 }
+
 std::string pretty_print(const reg &node)
 {
     return std::visit(visitor{ [](const ax &) { return "ax"; }, [](const R10 &) { return "R10d"; } }, node);
 }
+
 std::string pretty_print(const pseudo &node)
 {
     return fmt::format("Pseudo({})", pretty_print(node.name));
 }
+
 std::string pretty_print(const stack &node)
 {
     return fmt::format("Stack({})", pretty_print(node.value));
@@ -269,18 +226,22 @@ std::string pretty_print(const operand &node)
                                [](const stack &n) { return pretty_print(n); } },
                       node);
 }
+
 std::string pretty_print(const mov_instruction &node)
 {
     return fmt::format("Mov(src({}), dst({}))", pretty_print(node.src), pretty_print(node.dst));
 }
+
 std::string pretty_print(const unary &node)
 {
     return fmt::format("Unary(op({}), dst({}))", pretty_print(node.op), pretty_print(node.dst));
 }
+
 std::string pretty_print(const allocate_stack &node)
 {
     return fmt::format("Stack({})", pretty_print(node.size));
 }
+
 std::string pretty_print(const ret_instruction &node)
 {
     return fmt::format("Ret");
@@ -304,6 +265,7 @@ std::string pretty_print(const std::vector<instruction> &node)
     }
     return pretty;
 }
+
 std::string pretty_print(const function &node)
 {
     return fmt::format("Function(name: {}\ninsts: {}", pretty_print(node.name), pretty_print(node.instructions));

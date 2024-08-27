@@ -1,16 +1,8 @@
 #include "code_emission.h"
-
+#include "visitor.h"
 #include <fstream>
 
 namespace wccff::code_emission {
-
-template<class... Ts>
-struct visitor : Ts...
-{
-    using Ts::operator()...;
-};
-template<class... Ts>
-visitor(Ts...) -> visitor<Ts...>;
 
 std::string process_identifier(const assembly_generation::identifier &identifier)
 {

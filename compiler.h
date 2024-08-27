@@ -2,8 +2,6 @@
 #define COMPILER_H
 
 #include <filesystem>
-#include <string_view>
-#include <system_error>
 
 namespace wccff {
 enum class stop_phase

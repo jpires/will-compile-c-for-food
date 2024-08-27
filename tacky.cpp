@@ -1,5 +1,6 @@
 #include "tacky.h"
-#include "fmt/format.h"
+#include "visitor.h"
+#include <fmt/format.h>
 
 namespace wccff::tacky {
 
@@ -8,14 +9,6 @@ std::string get_temporary_name()
     static int counter = 0;
     return fmt::format("tacky-{}", ++counter);
 }
-
-template<class... Ts>
-struct visitor : Ts...
-{
-    using Ts::operator()...;
-};
-template<class... Ts>
-visitor(Ts...) -> visitor<Ts...>;
 
 identifier process_identifier(const parser::identifier &id)
 {
