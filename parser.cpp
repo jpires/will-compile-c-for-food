@@ -137,6 +137,32 @@ std::expected<statement, parser_error> parse_statement(tokens &tokens)
 {
     return parse_return_node(tokens);
 }
+
+std::expected<binary_operator, parser_error> parse_binary_operator(tokens &tokens)
+{
+    auto t = tokens.get_next_token();
+    if (t.has_value() == false)
+    {
+        return std::unexpected{ generate_unexpected_end_of_tokens(tokens) };
+    }
+
+    switch (t->t)
+    {
+        case lexer::token_type::plus_operator:
+            return plus_operator{};
+        case lexer::token_type::negation_operator:
+            return subtract_operator{};
+        case lexer::token_type::multiplication_operator:
+            return multiply_operator{};
+        case lexer::token_type::division_operator:
+            return divide_operator{};
+        case lexer::token_type::remainder_operator:
+            return remainder_operator{};
+        default:
+            auto msg = fmt::format("Expected Binary Operator but found '{}'", t->c);
+            return std::unexpected{ parser_error{ msg } };
+    }
+}
 std::expected<std::unique_ptr<unary_node>, parser_error> parse_unary_node(tokens &tokens)
 {
     auto t = tokens.get_next_token();
@@ -161,7 +187,7 @@ std::expected<std::unique_ptr<unary_node>, parser_error> parse_unary_node(tokens
             return std::unexpected{ parser_error{ msg } };
     }
 
-    auto exp = parse_expression(tokens);
+    auto exp = parse_factor(tokens);
     if (exp.has_value() == false)
     {
         return std::unexpected{ exp.error() };
@@ -170,7 +196,7 @@ std::expected<std::unique_ptr<unary_node>, parser_error> parse_unary_node(tokens
     return std::make_unique<unary_node>(op, std::move(exp.value()));
 }
 
-std::expected<expression, parser_error> parse_expression(tokens &tokens)
+std::expected<expression, parser_error> parse_factor(tokens &tokens)
 {
     auto next_toke = tokens.peek();
     switch (next_toke.t)
@@ -217,6 +243,55 @@ std::expected<expression, parser_error> parse_expression(tokens &tokens)
             return std::unexpected{ parser_error{ msg } };
         }
     }
+}
+
+std::expected<expression, parser_error> parse_expression(tokens &tokens, int32_t min_precedence)
+{
+    auto is_binary_operator = [](lexer::token_type type) {
+        return type == lexer::token_type::plus_operator || type == lexer::token_type::negation_operator ||
+               type == lexer::token_type::multiplication_operator || type == lexer::token_type::division_operator ||
+               type == lexer::token_type::remainder_operator;
+    };
+
+    auto get_precedende = [](lexer::token_type type) {
+        switch (type)
+        {
+            case lexer::token_type::plus_operator:
+            case lexer::token_type::negation_operator:
+                return 45;
+            case lexer::token_type::multiplication_operator:
+            case lexer::token_type::division_operator:
+            case lexer::token_type::remainder_operator:
+                return 50;
+        }
+        return 0;
+    };
+
+    auto left = parse_factor(tokens);
+    if (left.has_value() == false)
+    {
+        return std::unexpected{ left.error() };
+    }
+
+    auto next_token = tokens.peek();
+    while (is_binary_operator(next_token.t) && min_precedence < get_precedende(next_token.t))
+    {
+        auto op = parse_binary_operator(tokens);
+        if (op.has_value() == false)
+        {
+            return std::unexpected{ op.error() };
+        }
+
+        auto right = parse_expression(tokens, get_precedende(next_token.t) + 1);
+        if (right.has_value() == false)
+        {
+            return std::unexpected{ right.error() };
+        }
+
+        left = std::make_unique<binary_node>(op.value(), std::move(left.value()), std::move(right.value()));
+        next_token = tokens.peek();
+    }
+    return left;
 }
 
 std::expected<identifier, parser_error> parse_identifier(tokens &tokens)

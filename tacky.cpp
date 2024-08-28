@@ -40,11 +40,13 @@ val process_unary_node(const std::unique_ptr<parser::unary_node> &node, std::vec
 
 val process_expression(const wccff::parser::expression &exp, std::vector<instruction> &instructions)
 {
-    return std::visit(visitor{ [](const parser::int_constant &c) -> val { return process_int_constant(c); },
-                               [&instructions](const std::unique_ptr<parser::unary_node> &n) -> val {
-                                   return process_unary_node(n, instructions);
-                               } },
-                      exp);
+    return std::visit(
+      visitor{ [](const parser::int_constant &c) -> val { return process_int_constant(c); },
+               [&instructions](const std::unique_ptr<parser::unary_node> &n) -> val {
+                   return process_unary_node(n, instructions);
+               },
+               [&instructions](const std::unique_ptr<parser::binary_node> &n) -> val { return constant{ 31 }; } },
+      exp);
 }
 
 std::vector<instruction> process_return_node(const wccff::parser::return_node &stmt)
