@@ -30,7 +30,7 @@ namespace wccff::lexer {
 std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, file_location location) noexcept
 {
     static constexpr auto pattern = ctll::fixed_string{
-        R"(([a-zA-Z_]\w*\b)|([0-9]+\b)|(\()|(\))|(\{)|(\})|(;)|(--)|(-)|(~))"
+        R"(([a-zA-Z_]\w*\b)|([0-9]+\b)|(\()|(\))|(\{)|(\})|(;)|(--)|(-)|(~)|(\+)|(\*)|(/)|(%))"
     };
 
     // Remove trimming white spaces
@@ -125,6 +125,26 @@ std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, fil
         {
             std::cout << "Found Bitwise Complement Operator" << '\n';
             result.emplace_back(token_type::bitwise_complement_operator, m, location);
+        }
+        if (ctre::get<11>(m))
+        {
+            std::cout << "Found Plus Operator" << '\n';
+            result.emplace_back(token_type::plus_operator, m, location);
+        }
+        if (ctre::get<12>(m))
+        {
+            std::cout << "Found Multiplication Operator" << '\n';
+            result.emplace_back(token_type::multiplication_operator, m, location);
+        }
+        if (ctre::get<13>(m))
+        {
+            std::cout << "Found Division Operator" << '\n';
+            result.emplace_back(token_type::division_operator, m, location);
+        }
+        if (ctre::get<14>(m))
+        {
+            std::cout << "Found Remainder Operator" << '\n';
+            result.emplace_back(token_type::remainder_operator, m, location);
         }
 
         if (result.empty())

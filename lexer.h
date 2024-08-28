@@ -36,53 +36,12 @@ enum class token_type
     negation_operator,
     decrement_operator,
     bitwise_complement_operator,
-};
+    plus_operator,
+    multiplication_operator,
+    division_operator,
+    remainder_operator,
 
-inline std::ostream &operator<<(std::ostream &os, const token_type &t)
-{
-    switch (t)
-    {
-        case token_type::identifier:
-            os << "Identifier";
-            return os;
-        case token_type::constant:
-            os << "Constant";
-            return os;
-        case token_type::int_keyword:
-            os << "Int Keyword";
-            return os;
-        case token_type::void_keyword:
-            os << "Void Keyword";
-            return os;
-        case token_type::return_keyword:
-            os << "Return Keyword";
-            return os;
-        case token_type::open_parenthesis:
-            os << "Open Parenthesis";
-            return os;
-        case token_type::close_parenthesis:
-            os << "Close Parenthesis";
-            return os;
-        case token_type::open_brace:
-            os << "Open Brace";
-            return os;
-        case token_type::close_brace:
-            os << "Close Brace";
-            return os;
-        case token_type::semicolon:
-            os << "Semicolon";
-            return os;
-        case token_type::negation_operator:
-            os << "Negation Operator";
-            return os;
-        case token_type::decrement_operator:
-            os << "Decrment Operator";
-            return os;
-        case token_type::bitwise_complement_operator:
-            os << "Bitwise Complement Operator";
-            return os;
-    }
-}
+};
 
 struct lexer_error
 {
@@ -166,6 +125,18 @@ struct fmt::formatter<wccff::lexer::token_type> : formatter<string_view>
             case token_type::bitwise_complement_operator:
                 str = "Bitwise Complement Operator";
                 break;
+            case token_type::plus_operator:
+                str = "Plus Operator";
+                break;
+            case token_type::multiplication_operator:
+                str = "Multiplication Operator";
+                break;
+            case token_type::division_operator:
+                str = "Division Operator";
+                break;
+            case token_type::remainder_operator:
+                str = "Remainder Operator";
+                break;
         }
         return formatter<string_view>::format(str, ctx);
     }
@@ -181,4 +152,12 @@ struct fmt::formatter<wccff::lexer::file_location> : formatter<string_view>
         return formatter<string_view>::format(str, ctx);
     }
 };
+
+namespace wccff::lexer {
+inline std::ostream &operator<<(std::ostream &os, const token_type &t)
+{
+    os << fmt::format("{}", t);
+    return os;
+}
+} // namespace wccff::lexer
 #endif // LEXER_H

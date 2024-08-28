@@ -267,4 +267,44 @@ TEST_CASE("Operators", "[lexer]")
         REQUIRE(result.value().at(0).t == wccff::lexer::token_type::bitwise_complement_operator);
         REQUIRE(result.value().at(0).c == "~");
     }
+
+    SECTION("Plus Operator")
+    {
+        std::string_view input{ "+" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::plus_operator);
+        REQUIRE(result.value().at(0).c == "+");
+    }
+
+    SECTION("Multiplication Operator")
+    {
+        std::string_view input{ "*" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::multiplication_operator);
+        REQUIRE(result.value().at(0).c == "*");
+    }
+
+    SECTION("Division Operator")
+    {
+        std::string_view input{ "/" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::division_operator);
+        REQUIRE(result.value().at(0).c == "/");
+    }
+
+    SECTION("Remainder Operator")
+    {
+        std::string_view input{ "%" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::remainder_operator);
+        REQUIRE(result.value().at(0).c == "%");
+    }
 }
