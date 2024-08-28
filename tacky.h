@@ -70,6 +70,12 @@ struct program
 {
     function_definition function;
 };
+
+identifier process_identifier(const parser::identifier &id);
+constant process_int_constant(const parser::int_constant &int_con);
+unary_operator process_unary_operator(const parser::unary_operator &op);
+val process_unary_node(const std::unique_ptr<parser::unary_node> &node, std::vector<instruction> &instructions);
+
 val process_expression(const wccff::parser::expression &exp, std::vector<instruction> &instructions);
 program process(const parser::program &input);
 
