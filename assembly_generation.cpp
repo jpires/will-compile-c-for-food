@@ -72,7 +72,8 @@ std::vector<instruction> process_statement(const wccff::tacky::unary_statement &
 std::vector<instruction> process_statement(const tacky::instruction &i)
 {
     return std::visit(visitor{ [](const tacky::return_statement &n) { return process_statement(n); },
-                               [](const tacky::unary_statement &n) { return process_statement(n); } },
+                               [](const tacky::unary_statement &n) { return process_statement(n); },
+                               [](const tacky::binary_statement &n) { return process_statement(n); } },
                       i);
 }
 

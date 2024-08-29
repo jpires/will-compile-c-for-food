@@ -27,8 +27,24 @@ struct negate_operator
 {
 };
 
+struct plus_operator
+{
+};
+struct subtract_operator
+{
+};
+struct multiply_operator
+{
+};
+struct divide_operator
+{
+};
+struct remainder_operator
+{
+};
 using unary_operator = std::variant<binary_complement_operator, negate_operator>;
-
+using binary_operator =
+  std::variant<plus_operator, subtract_operator, multiply_operator, divide_operator, remainder_operator>;
 struct constant
 {
     int32_t value;
@@ -58,7 +74,22 @@ struct unary_statement
     val dst;
 };
 
-using instruction = std::variant<return_statement, unary_statement>;
+struct binary_statement
+{
+    binary_statement(binary_operator op_, val src1_, val src2_, val dst_)
+      : op(op_)
+      , src1(std::move(src1_))
+      , src2(std::move(src2_))
+      , dst(std::move(dst_))
+    {
+    }
+    binary_operator op;
+    val src1;
+    val src2;
+    val dst;
+};
+
+using instruction = std::variant<return_statement, unary_statement, binary_statement>;
 
 struct function_definition
 {
@@ -74,6 +105,8 @@ struct program
 identifier process_identifier(const parser::identifier &id);
 constant process_int_constant(const parser::int_constant &int_con);
 unary_operator process_unary_operator(const parser::unary_operator &op);
+binary_operator process_binary_operator(const parser::binary_operator &op);
+val process_binary_node(const std::unique_ptr<parser::binary_node> &node, std::vector<instruction> &instructions);
 val process_unary_node(const std::unique_ptr<parser::unary_node> &node, std::vector<instruction> &instructions);
 
 val process_expression(const wccff::parser::expression &exp, std::vector<instruction> &instructions);
