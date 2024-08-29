@@ -17,7 +17,9 @@ std::string process_immediate(const assembly_generation::immediate &immediate)
 std::string process_register(const assembly_generation::reg &node)
 {
     return std::visit(visitor{ [](const assembly_generation::ax &) { return "%eax"; },
-                               [](const assembly_generation::R10 &) { return "%r10d"; } },
+                               [](const assembly_generation::dx &) { return "%edx"; },
+                               [](const assembly_generation::R10 &) { return "%r10d"; },
+                               [](const assembly_generation::R11 &) { return "%r11d"; } },
                       node);
 }
 std::string process_pseudo(const assembly_generation::pseudo &node)
@@ -48,6 +50,14 @@ std::string process_ret_instruction(const assembly_generation::ret_instruction &
     return fmt::format("movq %rbp, %rsp\npopq %rbp\nret");
 }
 
+std::string process_binary_operator(const assembly_generation::binary_operator &node)
+{
+    return std::visit(visitor{ [](const assembly_generation::add &) { return "addl"; },
+                               [](const assembly_generation::sub &) { return "subl"; },
+                               [](const assembly_generation::mul &) { return "imull"; } },
+                      node);
+}
+
 std::string process_unary_operator(const assembly_generation::unary_operator &node)
 {
     return std::visit(visitor{ [](const assembly_generation::neg_op &) { return "negl"; },
@@ -56,7 +66,23 @@ std::string process_unary_operator(const assembly_generation::unary_operator &no
 }
 std::string process_unary(const assembly_generation::unary &node)
 {
-    return fmt::format("{} {}", process_unary_operator(node.op), process_operand(node.dst));
+    return fmt::format("{} {}", process_unary_operator(node.op), process_operand(node.dst), process_operand(node.dst));
+}
+std::string process_binary(const assembly_generation::binary &node)
+{
+    return fmt::format("{} {}, {}",
+                       process_binary_operator(node.op),
+                       process_operand(node.src),
+                       process_operand(node.dst));
+}
+
+std::string process_idiv(const assembly_generation::idiv &node)
+{
+    return fmt::format("idivl {}", process_operand(node.src));
+}
+std::string process_cdq(const assembly_generation::cdq &node)
+{
+    return fmt::format("cdq");
 }
 
 std::string process_allocate_stack(const assembly_generation::allocate_stack &node)
@@ -69,6 +95,9 @@ std::string process_instruction(const assembly_generation::instruction &instruct
     return std::visit(visitor{
                         [](const assembly_generation::mov_instruction &mov) { return process_mov_instruction(mov); },
                         [](const assembly_generation::unary &node) { return process_unary(node); },
+                        [](const assembly_generation::binary &node) { return process_binary(node); },
+                        [](const assembly_generation::idiv &node) { return process_idiv(node); },
+                        [](const assembly_generation::cdq &node) { return process_cdq(node); },
                         [](const assembly_generation::allocate_stack &node) { return process_allocate_stack(node); },
                         [](const assembly_generation::ret_instruction &ret) { return process_ret_instruction(ret); },
                       },

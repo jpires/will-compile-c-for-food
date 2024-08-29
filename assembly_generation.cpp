@@ -61,10 +61,46 @@ unary_operator process_unary_operator(const wccff::tacky::unary_operator &op)
                       op);
 }
 
+binary_operator process_binary_operator(const wccff::tacky::binary_operator &op)
+{
+    return std::visit(visitor{ [](const tacky::plus_operator &) -> binary_operator { return add{}; },
+                               [](const tacky::subtract_operator &) -> binary_operator { return sub{}; },
+                               [](const tacky::multiply_operator &) -> binary_operator { return mul{}; },
+                               [](const tacky::divide_operator &) -> binary_operator { return sub{}; },
+                               [](const tacky::remainder_operator &) -> binary_operator { return mul{}; } },
+                      op);
+}
+
 std::vector<instruction> process_statement(const wccff::tacky::unary_statement &stmt)
 {
     mov_instruction mov{ process_val(stmt.src), process_val(stmt.dst) };
     unary ret{ process_unary_operator(stmt.op), process_val(stmt.dst) };
+
+    return { mov, ret };
+}
+
+std::vector<instruction> process_statement(const wccff::tacky::binary_statement &stmt)
+{
+    if (std::holds_alternative<wccff::tacky::divide_operator>(stmt.op))
+    {
+        mov_instruction mov1{ process_val(stmt.src1), ax{} };
+        idiv div{ process_val(stmt.src2) };
+        mov_instruction mov2{ ax{}, process_val(stmt.dst) };
+
+        return { mov1, cdq{}, div, mov2 };
+    }
+
+    if (std::holds_alternative<wccff::tacky::remainder_operator>(stmt.op))
+    {
+        mov_instruction mov1{ process_val(stmt.src1), ax{} };
+        idiv div{ process_val(stmt.src2) };
+        mov_instruction mov2{ dx{}, process_val(stmt.dst) };
+
+        return { mov1, cdq{}, div, mov2 };
+    }
+
+    mov_instruction mov{ process_val(stmt.src1), process_val(stmt.dst) };
+    binary ret{ process_binary_operator(stmt.op), process_val(stmt.src2), process_val(stmt.dst) };
 
     return { mov, ret };
 }
@@ -121,6 +157,30 @@ void replace_pseudo_registers_q(unary &i)
         i.dst = stack{ table.get_address(r.name) };
     }
 }
+
+void replace_pseudo_registers_q(binary &i)
+{
+    if (std::holds_alternative<pseudo>(i.src))
+    {
+        auto r = std::get<pseudo>(i.src);
+        i.src = stack{ table.get_address(r.name) };
+    }
+
+    if (std::holds_alternative<pseudo>(i.dst))
+    {
+        auto r = std::get<pseudo>(i.dst);
+        i.dst = stack{ table.get_address(r.name) };
+    }
+}
+void replace_pseudo_registers_q(idiv &i)
+{
+    if (std::holds_alternative<pseudo>(i.src))
+    {
+        auto r = std::get<pseudo>(i.src);
+        i.src = stack{ table.get_address(r.name) };
+    }
+}
+void replace_pseudo_registers_q(cdq &i) {}
 void replace_pseudo_registers_q(allocate_stack &i) {}
 void replace_pseudo_registers_q(ret_instruction &i) {}
 
@@ -146,12 +206,63 @@ std::optional<std::vector<instruction>> fixing_up_instructions11(const mov_instr
 
     return std::nullopt;
 }
+
+std::optional<std::vector<instruction>> fixing_up_instructions_binary(const binary &n)
+{
+    if (std::holds_alternative<add>(n.op) || std::holds_alternative<sub>(n.op))
+    {
+        if (std::holds_alternative<stack>(n.src) && std::holds_alternative<stack>(n.dst))
+        {
+            std::vector<instruction> ret_insts;
+            mov_instruction m1{ n.src, R10{} };
+            binary b1{ n.op, R10{}, n.dst };
+            ret_insts.emplace_back(m1);
+            ret_insts.emplace_back(b1);
+            return ret_insts;
+        }
+    }
+
+    if (std::holds_alternative<mul>(n.op))
+    {
+        if (std::holds_alternative<stack>(n.dst))
+        {
+            std::vector<instruction> ret_insts;
+            mov_instruction m1{ n.dst, R11{} };
+            binary b1{ n.op, n.src, R11{} };
+            mov_instruction m2{ R11{}, n.dst };
+            ret_insts.emplace_back(m1);
+            ret_insts.emplace_back(b1);
+            ret_insts.emplace_back(m2);
+            return ret_insts;
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<std::vector<instruction>> fixing_up_instructions_idiv(const idiv &n)
+{
+    if (std::holds_alternative<immediate>(n.src))
+    {
+        std::vector<instruction> ret_insts;
+        mov_instruction m1{ n.src, R10{} };
+        idiv m2{ R10{} };
+        ret_insts.emplace_back(m1);
+        ret_insts.emplace_back(m2);
+        return ret_insts;
+    }
+
+    return std::nullopt;
+}
 std::optional<std::vector<instruction>> fixing_up_instructions1(const instruction &node)
 {
     return std::visit(
       visitor{
         [](const mov_instruction &n) -> std::optional<std::vector<instruction>> { return fixing_up_instructions11(n); },
         [](const unary &) -> std::optional<std::vector<instruction>> { return std::nullopt; },
+        [](const binary &i) -> std::optional<std::vector<instruction>> { return fixing_up_instructions_binary(i); },
+        [](const idiv &i) -> std::optional<std::vector<instruction>> { return fixing_up_instructions_idiv(i); },
+        [](const cdq &) -> std::optional<std::vector<instruction>> { return std::nullopt; },
         [](const allocate_stack &) -> std::optional<std::vector<instruction>> { return std::nullopt; },
         [](const ret_instruction &) -> std::optional<std::vector<instruction>> { return std::nullopt; } },
       node);
@@ -193,6 +304,13 @@ std::string pretty_print(const identifier &node)
     return fmt::format("{}", node.name);
 }
 
+std::string pretty_print(const binary_operator &node)
+{
+    return std::visit(visitor{ [](const add &) { return "Add"; },
+                               [](const sub &) { return "Sub"; },
+                               [](const mul &) { return "Mul"; } },
+                      node);
+}
 std::string pretty_print(const unary_operator &node)
 {
     return std::visit(visitor{ [](const not_op &) { return "Complement"; }, [](const neg_op &) { return "Negate"; } },
@@ -206,7 +324,13 @@ std::string pretty_print(const immediate &node)
 
 std::string pretty_print(const reg &node)
 {
-    return std::visit(visitor{ [](const ax &) { return "ax"; }, [](const R10 &) { return "R10d"; } }, node);
+    return std::visit(visitor{
+                        [](const ax &) { return "ax"; },
+                        [](const dx &) { return "dx"; },
+                        [](const R10 &) { return "R10d"; },
+                        [](const R11 &) { return "R11d"; },
+                      },
+                      node);
 }
 
 std::string pretty_print(const pseudo &node)
@@ -238,6 +362,22 @@ std::string pretty_print(const unary &node)
     return fmt::format("Unary(op({}), dst({}))", pretty_print(node.op), pretty_print(node.dst));
 }
 
+std::string pretty_print(const binary &node)
+{
+    return fmt::format("Binary(op({}), src({}), dst({}))",
+                       pretty_print(node.op),
+                       pretty_print(node.src),
+                       pretty_print(node.dst));
+}
+std::string pretty_print(const idiv &node)
+{
+    return fmt::format("iDiv");
+}
+std::string pretty_print(const cdq &node)
+{
+    return fmt::format("CDQ");
+}
+
 std::string pretty_print(const allocate_stack &node)
 {
     return fmt::format("Stack({})", pretty_print(node.size));
@@ -252,6 +392,9 @@ std::string pretty_print(const instruction &node)
 {
     return std::visit(visitor{ [](const mov_instruction &n) { return pretty_print(n); },
                                [](const unary &n) { return pretty_print(n); },
+                               [](const binary &n) { return pretty_print(n); },
+                               [](const idiv &n) { return pretty_print(n); },
+                               [](const cdq &n) { return pretty_print(n); },
                                [](const allocate_stack &n) { return pretty_print(n); },
                                [](const ret_instruction &n) { return pretty_print(n); } },
                       node);

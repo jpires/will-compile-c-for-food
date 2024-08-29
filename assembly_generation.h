@@ -24,11 +24,17 @@ struct immediate
 struct ax
 {
 };
+struct dx
+{
+};
 struct R10
 {
 };
+struct R11
+{
+};
 
-using reg = std::variant<ax, R10>;
+using reg = std::variant<ax, dx, R10, R11>;
 
 struct pseudo
 {
@@ -49,10 +55,35 @@ struct not_op
 
 using unary_operator = std::variant<not_op, neg_op>;
 
+struct add
+{
+};
+
+struct sub
+{
+};
+struct mul
+{
+};
+using binary_operator = std::variant<add, sub, mul>;
 struct unary
 {
     unary_operator op;
     operand dst;
+};
+struct binary
+{
+    binary_operator op;
+    operand src;
+    operand dst;
+};
+
+struct idiv
+{
+    operand src;
+};
+struct cdq
+{
 };
 struct mov_instruction
 {
@@ -69,7 +100,7 @@ struct allocate_stack
     immediate size;
 };
 
-using instruction = std::variant<mov_instruction, unary, allocate_stack, ret_instruction>;
+using instruction = std::variant<mov_instruction, unary, binary, idiv, cdq, allocate_stack, ret_instruction>;
 
 struct function
 {
