@@ -135,6 +135,9 @@ std::expected<std::unique_ptr<unary_node>, parser_error> parse_unary_node(tokens
 
 std::expected<program, parser_error> parse(tokens &tokens);
 
+std::string pretty_print(const expression &node, int32_t ident);
+std::string pretty_print(const function &node, int32_t ident);
+std::string pretty_print(const program &node, int32_t ident = 0);
 } // namespace wccff::parser
 
 #endif // PARSER_H

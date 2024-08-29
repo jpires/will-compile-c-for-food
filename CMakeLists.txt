@@ -22,6 +22,8 @@ add_executable(wccff
         parser.h
         tacky.cpp
         tacky.h
+        utils.cpp
+        utils.h
 )
 target_link_libraries(wccff PRIVATE
         ctre::ctre

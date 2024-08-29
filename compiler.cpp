@@ -51,7 +51,10 @@ bool compile(const std::filesystem::path &source_filename,
         fmt::print("Failed to parse file {}\n", parse_result.error().message);
         return false;
     }
+    fmt::print("PARSER PRETTY PRINT BEGIN\n");
+    fmt::print("{}", pretty_print(parse_result.value()));
 
+    fmt::print("\nPARSER PRETTY PRINT END\n");
     if (stop == stop_phase::parser)
     {
         return true;

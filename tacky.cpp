@@ -1,4 +1,5 @@
 #include "tacky.h"
+#include "utils.h"
 #include "visitor.h"
 #include <fmt/format.h>
 
@@ -97,29 +98,30 @@ program process(const parser::program &input)
 
 std::string pretty_print(const unary_operator &op, int32_t ident)
 {
-    return std::visit(visitor{ [](const binary_complement_operator &) { return fmt::format("Complement"); },
-                               [ident](const negate_operator &) { return fmt::format("Negate"); } },
-                      op);
+    return std::visit(
+      visitor{ [ident](const binary_complement_operator &) { return wccff::format_indented(ident, "Complement"); },
+               [ident](const negate_operator &) { return wccff::format_indented(ident, "Negate"); } },
+      op);
 }
 std::string pretty_print(const binary_operator &op, int32_t ident)
 {
     return std::visit(visitor{
-                        [ident](const plus_operator &) { return fmt::format("Plus"); },
-                        [ident](const subtract_operator &) { return fmt::format("Subtract"); },
-                        [ident](const multiply_operator &) { return fmt::format("Multiply"); },
-                        [ident](const divide_operator &) { return fmt::format("Divide"); },
-                        [ident](const remainder_operator &) { return fmt::format("Remainder"); },
+                        [ident](const plus_operator &) { return wccff::format_indented(ident, "Plus"); },
+                        [ident](const subtract_operator &) { return wccff::format_indented(ident, "Subtract"); },
+                        [ident](const multiply_operator &) { return wccff::format_indented(ident, "Multiply"); },
+                        [ident](const divide_operator &) { return wccff::format_indented(ident, "Divide"); },
+                        [ident](const remainder_operator &) { return wccff::format_indented(ident, "Remainder"); },
 
                       },
                       op);
 }
 std::string pretty_print(const constant &val, int32_t ident)
 {
-    return fmt::format("Constant({})", val.value);
+    return wccff::format_indented(ident, "Constant({})", val.value);
 }
 std::string pretty_print(const var &var, int32_t ident)
 {
-    return fmt::format("Var({})", var.id.name);
+    return wccff::format_indented(ident, "Var({})", var.id.name);
 }
 std::string pretty_print(const val &val, int32_t ident)
 {
@@ -127,22 +129,24 @@ std::string pretty_print(const val &val, int32_t ident)
 }
 std::string pretty_print(const return_statement &instruction, int32_t ident)
 {
-    return fmt::format("Return({})\n", pretty_print(instruction.val, ident));
+    return wccff::format_indented(ident, "Return({})\n", pretty_print(instruction.val, 0));
 }
 std::string pretty_print(const unary_statement &i, int32_t ident)
 {
-    return fmt::format("Unary({}, {}, {})\n",
-                       pretty_print(i.op, ident),
-                       pretty_print(i.src, ident),
-                       pretty_print(i.dst, ident));
+    return wccff::format_indented(ident,
+                                  "Unary({}, {}, {})\n",
+                                  pretty_print(i.op, 0),
+                                  pretty_print(i.src, 0),
+                                  pretty_print(i.dst, 0));
 }
 std::string pretty_print(const binary_statement &i, int32_t ident)
 {
-    return fmt::format("Binary({}, {}, {}, {})\n",
-                       pretty_print(i.op, ident),
-                       pretty_print(i.src1, ident),
-                       pretty_print(i.src2, ident),
-                       pretty_print(i.dst, ident));
+    return wccff::format_indented(ident,
+                                  "Binary({}, {}, {}, {})\n",
+                                  pretty_print(i.op, 0),
+                                  pretty_print(i.src1, 0),
+                                  pretty_print(i.src2, 0),
+                                  pretty_print(i.dst, 0));
 }
 
 std::string pretty_print(const instruction &instruction, int32_t ident)
@@ -163,7 +167,7 @@ std::string pretty_print(const std::vector<instruction> &instructions, int32_t i
 
 std::string pretty_print(const function_definition &f, int ident)
 {
-    return fmt::format("Function({})\n{}", f.name.name, pretty_print(f.instructions, ident));
+    return wccff::format_indented(ident, "Function({})\n{}", f.name.name, pretty_print(f.instructions, ident + 4));
 }
 
 std::string pretty_print(const program &p, int ident)

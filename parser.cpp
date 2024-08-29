@@ -1,4 +1,6 @@
 #include "parser.h"
+#include "utils.h"
+#include "visitor.h"
 #include <charconv>
 #include <fmt/core.h>
 
@@ -347,4 +349,69 @@ std::expected<program, parser_error> parse(tokens &tokens)
     return p;
 }
 
+std::string pretty_print(const unary_operator &node, int32_t ident)
+{
+    return std::visit(
+      wccff::visitor{
+        [ident](const bitwise_complement_operator &) { return wccff::format_indented(ident, "Complement"); },
+        [ident](const negate_operator &) { return wccff::format_indented(ident, "Negate"); } },
+      node);
+}
+
+std::string pretty_print(const binary_operator &node, int32_t ident)
+{
+    return std::visit(
+      wccff::visitor{ [ident](const plus_operator &) { return wccff::format_indented(ident, "Plus"); },
+                      [ident](const subtract_operator &) { return wccff::format_indented(ident, "Subtract"); },
+                      [ident](const multiply_operator &) { return wccff::format_indented(ident, "Multiply"); },
+                      [ident](const divide_operator &) { return wccff::format_indented(ident, "Divide"); },
+                      [ident](const remainder_operator &) { return wccff::format_indented(ident, "Remainder"); } },
+      node);
+}
+
+std::string pretty_print(const std::unique_ptr<unary_node> &node, int32_t ident)
+{
+    auto prefix = wccff::format_indented(ident, "Unary({}", pretty_print(node->op, 0));
+    auto inner = wccff::format_indented(0, "{}", pretty_print(node->exp, ident + 6));
+    auto sufix = wccff::format_indented(ident, ")");
+
+    return fmt::format("{}\n{}\n{}", prefix, inner, sufix);
+}
+
+std::string pretty_print(const std::unique_ptr<binary_node> &node, int32_t ident)
+{
+    auto prefix = wccff::format_indented(ident, "Binary({}", pretty_print(node->op, 0));
+    auto left = wccff::format_indented(0, "{}", pretty_print(node->left, ident + 7));
+    auto right = wccff::format_indented(0, "{}", pretty_print(node->right, ident + 7));
+    auto sufix = wccff::format_indented(ident, ")");
+
+    return fmt::format("{}\n{}\n{}\n{}", prefix, left, right, sufix);
+}
+std::string pretty_print(const expression &node, int32_t ident)
+{
+    return std::visit(
+      wccff::visitor{ [ident](const int_constant &n) { return wccff::format_indented(ident, "Constant({})", n.value); },
+                      [ident](const std::unique_ptr<unary_node> &n) { return pretty_print(n, ident); },
+                      [ident](const std::unique_ptr<binary_node> &n) { return pretty_print(n, ident); } },
+      node);
+}
+std::string pretty_print(const statement &node, int32_t ident)
+{
+    return std::visit(
+      [ident](const return_node &n) {
+          return wccff::format_indented(ident, "Return\n{}", pretty_print(n.e, ident + 4));
+      },
+      node);
+}
+std::string pretty_print(const function &node, int32_t ident)
+{
+    return wccff::format_indented(ident,
+                                  "Function({})\n{}",
+                                  node.function_name.name,
+                                  pretty_print(node.body, ident + 4));
+}
+std::string pretty_print(const program &node, int32_t ident)
+{
+    return pretty_print(node.f, ident);
+}
 } // namespace wccff::parser
