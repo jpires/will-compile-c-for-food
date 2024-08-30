@@ -59,14 +59,14 @@ struct lexer_error
 
 struct token
 {
-    token(token_type t_, std::string_view v_, file_location loc_)
-      : t(t_)
-      , c(v_)
+    token(token_type type_, std::string_view text_, file_location loc_)
+      : type(type_)
+      , text(text_)
       , loc(loc_)
     {
     }
-    token_type t;
-    std::string_view c;
+    token_type type;
+    std::string_view text;
     file_location loc;
 };
 

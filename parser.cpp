@@ -9,7 +9,7 @@ namespace wccff::parser {
 static parser_error generate_unexpected_end_of_tokens(const tokens &tokens)
 {
     auto previous = tokens.previous_token();
-    auto msg = fmt::format("{}: Error: Unexpected end of tokens after '{}'", previous.loc, previous.c);
+    auto msg = fmt::format("{}: Error: Unexpected end of tokens after '{}'", previous.loc, previous.text);
     return { msg };
 }
 
@@ -28,9 +28,9 @@ std::expected<function, parser_error> parse_function(tokens &tokens)
     {
         return std::unexpected{ generate_unexpected_end_of_tokens(tokens) };
     }
-    if (t1->t != lexer::token_type::int_keyword)
+    if (t1->type != lexer::token_type::int_keyword)
     {
-        auto msg = fmt::format("Parse failure at: {}. Expected int keyword found {}", t1->loc, t1->t);
+        auto msg = fmt::format("Parse failure at: {}. Expected int keyword found {}", t1->loc, t1->type);
         return std::unexpected{ parser_error{ msg } };
     }
     auto function_name = parse_identifier(tokens);
@@ -46,30 +46,30 @@ std::expected<function, parser_error> parse_function(tokens &tokens)
     }
 
     t1 = tokens.get_next_token_safe();
-    if (t1->t != lexer::token_type::open_parenthesis)
+    if (t1->type != lexer::token_type::open_parenthesis)
     {
-        auto msg = fmt::format("Parse failure at: {}. Expected '(' found {}", t1->loc, t1->t);
+        auto msg = fmt::format("Parse failure at: {}. Expected '(' found {}", t1->loc, t1->type);
         return std::unexpected{ parser_error{ msg } };
     }
 
     t1 = tokens.get_next_token_safe();
-    if (t1->t != lexer::token_type::void_keyword)
+    if (t1->type != lexer::token_type::void_keyword)
     {
-        auto msg = fmt::format("Parse failure at: {}. Expected void keyword found {}", t1->loc, t1->t);
+        auto msg = fmt::format("Parse failure at: {}. Expected void keyword found {}", t1->loc, t1->type);
         return std::unexpected{ parser_error{ msg } };
     }
 
     t1 = tokens.get_next_token_safe();
-    if (t1->t != lexer::token_type::close_parenthesis)
+    if (t1->type != lexer::token_type::close_parenthesis)
     {
-        auto msg = fmt::format("Parse failure at: {}. Expected ')' found {}", t1->loc, t1->t);
+        auto msg = fmt::format("Parse failure at: {}. Expected ')' found {}", t1->loc, t1->type);
         return std::unexpected{ parser_error{ msg } };
     }
 
     t1 = tokens.get_next_token_safe();
-    if (t1->t != lexer::token_type::open_brace)
+    if (t1->type != lexer::token_type::open_brace)
     {
-        auto msg = fmt::format("Parse failure at: {}. Expected '{{' found {}", t1->loc, t1->t);
+        auto msg = fmt::format("Parse failure at: {}. Expected '{{' found {}", t1->loc, t1->type);
         return std::unexpected{ parser_error{ msg } };
     }
 
@@ -85,16 +85,16 @@ std::expected<function, parser_error> parse_function(tokens &tokens)
         return std::unexpected{ generate_unexpected_end_of_tokens(tokens) };
     }
     t1 = tokens.get_next_token_safe();
-    if (t1->t != lexer::token_type::semicolon)
+    if (t1->type != lexer::token_type::semicolon)
     {
-        auto msg = fmt::format("Parse failure at: {}. Expected ';' found {}", t1->loc, t1->t);
+        auto msg = fmt::format("Parse failure at: {}. Expected ';' found {}", t1->loc, t1->type);
         return std::unexpected{ parser_error{ msg } };
     }
 
     t1 = tokens.get_next_token_safe();
-    if (t1->t != lexer::token_type::close_brace)
+    if (t1->type != lexer::token_type::close_brace)
     {
-        auto msg = fmt::format("Parse failure at: {}. Expected '}}' found {}", t1->loc, t1->t);
+        auto msg = fmt::format("Parse failure at: {}. Expected '}}' found {}", t1->loc, t1->type);
         return std::unexpected{ parser_error{ msg } };
     }
 
@@ -121,9 +121,9 @@ std::expected<return_node, parser_error> parse_return_node(tokens &tokens)
         return std::unexpected{ generate_unexpected_end_of_tokens(tokens) };
     }
 
-    if (t1->t != lexer::token_type::return_keyword)
+    if (t1->type != lexer::token_type::return_keyword)
     {
-        auto msg = fmt::format("Parse failure at: {}. Expected return keyword found {}", t1->loc, t1->t);
+        auto msg = fmt::format("Parse failure at: {}. Expected return keyword found {}", t1->loc, t1->type);
         return std::unexpected{ parser_error{ msg } };
     }
     auto e = parse_expression(tokens);
@@ -148,7 +148,7 @@ std::expected<binary_operator, parser_error> parse_binary_operator(tokens &token
         return std::unexpected{ generate_unexpected_end_of_tokens(tokens) };
     }
 
-    switch (t->t)
+    switch (t->type)
     {
         case lexer::token_type::plus_operator:
             return plus_operator{};
@@ -161,7 +161,7 @@ std::expected<binary_operator, parser_error> parse_binary_operator(tokens &token
         case lexer::token_type::remainder_operator:
             return remainder_operator{};
         default:
-            auto msg = fmt::format("Expected Binary Operator but found '{}'", t->c);
+            auto msg = fmt::format("Expected Binary Operator but found '{}'", t->text);
             return std::unexpected{ parser_error{ msg } };
     }
 }
@@ -173,7 +173,7 @@ std::expected<std::unique_ptr<unary_node>, parser_error> parse_unary_node(tokens
         return std::unexpected{ generate_unexpected_end_of_tokens(tokens) };
     }
     unary_operator op;
-    switch (t->t)
+    switch (t->type)
     {
         case lexer::token_type::bitwise_complement_operator:
             op = bitwise_complement_operator{};
@@ -185,7 +185,7 @@ std::expected<std::unique_ptr<unary_node>, parser_error> parse_unary_node(tokens
         default:
             auto msg = fmt::format("Parse failure at: {}. Expected Unary Operator '~' or '-' but found {}",
                                    t->loc,
-                                   t->t);
+                                   t->type);
             return std::unexpected{ parser_error{ msg } };
     }
 
@@ -201,7 +201,7 @@ std::expected<std::unique_ptr<unary_node>, parser_error> parse_unary_node(tokens
 std::expected<expression, parser_error> parse_factor(tokens &tokens)
 {
     auto next_toke = tokens.peek();
-    switch (next_toke.t)
+    switch (next_toke.type)
     {
         case lexer::token_type::constant:
         {
@@ -232,16 +232,16 @@ std::expected<expression, parser_error> parse_factor(tokens &tokens)
             {
                 return std::unexpected{ generate_unexpected_end_of_tokens(tokens) };
             }
-            if (n_t->t != lexer::token_type::close_parenthesis)
+            if (n_t->type != lexer::token_type::close_parenthesis)
             {
-                auto msg = fmt::format("Parse failure at: {}. Expected return keyword found {}", n_t->loc, n_t->t);
+                auto msg = fmt::format("Parse failure at: {}. Expected return keyword found {}", n_t->loc, n_t->type);
                 return std::unexpected{ parser_error{ msg } };
             }
             return inner_expr;
         }
         default:
         {
-            auto msg = fmt::format("Parse failure at: Unexpected token '{}', expected an Expression", next_toke.c);
+            auto msg = fmt::format("Parse failure at: Unexpected token '{}', expected an Expression", next_toke.text);
             return std::unexpected{ parser_error{ msg } };
         }
     }
@@ -276,7 +276,7 @@ std::expected<expression, parser_error> parse_expression(tokens &tokens, int32_t
     }
 
     auto next_token = tokens.peek();
-    while (is_binary_operator(next_token.t) && min_precedence < get_precedende(next_token.t))
+    while (is_binary_operator(next_token.type) && min_precedence < get_precedende(next_token.type))
     {
         auto op = parse_binary_operator(tokens);
         if (op.has_value() == false)
@@ -284,7 +284,7 @@ std::expected<expression, parser_error> parse_expression(tokens &tokens, int32_t
             return std::unexpected{ op.error() };
         }
 
-        auto right = parse_expression(tokens, get_precedende(next_token.t) + 1);
+        auto right = parse_expression(tokens, get_precedende(next_token.type) + 1);
         if (right.has_value() == false)
         {
             return std::unexpected{ right.error() };
@@ -304,14 +304,14 @@ std::expected<identifier, parser_error> parse_identifier(tokens &tokens)
         return std::unexpected{ generate_unexpected_end_of_tokens(tokens) };
     }
 
-    if (token->t != lexer::token_type::identifier)
+    if (token->type != lexer::token_type::identifier)
     {
-        auto msg = fmt::format("Parse failure at: {}. Expected Identifier found {}", token->loc, token->t);
+        auto msg = fmt::format("Parse failure at: {}. Expected Identifier found {}", token->loc, token->type);
         return std::unexpected{ parser_error{ msg } };
     }
 
     identifier c;
-    c.name = token->c;
+    c.name = token->text;
     return c;
 }
 
@@ -323,13 +323,13 @@ std::expected<int_constant, parser_error> parse_constant(tokens &tokens)
         return std::unexpected{ generate_unexpected_end_of_tokens(tokens) };
     }
 
-    if (token->t != lexer::token_type::constant)
+    if (token->type != lexer::token_type::constant)
     {
-        auto msg = fmt::format("Parse failure at: {}. Expected Constant found {}", token->loc, token->t);
+        auto msg = fmt::format("Parse failure at: {}. Expected Constant found {}", token->loc, token->type);
         return std::unexpected{ parser_error{ msg } };
     }
 
-    return int_constant{ int32_t_from_string(token->c) };
+    return int_constant{ int32_t_from_string(token->text) };
 }
 
 std::expected<program, parser_error> parse(tokens &tokens)

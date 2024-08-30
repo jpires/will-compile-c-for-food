@@ -32,7 +32,7 @@ bool compile(const std::filesystem::path &source_filename,
     }
     for (const auto i : le.value())
     {
-        std::cout << "Type: " << i.t << "Value: " << i.c << std::endl;
+        std::cout << "Type: " << i.type << "Value: " << i.text << std::endl;
     }
 
     if (stop == stop_phase::lexer)

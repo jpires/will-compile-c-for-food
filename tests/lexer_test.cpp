@@ -113,10 +113,10 @@ TEST_CASE("Lexer", "[lexer]")
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 2);
-            REQUIRE(result.value().at(0).t == token_type::identifier);
-            REQUIRE(result.value().at(0).c == "a");
-            REQUIRE(result.value().at(1).t == token_type::constant);
-            REQUIRE(result.value().at(1).c == "11");
+            REQUIRE(result.value().at(0).type == token_type::identifier);
+            REQUIRE(result.value().at(0).text == "a");
+            REQUIRE(result.value().at(1).type == token_type::constant);
+            REQUIRE(result.value().at(1).text == "11");
         }
 
         SECTION("Separated by newlines")
@@ -125,10 +125,10 @@ TEST_CASE("Lexer", "[lexer]")
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 2);
-            REQUIRE(result.value().at(0).t == token_type::identifier);
-            REQUIRE(result.value().at(0).c == "a");
-            REQUIRE(result.value().at(1).t == token_type::constant);
-            REQUIRE(result.value().at(1).c == "11");
+            REQUIRE(result.value().at(0).type == token_type::identifier);
+            REQUIRE(result.value().at(0).text == "a");
+            REQUIRE(result.value().at(1).type == token_type::constant);
+            REQUIRE(result.value().at(1).text == "11");
         }
     }
 }
@@ -143,8 +143,8 @@ TEST_CASE("Identifiers", "[lexer]")
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
-            REQUIRE(result.value().at(0).t == wccff::lexer::token_type::identifier);
-            REQUIRE(result.value().at(0).c == "a");
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::identifier);
+            REQUIRE(result.value().at(0).text == "a");
         }
 
         SECTION("Five chars long")
@@ -153,8 +153,8 @@ TEST_CASE("Identifiers", "[lexer]")
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
-            REQUIRE(result.value().at(0).t == wccff::lexer::token_type::identifier);
-            REQUIRE(result.value().at(0).c == "abcde");
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::identifier);
+            REQUIRE(result.value().at(0).text == "abcde");
         }
     }
 
@@ -166,8 +166,8 @@ TEST_CASE("Identifiers", "[lexer]")
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
-            REQUIRE(result.value().at(0).t == wccff::lexer::token_type::identifier);
-            REQUIRE(result.value().at(0).c == "a1");
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::identifier);
+            REQUIRE(result.value().at(0).text == "a1");
         }
 
         SECTION("Five chars long and two digits")
@@ -176,8 +176,8 @@ TEST_CASE("Identifiers", "[lexer]")
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
-            REQUIRE(result.value().at(0).t == wccff::lexer::token_type::identifier);
-            REQUIRE(result.value().at(0).c == "abcde45");
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::identifier);
+            REQUIRE(result.value().at(0).text == "abcde45");
         }
     }
 }
@@ -190,8 +190,8 @@ TEST_CASE("Keywords", "[lexer]")
         auto result = wccff::lexer::lexer(input);
         REQUIRE(result.has_value());
         REQUIRE(result.value().size() == 1);
-        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::void_keyword);
-        REQUIRE(result.value().at(0).c == "void");
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::void_keyword);
+        REQUIRE(result.value().at(0).text == "void");
     }
 
     SECTION("int")
@@ -200,8 +200,8 @@ TEST_CASE("Keywords", "[lexer]")
         auto result = wccff::lexer::lexer(input);
         REQUIRE(result.has_value());
         REQUIRE(result.value().size() == 1);
-        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::int_keyword);
-        REQUIRE(result.value().at(0).c == "int");
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::int_keyword);
+        REQUIRE(result.value().at(0).text == "int");
     }
 
     SECTION("return")
@@ -210,8 +210,8 @@ TEST_CASE("Keywords", "[lexer]")
         auto result = wccff::lexer::lexer(input);
         REQUIRE(result.has_value());
         REQUIRE(result.value().size() == 1);
-        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::return_keyword);
-        REQUIRE(result.value().at(0).c == "return");
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::return_keyword);
+        REQUIRE(result.value().at(0).text == "return");
     }
 }
 
@@ -223,8 +223,8 @@ TEST_CASE("Constants", "[lexer]")
         auto result = wccff::lexer::lexer(input);
         REQUIRE(result.has_value());
         REQUIRE(result.value().size() == 1);
-        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::constant);
-        REQUIRE(result.value().at(0).c == "1");
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::constant);
+        REQUIRE(result.value().at(0).text == "1");
     }
 
     SECTION("Four digits")
@@ -233,8 +233,8 @@ TEST_CASE("Constants", "[lexer]")
         auto result = wccff::lexer::lexer(input);
         REQUIRE(result.has_value());
         REQUIRE(result.value().size() == 1);
-        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::constant);
-        REQUIRE(result.value().at(0).c == "1234");
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::constant);
+        REQUIRE(result.value().at(0).text == "1234");
     }
 }
 
@@ -246,8 +246,8 @@ TEST_CASE("Operators", "[lexer]")
         auto result = wccff::lexer::lexer(input);
         REQUIRE(result.has_value());
         REQUIRE(result.value().size() == 1);
-        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::negation_operator);
-        REQUIRE(result.value().at(0).c == "-");
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::negation_operator);
+        REQUIRE(result.value().at(0).text == "-");
     }
 
     SECTION("Decrement Operator")
@@ -256,8 +256,8 @@ TEST_CASE("Operators", "[lexer]")
         auto result = wccff::lexer::lexer(input);
         REQUIRE(result.has_value());
         REQUIRE(result.value().size() == 1);
-        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::decrement_operator);
-        REQUIRE(result.value().at(0).c == "--");
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::decrement_operator);
+        REQUIRE(result.value().at(0).text == "--");
     }
 
     SECTION("Bitwise Complement Operator")
@@ -266,8 +266,8 @@ TEST_CASE("Operators", "[lexer]")
         auto result = wccff::lexer::lexer(input);
         REQUIRE(result.has_value());
         REQUIRE(result.value().size() == 1);
-        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::bitwise_complement_operator);
-        REQUIRE(result.value().at(0).c == "~");
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::bitwise_complement_operator);
+        REQUIRE(result.value().at(0).text == "~");
     }
 
     SECTION("Plus Operator")
@@ -276,8 +276,8 @@ TEST_CASE("Operators", "[lexer]")
         auto result = wccff::lexer::lexer(input);
         REQUIRE(result.has_value());
         REQUIRE(result.value().size() == 1);
-        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::plus_operator);
-        REQUIRE(result.value().at(0).c == "+");
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::plus_operator);
+        REQUIRE(result.value().at(0).text == "+");
     }
 
     SECTION("Multiplication Operator")
@@ -286,8 +286,8 @@ TEST_CASE("Operators", "[lexer]")
         auto result = wccff::lexer::lexer(input);
         REQUIRE(result.has_value());
         REQUIRE(result.value().size() == 1);
-        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::multiplication_operator);
-        REQUIRE(result.value().at(0).c == "*");
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::multiplication_operator);
+        REQUIRE(result.value().at(0).text == "*");
     }
 
     SECTION("Division Operator")
@@ -296,8 +296,8 @@ TEST_CASE("Operators", "[lexer]")
         auto result = wccff::lexer::lexer(input);
         REQUIRE(result.has_value());
         REQUIRE(result.value().size() == 1);
-        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::division_operator);
-        REQUIRE(result.value().at(0).c == "/");
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::division_operator);
+        REQUIRE(result.value().at(0).text == "/");
     }
 
     SECTION("Remainder Operator")
@@ -306,8 +306,8 @@ TEST_CASE("Operators", "[lexer]")
         auto result = wccff::lexer::lexer(input);
         REQUIRE(result.has_value());
         REQUIRE(result.value().size() == 1);
-        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::remainder_operator);
-        REQUIRE(result.value().at(0).c == "%");
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::remainder_operator);
+        REQUIRE(result.value().at(0).text == "%");
     }
 }
 
@@ -319,8 +319,8 @@ TEST_CASE("Other tokens", "[lexer]")
         auto result = wccff::lexer::lexer(input);
         REQUIRE(result.has_value());
         REQUIRE(result.value().size() == 1);
-        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::semicolon);
-        REQUIRE(result.value().at(0).c == ";");
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::semicolon);
+        REQUIRE(result.value().at(0).text == ";");
     }
 
     SECTION("Open Brace")
@@ -329,8 +329,8 @@ TEST_CASE("Other tokens", "[lexer]")
         auto result = wccff::lexer::lexer(input);
         REQUIRE(result.has_value());
         REQUIRE(result.value().size() == 1);
-        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::open_brace);
-        REQUIRE(result.value().at(0).c == "{");
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::open_brace);
+        REQUIRE(result.value().at(0).text == "{");
     }
 
     SECTION("Close Brace")
@@ -339,8 +339,8 @@ TEST_CASE("Other tokens", "[lexer]")
         auto result = wccff::lexer::lexer(input);
         REQUIRE(result.has_value());
         REQUIRE(result.value().size() == 1);
-        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::close_brace);
-        REQUIRE(result.value().at(0).c == "}");
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::close_brace);
+        REQUIRE(result.value().at(0).text == "}");
     }
 
     SECTION("Open Parenthesis")
@@ -349,8 +349,8 @@ TEST_CASE("Other tokens", "[lexer]")
         auto result = wccff::lexer::lexer(input);
         REQUIRE(result.has_value());
         REQUIRE(result.value().size() == 1);
-        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::open_parenthesis);
-        REQUIRE(result.value().at(0).c == "(");
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::open_parenthesis);
+        REQUIRE(result.value().at(0).text == "(");
     }
 
     SECTION("Close Parenthesis")
@@ -359,7 +359,7 @@ TEST_CASE("Other tokens", "[lexer]")
         auto result = wccff::lexer::lexer(input);
         REQUIRE(result.has_value());
         REQUIRE(result.value().size() == 1);
-        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::close_parenthesis);
-        REQUIRE(result.value().at(0).c == ")");
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::close_parenthesis);
+        REQUIRE(result.value().at(0).text == ")");
     }
 }
