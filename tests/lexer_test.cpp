@@ -11,7 +11,7 @@ TEST_CASE("Lexer", "[lexer]")
 
     SECTION("No tokens")
     {
-        SECTION("nullpt input")
+        SECTION("nullptr input")
         {
             // This string_view doesn't have any memory associated.
             // Any attempt to read data will crash
@@ -132,6 +132,7 @@ TEST_CASE("Lexer", "[lexer]")
         }
     }
 }
+
 TEST_CASE("Identifiers", "[lexer]")
 {
     SECTION("Only Chars")
@@ -213,6 +214,7 @@ TEST_CASE("Keywords", "[lexer]")
         REQUIRE(result.value().at(0).c == "return");
     }
 }
+
 TEST_CASE("Constants", "[lexer]")
 {
     SECTION("One digit")
@@ -306,5 +308,58 @@ TEST_CASE("Operators", "[lexer]")
         REQUIRE(result.value().size() == 1);
         REQUIRE(result.value().at(0).t == wccff::lexer::token_type::remainder_operator);
         REQUIRE(result.value().at(0).c == "%");
+    }
+}
+
+TEST_CASE("Other tokens", "[lexer]")
+{
+    SECTION("Semicolon")
+    {
+        std::string_view input{ ";" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::semicolon);
+        REQUIRE(result.value().at(0).c == ";");
+    }
+
+    SECTION("Open Brace")
+    {
+        std::string_view input{ "{" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::open_brace);
+        REQUIRE(result.value().at(0).c == "{");
+    }
+
+    SECTION("Close Brace")
+    {
+        std::string_view input{ "}" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::close_brace);
+        REQUIRE(result.value().at(0).c == "}");
+    }
+
+    SECTION("Open Parenthesis")
+    {
+        std::string_view input{ "(" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::open_parenthesis);
+        REQUIRE(result.value().at(0).c == "(");
+    }
+
+    SECTION("Close Parenthesis")
+    {
+        std::string_view input{ ")" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).t == wccff::lexer::token_type::close_parenthesis);
+        REQUIRE(result.value().at(0).c == ")");
     }
 }
