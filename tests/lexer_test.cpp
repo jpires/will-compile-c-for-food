@@ -318,6 +318,42 @@ TEST_CASE("Operators", "[lexer]")
         REQUIRE(result.value().at(0).type == wccff::lexer::token_type::bitwise_and_operator);
         REQUIRE(result.value().at(0).text == "&");
     }
+    SECTION("Bitwise Or Operator")
+    {
+        std::string_view input{ "|" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::bitwise_or_operator);
+        REQUIRE(result.value().at(0).text == "|");
+    }
+    SECTION("Bitwise Xor Operator")
+    {
+        std::string_view input{ "^" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::bitwise_xor_operator);
+        REQUIRE(result.value().at(0).text == "^");
+    }
+    SECTION("Left Shift Operator")
+    {
+        std::string_view input{ "<<" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::left_shift_operator);
+        REQUIRE(result.value().at(0).text == "<<");
+    }
+    SECTION("Right Shift Operator")
+    {
+        std::string_view input{ ">>" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::right_shift_operator);
+        REQUIRE(result.value().at(0).text == ">>");
+    }
 }
 
 TEST_CASE("Other tokens", "[lexer]")

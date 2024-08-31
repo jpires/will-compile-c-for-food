@@ -6,6 +6,11 @@
 
 namespace wccff::code_emission {
 
+enum class operand_size
+{
+    one_byte,
+    four_bytes,
+};
 void process(const std::filesystem::path &output_file, const assembly_generation::program &p);
 
 } // namespace wccff::code_emission

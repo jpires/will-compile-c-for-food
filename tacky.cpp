@@ -40,6 +40,10 @@ binary_operator process_binary_operator(const parser::binary_operator &op)
                         [](const parser::divide_operator &) -> binary_operator { return divide_operator{}; },
                         [](const parser::remainder_operator &) -> binary_operator { return remainder_operator{}; },
                         [](const parser::bitwise_and_operator &) -> binary_operator { return binary_and_operator{}; },
+                        [](const parser::bitwise_or_operator &) -> binary_operator { return binary_or_operator{}; },
+                        [](const parser::bitwise_xor_operator &) -> binary_operator { return binary_xor_operator{}; },
+                        [](const parser::left_shift_operator &) -> binary_operator { return left_shift_operator{}; },
+                        [](const parser::right_shift_operator &) -> binary_operator { return right_shift_operator{}; },
                       },
                       op);
 }
@@ -113,6 +117,10 @@ std::string pretty_print(const binary_operator &op, int32_t ident)
                         [ident](const divide_operator &) { return wccff::format_indented(ident, "Divide"); },
                         [ident](const remainder_operator &) { return wccff::format_indented(ident, "Remainder"); },
                         [ident](const binary_and_operator &) { return wccff::format_indented(ident, "Bitwise And"); },
+                        [ident](const binary_or_operator &) { return wccff::format_indented(ident, "Bitwise Or"); },
+                        [ident](const binary_xor_operator &) { return wccff::format_indented(ident, "Bitwise Xor"); },
+                        [ident](const left_shift_operator &) { return wccff::format_indented(ident, "Left Shift"); },
+                        [ident](const right_shift_operator &) { return wccff::format_indented(ident, "Right Shift"); },
                       },
                       op);
 }

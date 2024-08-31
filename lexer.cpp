@@ -23,17 +23,34 @@ constexpr auto multiplication_operator_pattern{ R"((\*))" };
 constexpr auto division_operator_pattern{ "(/)" };
 constexpr auto remainder_operator_pattern{ "(%)" };
 constexpr auto bitwise_and_operator_pattern{ "(&)" };
+constexpr auto bitwise_or_operator_pattern{ R"((\|))" };
+constexpr auto bitwise_xor_operator_pattern{ R"((\^))" };
+constexpr auto left_shift_operator_pattern{ R"((<<))" };
+constexpr auto right_shift_operator_pattern{ R"((>>))" };
 
 constexpr auto get_patters()
 {
-    return std::array{ identifier_pattern,          constant_pattern,
-                       open_parenthesis_pattern,    close_parenthesis_pattern,
-                       open_brace_pattern,          close_brace_pattern,
-                       semicolon_pattern,           decrement_operator_pattern,
-                       negate_operator_pattern,     bitwise_complement_operator_pattern,
-                       plus_operator_pattern,       multiplication_operator_pattern,
-                       division_operator_pattern,   remainder_operator_pattern,
-                       bitwise_and_operator_pattern };
+    return std::array{
+        identifier_pattern,
+        constant_pattern,
+        open_parenthesis_pattern,
+        close_parenthesis_pattern,
+        open_brace_pattern,
+        close_brace_pattern,
+        semicolon_pattern,
+        decrement_operator_pattern,
+        negate_operator_pattern,
+        bitwise_complement_operator_pattern,
+        plus_operator_pattern,
+        multiplication_operator_pattern,
+        division_operator_pattern,
+        remainder_operator_pattern,
+        bitwise_and_operator_pattern,
+        bitwise_or_operator_pattern,
+        bitwise_xor_operator_pattern,
+        left_shift_operator_pattern,
+        right_shift_operator_pattern,
+    };
 }
 
 constexpr bool str_compare(const char *p1, const char *p2)
@@ -223,9 +240,49 @@ consteval int get_bitwise_and_operator_position()
 
     return std::distance(patterns.begin(), f) + 1;
 }
+consteval int get_bitwise_or_operator_position()
+{
+    auto patterns = get_patters();
+    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
+        return str_compare(i, bitwise_or_operator_pattern);
+    });
+
+    return std::distance(patterns.begin(), f) + 1;
+}
+consteval int get_bitwise_xor_operator_position()
+{
+    auto patterns = get_patters();
+    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
+        return str_compare(i, bitwise_xor_operator_pattern);
+    });
+
+    return std::distance(patterns.begin(), f) + 1;
+}
+consteval int get_left_shift_operator_position()
+{
+    auto patterns = get_patters();
+    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
+        return str_compare(i, left_shift_operator_pattern);
+    });
+
+    return std::distance(patterns.begin(), f) + 1;
+}
+consteval int get_right_shift_operator_position()
+{
+    auto patterns = get_patters();
+    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
+        return str_compare(i, right_shift_operator_pattern);
+    });
+
+    return std::distance(patterns.begin(), f) + 1;
+}
 
 std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, file_location location) noexcept
 {
+    auto left = get_left_shift_operator_position();
+    auto right = get_right_shift_operator_position();
+    auto p = create_regex_pattern();
+
     // Remove trimming white spaces
     while ((input.empty() == false) && std::isspace(input[0]))
     {
@@ -343,6 +400,26 @@ std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, fil
         {
             std::cout << "Found Bitwise And Operator" << '\n';
             result.emplace_back(token_type::bitwise_and_operator, m, location);
+        }
+        if (ctre::get<get_bitwise_or_operator_position()>(m))
+        {
+            std::cout << "Found Bitwise Or Operator" << '\n';
+            result.emplace_back(token_type::bitwise_or_operator, m, location);
+        }
+        if (ctre::get<get_bitwise_xor_operator_position()>(m))
+        {
+            std::cout << "Found Bitwise Xor Operator" << '\n';
+            result.emplace_back(token_type::bitwise_xor_operator, m, location);
+        }
+        if (ctre::get<get_left_shift_operator_position()>(m))
+        {
+            std::cout << "Found Left Shift Operator" << '\n';
+            result.emplace_back(token_type::left_shift_operator, m, location);
+        }
+        if (ctre::get<get_right_shift_operator_position()>(m))
+        {
+            std::cout << "Found Right Shift Operator" << '\n';
+            result.emplace_back(token_type::right_shift_operator, m, location);
         }
 
         if (result.empty())

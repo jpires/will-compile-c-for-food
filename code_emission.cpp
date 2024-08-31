@@ -14,9 +14,16 @@ std::string process_immediate(const assembly_generation::immediate &immediate)
     return fmt::format("${}", immediate.value);
 }
 
-std::string process_register(const assembly_generation::reg &node)
+std::string process_register(const assembly_generation::reg &node, operand_size size = operand_size::four_bytes)
 {
     return std::visit(visitor{ [](const assembly_generation::ax &) { return "%eax"; },
+                               [size](const assembly_generation::cx &) {
+                                   if (size == operand_size::one_byte)
+                                   {
+                                       return "%cl";
+                                   }
+                                   return "%ecx";
+                               },
                                [](const assembly_generation::dx &) { return "%edx"; },
                                [](const assembly_generation::R10 &) { return "%r10d"; },
                                [](const assembly_generation::R11 &) { return "%r11d"; } },
@@ -31,11 +38,11 @@ std::string process_stack(const assembly_generation::stack &node)
     return fmt::format("{}(%rbp)", node.value.value);
 }
 
-std::string process_operand(const assembly_generation::operand &operand)
+std::string process_operand(const assembly_generation::operand &operand, operand_size size = operand_size::four_bytes)
 {
     return std::visit(
       visitor{ [](const assembly_generation::immediate &immediate) { return process_immediate(immediate); },
-               [](const assembly_generation::reg &reg) { return process_register(reg); },
+               [size](const assembly_generation::reg &reg) { return process_register(reg, size); },
                [](const assembly_generation::pseudo &reg) { return process_pseudo(reg); },
                [](const assembly_generation::stack &reg) { return process_stack(reg); } },
       operand);
@@ -56,7 +63,11 @@ std::string process_binary_operator(const assembly_generation::binary_operator &
                         [](const assembly_generation::add &) { return "addl"; },
                         [](const assembly_generation::sub &) { return "subl"; },
                         [](const assembly_generation::mul &) { return "imull"; },
-                        [](const assembly_generation::binary_operator &) { return "andl"; },
+                        [](const assembly_generation::binary_and &) { return "andl"; },
+                        [](const assembly_generation::binary_or &) { return "orl"; },
+                        [](const assembly_generation::binary_xor &) { return "xorl"; },
+                        [](const assembly_generation::left_shift &) { return "sall"; },
+                        [](const assembly_generation::right_shift &) { return "sarl"; },
                       },
                       node);
 }
@@ -73,9 +84,23 @@ std::string process_unary(const assembly_generation::unary &node)
 }
 std::string process_binary(const assembly_generation::binary &node)
 {
+    auto op_size = [](const assembly_generation::binary_operator &op) {
+        if (std::holds_alternative<assembly_generation::left_shift>(op) ||
+            std::holds_alternative<assembly_generation::right_shift>(op))
+        {
+            return operand_size::one_byte;
+        }
+        return operand_size::four_bytes;
+    };
+
+    if (std::holds_alternative<assembly_generation::left_shift>(node.op) ||
+        std::holds_alternative<assembly_generation::right_shift>(node.op))
+    {
+    }
+
     return fmt::format("{} {}, {}",
                        process_binary_operator(node.op),
-                       process_operand(node.src),
+                       process_operand(node.src, op_size(node.op)),
                        process_operand(node.dst));
 }
 

@@ -152,6 +152,10 @@ std::expected<binary_operator, parser_error> parse_binary_operator(tokens &token
     {
         case lexer::token_type::bitwise_and_operator:
             return bitwise_and_operator{};
+        case lexer::token_type::bitwise_or_operator:
+            return bitwise_or_operator{};
+        case lexer::token_type::bitwise_xor_operator:
+            return bitwise_xor_operator{};
         case lexer::token_type::plus_operator:
             return plus_operator{};
         case lexer::token_type::negation_operator:
@@ -162,6 +166,10 @@ std::expected<binary_operator, parser_error> parse_binary_operator(tokens &token
             return divide_operator{};
         case lexer::token_type::remainder_operator:
             return remainder_operator{};
+        case lexer::token_type::left_shift_operator:
+            return left_shift_operator{};
+        case lexer::token_type::right_shift_operator:
+            return right_shift_operator{};
         default:
             auto msg = fmt::format("Expected Binary Operator but found '{}'", t->text);
             return std::unexpected{ parser_error{ msg } };
@@ -252,22 +260,33 @@ std::expected<expression, parser_error> parse_factor(tokens &tokens)
 std::expected<expression, parser_error> parse_expression(tokens &tokens, int32_t min_precedence)
 {
     auto is_binary_operator = [](lexer::token_type type) {
-        return type == lexer::token_type::plus_operator || type == lexer::token_type::negation_operator ||
-               type == lexer::token_type::multiplication_operator || type == lexer::token_type::division_operator ||
-               type == lexer::token_type::remainder_operator || type == lexer::token_type::bitwise_and_operator;
+        using enum lexer::token_type;
+        return type == plus_operator || type == negation_operator || type == multiplication_operator ||
+               type == division_operator || type == remainder_operator || type == bitwise_and_operator ||
+               type == bitwise_or_operator || type == bitwise_xor_operator || type == left_shift_operator ||
+               type == right_shift_operator;
+        ;
     };
 
     auto get_precedende = [](lexer::token_type type) {
+        using enum lexer::token_type;
         switch (type)
         {
-            case lexer::token_type::bitwise_and_operator:
+            case bitwise_or_operator:
+                return 15;
+            case bitwise_xor_operator:
+                return 20;
+            case bitwise_and_operator:
                 return 25;
-            case lexer::token_type::plus_operator:
-            case lexer::token_type::negation_operator:
+            case left_shift_operator:
+            case right_shift_operator:
+                return 40;
+            case plus_operator:
+            case negation_operator:
                 return 45;
-            case lexer::token_type::multiplication_operator:
-            case lexer::token_type::division_operator:
-            case lexer::token_type::remainder_operator:
+            case multiplication_operator:
+            case division_operator:
+            case remainder_operator:
                 return 50;
         }
         return 0;
@@ -364,14 +383,19 @@ std::string pretty_print(const unary_operator &node, int32_t ident)
 
 std::string pretty_print(const binary_operator &node, int32_t ident)
 {
-    return std::visit(
-      wccff::visitor{ [ident](const plus_operator &) { return wccff::format_indented(ident, "Plus"); },
-                      [ident](const subtract_operator &) { return wccff::format_indented(ident, "Subtract"); },
-                      [ident](const multiply_operator &) { return wccff::format_indented(ident, "Multiply"); },
-                      [ident](const divide_operator &) { return wccff::format_indented(ident, "Divide"); },
-                      [ident](const remainder_operator &) { return wccff::format_indented(ident, "Remainder"); },
-                      [ident](const bitwise_and_operator &) { return wccff::format_indented(ident, "Bitwise And"); } },
-      node);
+    return std::visit(wccff::visitor{
+                        [ident](const plus_operator &) { return wccff::format_indented(ident, "Plus"); },
+                        [ident](const subtract_operator &) { return wccff::format_indented(ident, "Subtract"); },
+                        [ident](const multiply_operator &) { return wccff::format_indented(ident, "Multiply"); },
+                        [ident](const divide_operator &) { return wccff::format_indented(ident, "Divide"); },
+                        [ident](const remainder_operator &) { return wccff::format_indented(ident, "Remainder"); },
+                        [ident](const bitwise_and_operator &) { return wccff::format_indented(ident, "Bitwise And"); },
+                        [ident](const bitwise_or_operator &) { return wccff::format_indented(ident, "Bitwise Or"); },
+                        [ident](const bitwise_xor_operator &) { return wccff::format_indented(ident, "Bitwise Xor"); },
+                        [ident](const left_shift_operator &) { return wccff::format_indented(ident, "Left Shift"); },
+                        [ident](const right_shift_operator &) { return wccff::format_indented(ident, "Right Shift"); },
+                      },
+                      node);
 }
 
 std::string pretty_print(const std::unique_ptr<unary_node> &node, int32_t ident)

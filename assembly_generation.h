@@ -24,6 +24,9 @@ struct immediate
 struct ax
 {
 };
+struct cx
+{
+};
 struct dx
 {
 };
@@ -34,7 +37,7 @@ struct R11
 {
 };
 
-using reg = std::variant<ax, dx, R10, R11>;
+using reg = std::variant<ax, cx, dx, R10, R11>;
 
 struct pseudo
 {
@@ -68,7 +71,19 @@ struct mul
 struct binary_and
 {
 };
-using binary_operator = std::variant<add, sub, mul, binary_and>;
+struct binary_or
+{
+};
+struct binary_xor
+{
+};
+struct left_shift
+{
+};
+struct right_shift
+{
+};
+using binary_operator = std::variant<add, sub, mul, binary_and, binary_or, binary_xor, left_shift, right_shift>;
 struct unary
 {
     unary_operator op;

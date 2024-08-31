@@ -70,6 +70,10 @@ binary_operator process_binary_operator(const wccff::tacky::binary_operator &op)
                         [](const tacky::divide_operator &) -> binary_operator { return sub{}; },
                         [](const tacky::remainder_operator &) -> binary_operator { return mul{}; },
                         [](const tacky::binary_and_operator &) -> binary_operator { return binary_and{}; },
+                        [](const tacky::binary_or_operator &) -> binary_operator { return binary_or{}; },
+                        [](const tacky::binary_xor_operator &) -> binary_operator { return binary_xor{}; },
+                        [](const tacky::left_shift_operator &) -> binary_operator { return left_shift{}; },
+                        [](const tacky::right_shift_operator &) -> binary_operator { return right_shift{}; },
                       },
                       op);
 }
@@ -213,7 +217,8 @@ std::optional<std::vector<instruction>> fixing_up_instructions11(const mov_instr
 std::optional<std::vector<instruction>> fixing_up_instructions_binary(const binary &n)
 {
     if (std::holds_alternative<add>(n.op) || std::holds_alternative<sub>(n.op) ||
-        std::holds_alternative<binary_and>(n.op))
+        std::holds_alternative<binary_and>(n.op) || std::holds_alternative<binary_or>(n.op) ||
+        std::holds_alternative<binary_xor>(n.op))
     {
         if (std::holds_alternative<stack>(n.src) && std::holds_alternative<stack>(n.dst))
         {
@@ -224,6 +229,16 @@ std::optional<std::vector<instruction>> fixing_up_instructions_binary(const bina
             ret_insts.emplace_back(b1);
             return ret_insts;
         }
+    }
+
+    if (std::holds_alternative<left_shift>(n.op) || std::holds_alternative<right_shift>(n.op))
+    {
+        std::vector<instruction> ret_insts;
+        mov_instruction m1{ n.src, cx{} };
+        binary b1{ n.op, cx{}, n.dst };
+        ret_insts.emplace_back(m1);
+        ret_insts.emplace_back(b1);
+        return ret_insts;
     }
 
     if (std::holds_alternative<mul>(n.op))
@@ -315,6 +330,10 @@ std::string pretty_print(const binary_operator &node)
                         [](const sub &) { return "Sub"; },
                         [](const mul &) { return "Mul"; },
                         [](const binary_and &) { return "Binary And"; },
+                        [](const binary_or &) { return "Binary Or"; },
+                        [](const binary_xor &) { return "Binary Xor"; },
+                        [](const left_shift &) { return "Left Shift"; },
+                        [](const right_shift &) { return "Right Shift"; },
                       },
                       node);
 }
@@ -333,6 +352,7 @@ std::string pretty_print(const reg &node)
 {
     return std::visit(visitor{
                         [](const ax &) { return "ax"; },
+                        [](const cx &) { return "cx"; },
                         [](const dx &) { return "dx"; },
                         [](const R10 &) { return "R10d"; },
                         [](const R11 &) { return "R11d"; },

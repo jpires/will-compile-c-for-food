@@ -398,4 +398,89 @@ TEST_CASE("Binary Operators", "[parser]")
         REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->right));
         REQUIRE(std::get<wccff::parser::int_constant>(exp->right).value == 2);
     }
+
+    SECTION("Bitwise Or Operator")
+    {
+        wccff::lexer::file_location location{ 1, 2 };
+        std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::bitwise_or_operator, "|", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "2", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
+
+        wccff::parser::tokens tokens{ tokens_vector };
+        auto r = wccff::parser::parse_expression(tokens);
+        REQUIRE(r.has_value());
+        REQUIRE(std::holds_alternative<std::unique_ptr<wccff::parser::binary_node>>(r.value()));
+        const auto &exp = std::get<std::unique_ptr<wccff::parser::binary_node>>(r.value());
+
+        REQUIRE(std::holds_alternative<wccff::parser::bitwise_or_operator>(exp->op));
+        REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->left));
+        REQUIRE(std::get<wccff::parser::int_constant>(exp->left).value == 1);
+        REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->right));
+        REQUIRE(std::get<wccff::parser::int_constant>(exp->right).value == 2);
+    }
+    SECTION("Bitwise Xor Operator")
+    {
+        wccff::lexer::file_location location{ 1, 2 };
+        std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::bitwise_xor_operator, "^", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "2", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
+
+        wccff::parser::tokens tokens{ tokens_vector };
+        auto r = wccff::parser::parse_expression(tokens);
+        REQUIRE(r.has_value());
+        REQUIRE(std::holds_alternative<std::unique_ptr<wccff::parser::binary_node>>(r.value()));
+        const auto &exp = std::get<std::unique_ptr<wccff::parser::binary_node>>(r.value());
+
+        REQUIRE(std::holds_alternative<wccff::parser::bitwise_xor_operator>(exp->op));
+        REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->left));
+        REQUIRE(std::get<wccff::parser::int_constant>(exp->left).value == 1);
+        REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->right));
+        REQUIRE(std::get<wccff::parser::int_constant>(exp->right).value == 2);
+    }
+    SECTION("Left Shift Operator")
+    {
+        wccff::lexer::file_location location{ 1, 2 };
+        std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::left_shift_operator, "<<", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "2", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
+
+        wccff::parser::tokens tokens{ tokens_vector };
+        auto r = wccff::parser::parse_expression(tokens);
+        REQUIRE(r.has_value());
+        REQUIRE(std::holds_alternative<std::unique_ptr<wccff::parser::binary_node>>(r.value()));
+        const auto &exp = std::get<std::unique_ptr<wccff::parser::binary_node>>(r.value());
+
+        REQUIRE(std::holds_alternative<wccff::parser::left_shift_operator>(exp->op));
+        REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->left));
+        REQUIRE(std::get<wccff::parser::int_constant>(exp->left).value == 1);
+        REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->right));
+        REQUIRE(std::get<wccff::parser::int_constant>(exp->right).value == 2);
+    }
+    SECTION("Right Shift Operator")
+    {
+        wccff::lexer::file_location location{ 1, 2 };
+        std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::right_shift_operator, ">>", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "2", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
+
+        wccff::parser::tokens tokens{ tokens_vector };
+        auto r = wccff::parser::parse_expression(tokens);
+        REQUIRE(r.has_value());
+        REQUIRE(std::holds_alternative<std::unique_ptr<wccff::parser::binary_node>>(r.value()));
+        const auto &exp = std::get<std::unique_ptr<wccff::parser::binary_node>>(r.value());
+
+        REQUIRE(std::holds_alternative<wccff::parser::right_shift_operator>(exp->op));
+        REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->left));
+        REQUIRE(std::get<wccff::parser::int_constant>(exp->left).value == 1);
+        REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->right));
+        REQUIRE(std::get<wccff::parser::int_constant>(exp->right).value == 2);
+    }
 }

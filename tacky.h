@@ -26,6 +26,12 @@ struct binary_and_operator
 struct binary_complement_operator
 {
 };
+struct binary_or_operator
+{
+};
+struct binary_xor_operator
+{
+};
 struct negate_operator
 {
 };
@@ -45,13 +51,23 @@ struct divide_operator
 struct remainder_operator
 {
 };
+struct left_shift_operator
+{
+};
+struct right_shift_operator
+{
+};
 using unary_operator = std::variant<binary_complement_operator, negate_operator>;
 using binary_operator = std::variant<plus_operator,
                                      subtract_operator,
                                      multiply_operator,
                                      divide_operator,
                                      remainder_operator,
-                                     binary_and_operator>;
+                                     binary_and_operator,
+                                     binary_or_operator,
+                                     binary_xor_operator,
+                                     left_shift_operator,
+                                     right_shift_operator>;
 struct constant
 {
     int32_t value;

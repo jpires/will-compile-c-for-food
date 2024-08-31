@@ -55,6 +55,12 @@ struct bitwise_complement_operator
 struct bitwise_and_operator
 {
 };
+struct bitwise_or_operator
+{
+};
+struct bitwise_xor_operator
+{
+};
 struct negate_operator
 {
 };
@@ -73,6 +79,12 @@ struct divide_operator
 struct remainder_operator
 {
 };
+struct left_shift_operator
+{
+};
+struct right_shift_operator
+{
+};
 using unary_operator = std::variant<bitwise_complement_operator, negate_operator>;
 
 using binary_operator = std::variant<plus_operator,
@@ -80,7 +92,11 @@ using binary_operator = std::variant<plus_operator,
                                      multiply_operator,
                                      divide_operator,
                                      remainder_operator,
-                                     bitwise_and_operator>;
+                                     bitwise_and_operator,
+                                     bitwise_or_operator,
+                                     bitwise_xor_operator,
+                                     left_shift_operator,
+                                     right_shift_operator>;
 struct binary_node;
 struct unary_node;
 

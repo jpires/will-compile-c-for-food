@@ -37,11 +37,14 @@ enum class token_type
     decrement_operator,
     bitwise_complement_operator,
     bitwise_and_operator,
+    bitwise_or_operator,
+    bitwise_xor_operator,
     plus_operator,
     multiplication_operator,
     division_operator,
     remainder_operator,
-
+    left_shift_operator,
+    right_shift_operator,
 };
 
 struct lexer_error
@@ -129,6 +132,12 @@ struct fmt::formatter<wccff::lexer::token_type> : formatter<string_view>
             case token_type::bitwise_and_operator:
                 str = "Bitwise And Operator";
                 break;
+            case token_type::bitwise_or_operator:
+                str = "Bitwise Or Operator";
+                break;
+            case token_type::bitwise_xor_operator:
+                str = "Bitwise Xor Operator";
+                break;
             case token_type::plus_operator:
                 str = "Plus Operator";
                 break;
@@ -140,6 +149,12 @@ struct fmt::formatter<wccff::lexer::token_type> : formatter<string_view>
                 break;
             case token_type::remainder_operator:
                 str = "Remainder Operator";
+                break;
+            case token_type::left_shift_operator:
+                str = "Left Shift Operator";
+                break;
+            case token_type::right_shift_operator:
+                str = "Right Shift Operator";
                 break;
         }
         return formatter<string_view>::format(str, ctx);

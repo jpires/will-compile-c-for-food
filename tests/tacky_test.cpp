@@ -92,7 +92,7 @@ TEST_CASE("process_binary_node", "[tacky]")
         REQUIRE(std::holds_alternative<tacky::var>(inst.dst));
     }
 
-    SECTION("Plus Operator")
+    SECTION("Bitwise And Operator")
     {
         auto left = wccff::parser::int_constant{ 1 };
         auto right = wccff::parser::int_constant{ 2 };
@@ -106,6 +106,86 @@ TEST_CASE("process_binary_node", "[tacky]")
         auto inst = std::get<tacky::binary_statement>(instructions.at(0));
 
         REQUIRE(std::holds_alternative<tacky::binary_and_operator>(inst.op));
+        REQUIRE(std::holds_alternative<tacky::constant>(inst.src1));
+        REQUIRE(std::get<tacky::constant>(inst.src1).value == 1);
+        REQUIRE(std::get<tacky::constant>(inst.src2).value == 2);
+        REQUIRE(std::holds_alternative<tacky::var>(inst.dst));
+    }
+
+    SECTION("Bitwise Or Operator")
+    {
+        auto left = wccff::parser::int_constant{ 1 };
+        auto right = wccff::parser::int_constant{ 2 };
+        auto binary_expr = std::make_unique<parser::binary_node>(parser::bitwise_or_operator{}, left, right);
+
+        std::vector<wccff::tacky::instruction> instructions;
+        auto result = tacky::process_binary_node(binary_expr, instructions);
+
+        REQUIRE(instructions.size() == 1);
+        REQUIRE(std::holds_alternative<tacky::binary_statement>(instructions.at(0)));
+        auto inst = std::get<tacky::binary_statement>(instructions.at(0));
+
+        REQUIRE(std::holds_alternative<tacky::binary_or_operator>(inst.op));
+        REQUIRE(std::holds_alternative<tacky::constant>(inst.src1));
+        REQUIRE(std::get<tacky::constant>(inst.src1).value == 1);
+        REQUIRE(std::get<tacky::constant>(inst.src2).value == 2);
+        REQUIRE(std::holds_alternative<tacky::var>(inst.dst));
+    }
+
+    SECTION("Bitwise Xor Operator")
+    {
+        auto left = wccff::parser::int_constant{ 1 };
+        auto right = wccff::parser::int_constant{ 2 };
+        auto binary_expr = std::make_unique<parser::binary_node>(parser::bitwise_xor_operator{}, left, right);
+
+        std::vector<wccff::tacky::instruction> instructions;
+        auto result = tacky::process_binary_node(binary_expr, instructions);
+
+        REQUIRE(instructions.size() == 1);
+        REQUIRE(std::holds_alternative<tacky::binary_statement>(instructions.at(0)));
+        auto inst = std::get<tacky::binary_statement>(instructions.at(0));
+
+        REQUIRE(std::holds_alternative<tacky::binary_xor_operator>(inst.op));
+        REQUIRE(std::holds_alternative<tacky::constant>(inst.src1));
+        REQUIRE(std::get<tacky::constant>(inst.src1).value == 1);
+        REQUIRE(std::get<tacky::constant>(inst.src2).value == 2);
+        REQUIRE(std::holds_alternative<tacky::var>(inst.dst));
+    }
+
+    SECTION("Left Shift Operator")
+    {
+        auto left = wccff::parser::int_constant{ 1 };
+        auto right = wccff::parser::int_constant{ 2 };
+        auto binary_expr = std::make_unique<parser::binary_node>(parser::left_shift_operator{}, left, right);
+
+        std::vector<wccff::tacky::instruction> instructions;
+        auto result = tacky::process_binary_node(binary_expr, instructions);
+
+        REQUIRE(instructions.size() == 1);
+        REQUIRE(std::holds_alternative<tacky::binary_statement>(instructions.at(0)));
+        auto inst = std::get<tacky::binary_statement>(instructions.at(0));
+
+        REQUIRE(std::holds_alternative<tacky::left_shift_operator>(inst.op));
+        REQUIRE(std::holds_alternative<tacky::constant>(inst.src1));
+        REQUIRE(std::get<tacky::constant>(inst.src1).value == 1);
+        REQUIRE(std::get<tacky::constant>(inst.src2).value == 2);
+        REQUIRE(std::holds_alternative<tacky::var>(inst.dst));
+    }
+
+    SECTION("Right Shift Operator")
+    {
+        auto left = wccff::parser::int_constant{ 1 };
+        auto right = wccff::parser::int_constant{ 2 };
+        auto binary_expr = std::make_unique<parser::binary_node>(parser::right_shift_operator{}, left, right);
+
+        std::vector<wccff::tacky::instruction> instructions;
+        auto result = tacky::process_binary_node(binary_expr, instructions);
+
+        REQUIRE(instructions.size() == 1);
+        REQUIRE(std::holds_alternative<tacky::binary_statement>(instructions.at(0)));
+        auto inst = std::get<tacky::binary_statement>(instructions.at(0));
+
+        REQUIRE(std::holds_alternative<tacky::right_shift_operator>(inst.op));
         REQUIRE(std::holds_alternative<tacky::constant>(inst.src1));
         REQUIRE(std::get<tacky::constant>(inst.src1).value == 1);
         REQUIRE(std::get<tacky::constant>(inst.src2).value == 2);
