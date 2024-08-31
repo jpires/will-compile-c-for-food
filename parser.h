@@ -52,6 +52,9 @@ struct identifier
 struct bitwise_complement_operator
 {
 };
+struct bitwise_and_operator
+{
+};
 struct negate_operator
 {
 };
@@ -72,8 +75,12 @@ struct remainder_operator
 };
 using unary_operator = std::variant<bitwise_complement_operator, negate_operator>;
 
-using binary_operator =
-  std::variant<plus_operator, subtract_operator, multiply_operator, divide_operator, remainder_operator>;
+using binary_operator = std::variant<plus_operator,
+                                     subtract_operator,
+                                     multiply_operator,
+                                     divide_operator,
+                                     remainder_operator,
+                                     bitwise_and_operator>;
 struct binary_node;
 struct unary_node;
 

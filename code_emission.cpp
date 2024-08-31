@@ -52,9 +52,12 @@ std::string process_ret_instruction(const assembly_generation::ret_instruction &
 
 std::string process_binary_operator(const assembly_generation::binary_operator &node)
 {
-    return std::visit(visitor{ [](const assembly_generation::add &) { return "addl"; },
-                               [](const assembly_generation::sub &) { return "subl"; },
-                               [](const assembly_generation::mul &) { return "imull"; } },
+    return std::visit(visitor{
+                        [](const assembly_generation::add &) { return "addl"; },
+                        [](const assembly_generation::sub &) { return "subl"; },
+                        [](const assembly_generation::mul &) { return "imull"; },
+                        [](const assembly_generation::binary_operator &) { return "andl"; },
+                      },
                       node);
 }
 

@@ -309,6 +309,15 @@ TEST_CASE("Operators", "[lexer]")
         REQUIRE(result.value().at(0).type == wccff::lexer::token_type::remainder_operator);
         REQUIRE(result.value().at(0).text == "%");
     }
+    SECTION("Bitwise And Operator")
+    {
+        std::string_view input{ "&" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::bitwise_and_operator);
+        REQUIRE(result.value().at(0).text == "&");
+    }
 }
 
 TEST_CASE("Other tokens", "[lexer]")

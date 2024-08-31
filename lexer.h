@@ -36,6 +36,7 @@ enum class token_type
     negation_operator,
     decrement_operator,
     bitwise_complement_operator,
+    bitwise_and_operator,
     plus_operator,
     multiplication_operator,
     division_operator,
@@ -124,6 +125,9 @@ struct fmt::formatter<wccff::lexer::token_type> : formatter<string_view>
                 break;
             case token_type::bitwise_complement_operator:
                 str = "Bitwise Complement Operator";
+                break;
+            case token_type::bitwise_and_operator:
+                str = "Bitwise And Operator";
                 break;
             case token_type::plus_operator:
                 str = "Plus Operator";

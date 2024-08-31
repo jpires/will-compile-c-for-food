@@ -63,11 +63,14 @@ unary_operator process_unary_operator(const wccff::tacky::unary_operator &op)
 
 binary_operator process_binary_operator(const wccff::tacky::binary_operator &op)
 {
-    return std::visit(visitor{ [](const tacky::plus_operator &) -> binary_operator { return add{}; },
-                               [](const tacky::subtract_operator &) -> binary_operator { return sub{}; },
-                               [](const tacky::multiply_operator &) -> binary_operator { return mul{}; },
-                               [](const tacky::divide_operator &) -> binary_operator { return sub{}; },
-                               [](const tacky::remainder_operator &) -> binary_operator { return mul{}; } },
+    return std::visit(visitor{
+                        [](const tacky::plus_operator &) -> binary_operator { return add{}; },
+                        [](const tacky::subtract_operator &) -> binary_operator { return sub{}; },
+                        [](const tacky::multiply_operator &) -> binary_operator { return mul{}; },
+                        [](const tacky::divide_operator &) -> binary_operator { return sub{}; },
+                        [](const tacky::remainder_operator &) -> binary_operator { return mul{}; },
+                        [](const tacky::binary_and_operator &) -> binary_operator { return binary_and{}; },
+                      },
                       op);
 }
 
@@ -209,7 +212,8 @@ std::optional<std::vector<instruction>> fixing_up_instructions11(const mov_instr
 
 std::optional<std::vector<instruction>> fixing_up_instructions_binary(const binary &n)
 {
-    if (std::holds_alternative<add>(n.op) || std::holds_alternative<sub>(n.op))
+    if (std::holds_alternative<add>(n.op) || std::holds_alternative<sub>(n.op) ||
+        std::holds_alternative<binary_and>(n.op))
     {
         if (std::holds_alternative<stack>(n.src) && std::holds_alternative<stack>(n.dst))
         {
@@ -306,9 +310,12 @@ std::string pretty_print(const identifier &node)
 
 std::string pretty_print(const binary_operator &node)
 {
-    return std::visit(visitor{ [](const add &) { return "Add"; },
-                               [](const sub &) { return "Sub"; },
-                               [](const mul &) { return "Mul"; } },
+    return std::visit(visitor{
+                        [](const add &) { return "Add"; },
+                        [](const sub &) { return "Sub"; },
+                        [](const mul &) { return "Mul"; },
+                        [](const binary_and &) { return "Binary And"; },
+                      },
                       node);
 }
 std::string pretty_print(const unary_operator &node)

@@ -65,7 +65,10 @@ struct sub
 struct mul
 {
 };
-using binary_operator = std::variant<add, sub, mul>;
+struct binary_and
+{
+};
+using binary_operator = std::variant<add, sub, mul, binary_and>;
 struct unary
 {
     unary_operator op;
@@ -114,6 +117,7 @@ struct program
 };
 
 std::vector<instruction> process_statement(const wccff::tacky::return_statement &stmt);
+std::vector<instruction> process_statement(const wccff::tacky::binary_statement &stmt);
 std::vector<instruction> process_statement(const wccff::tacky::unary_statement &stmt);
 std::vector<instruction> process_statement(const tacky::instruction &i);
 std::vector<instruction> process_statement(const std::vector<tacky::instruction> &s);

@@ -374,3 +374,28 @@ TEST_CASE("Parser complex test", "[parser]")
         REQUIRE(std::get<wccff::parser::int_constant>(ret_node.e).value == 2);
     }
 }
+
+TEST_CASE("Binary Operators", "[parser]")
+{
+    SECTION("Bitwise And Operator")
+    {
+        wccff::lexer::file_location location{ 1, 2 };
+        std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::bitwise_and_operator, "&", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "2", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
+
+        wccff::parser::tokens tokens{ tokens_vector };
+        auto r = wccff::parser::parse_expression(tokens);
+        REQUIRE(r.has_value());
+        REQUIRE(std::holds_alternative<std::unique_ptr<wccff::parser::binary_node>>(r.value()));
+        const auto &exp = std::get<std::unique_ptr<wccff::parser::binary_node>>(r.value());
+
+        REQUIRE(std::holds_alternative<wccff::parser::bitwise_and_operator>(exp->op));
+        REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->left));
+        REQUIRE(std::get<wccff::parser::int_constant>(exp->left).value == 1);
+        REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->right));
+        REQUIRE(std::get<wccff::parser::int_constant>(exp->right).value == 2);
+    }
+}

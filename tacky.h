@@ -20,6 +20,9 @@ struct identifier
     std::string name;
 };
 
+struct binary_and_operator
+{
+};
 struct binary_complement_operator
 {
 };
@@ -43,8 +46,12 @@ struct remainder_operator
 {
 };
 using unary_operator = std::variant<binary_complement_operator, negate_operator>;
-using binary_operator =
-  std::variant<plus_operator, subtract_operator, multiply_operator, divide_operator, remainder_operator>;
+using binary_operator = std::variant<plus_operator,
+                                     subtract_operator,
+                                     multiply_operator,
+                                     divide_operator,
+                                     remainder_operator,
+                                     binary_and_operator>;
 struct constant
 {
     int32_t value;

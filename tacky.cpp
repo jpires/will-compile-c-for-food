@@ -39,6 +39,7 @@ binary_operator process_binary_operator(const parser::binary_operator &op)
                         [](const parser::multiply_operator &) -> binary_operator { return multiply_operator{}; },
                         [](const parser::divide_operator &) -> binary_operator { return divide_operator{}; },
                         [](const parser::remainder_operator &) -> binary_operator { return remainder_operator{}; },
+                        [](const parser::bitwise_and_operator &) -> binary_operator { return binary_and_operator{}; },
                       },
                       op);
 }
@@ -111,7 +112,7 @@ std::string pretty_print(const binary_operator &op, int32_t ident)
                         [ident](const multiply_operator &) { return wccff::format_indented(ident, "Multiply"); },
                         [ident](const divide_operator &) { return wccff::format_indented(ident, "Divide"); },
                         [ident](const remainder_operator &) { return wccff::format_indented(ident, "Remainder"); },
-
+                        [ident](const binary_and_operator &) { return wccff::format_indented(ident, "Bitwise And"); },
                       },
                       op);
 }

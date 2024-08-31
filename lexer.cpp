@@ -22,16 +22,18 @@ constexpr auto plus_operator_pattern{ R"((\+))" };
 constexpr auto multiplication_operator_pattern{ R"((\*))" };
 constexpr auto division_operator_pattern{ "(/)" };
 constexpr auto remainder_operator_pattern{ "(%)" };
+constexpr auto bitwise_and_operator_pattern{ "(&)" };
 
 constexpr auto get_patters()
 {
-    return std::array{ identifier_pattern,        constant_pattern,
-                       open_parenthesis_pattern,  close_parenthesis_pattern,
-                       open_brace_pattern,        close_brace_pattern,
-                       semicolon_pattern,         decrement_operator_pattern,
-                       negate_operator_pattern,   bitwise_complement_operator_pattern,
-                       plus_operator_pattern,     multiplication_operator_pattern,
-                       division_operator_pattern, remainder_operator_pattern };
+    return std::array{ identifier_pattern,          constant_pattern,
+                       open_parenthesis_pattern,    close_parenthesis_pattern,
+                       open_brace_pattern,          close_brace_pattern,
+                       semicolon_pattern,           decrement_operator_pattern,
+                       negate_operator_pattern,     bitwise_complement_operator_pattern,
+                       plus_operator_pattern,       multiplication_operator_pattern,
+                       division_operator_pattern,   remainder_operator_pattern,
+                       bitwise_and_operator_pattern };
 }
 
 constexpr bool str_compare(const char *p1, const char *p2)
@@ -212,6 +214,15 @@ consteval int get_remainder_operator_position()
 
     return std::distance(patterns.begin(), f) + 1;
 }
+consteval int get_bitwise_and_operator_position()
+{
+    auto patterns = get_patters();
+    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
+        return str_compare(i, bitwise_and_operator_pattern);
+    });
+
+    return std::distance(patterns.begin(), f) + 1;
+}
 
 std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, file_location location) noexcept
 {
@@ -327,6 +338,11 @@ std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, fil
         {
             std::cout << "Found Remainder Operator" << '\n';
             result.emplace_back(token_type::remainder_operator, m, location);
+        }
+        if (ctre::get<get_bitwise_and_operator_position()>(m))
+        {
+            std::cout << "Found Bitwise And Operator" << '\n';
+            result.emplace_back(token_type::bitwise_and_operator, m, location);
         }
 
         if (result.empty())

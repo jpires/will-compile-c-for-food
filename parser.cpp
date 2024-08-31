@@ -150,6 +150,8 @@ std::expected<binary_operator, parser_error> parse_binary_operator(tokens &token
 
     switch (t->type)
     {
+        case lexer::token_type::bitwise_and_operator:
+            return bitwise_and_operator{};
         case lexer::token_type::plus_operator:
             return plus_operator{};
         case lexer::token_type::negation_operator:
@@ -252,12 +254,14 @@ std::expected<expression, parser_error> parse_expression(tokens &tokens, int32_t
     auto is_binary_operator = [](lexer::token_type type) {
         return type == lexer::token_type::plus_operator || type == lexer::token_type::negation_operator ||
                type == lexer::token_type::multiplication_operator || type == lexer::token_type::division_operator ||
-               type == lexer::token_type::remainder_operator;
+               type == lexer::token_type::remainder_operator || type == lexer::token_type::bitwise_and_operator;
     };
 
     auto get_precedende = [](lexer::token_type type) {
         switch (type)
         {
+            case lexer::token_type::bitwise_and_operator:
+                return 25;
             case lexer::token_type::plus_operator:
             case lexer::token_type::negation_operator:
                 return 45;
@@ -365,7 +369,8 @@ std::string pretty_print(const binary_operator &node, int32_t ident)
                       [ident](const subtract_operator &) { return wccff::format_indented(ident, "Subtract"); },
                       [ident](const multiply_operator &) { return wccff::format_indented(ident, "Multiply"); },
                       [ident](const divide_operator &) { return wccff::format_indented(ident, "Divide"); },
-                      [ident](const remainder_operator &) { return wccff::format_indented(ident, "Remainder"); } },
+                      [ident](const remainder_operator &) { return wccff::format_indented(ident, "Remainder"); },
+                      [ident](const bitwise_and_operator &) { return wccff::format_indented(ident, "Bitwise And"); } },
       node);
 }
 
