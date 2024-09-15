@@ -27,6 +27,9 @@ unary_operator process_unary_operator(const parser::unary_operator &op)
       visitor{
         [](const parser::bitwise_complement_operator &) -> unary_operator { return binary_complement_operator{}; },
         [](const parser::negate_operator &) -> unary_operator { return negate_operator{}; },
+        [](const parser::logical_not_operator &) -> unary_operator {
+            throw std::logic_error("logical not operator Not implemented");
+        },
       },
       op);
 }
@@ -44,6 +47,30 @@ binary_operator process_binary_operator(const parser::binary_operator &op)
                         [](const parser::bitwise_xor_operator &) -> binary_operator { return binary_xor_operator{}; },
                         [](const parser::left_shift_operator &) -> binary_operator { return left_shift_operator{}; },
                         [](const parser::right_shift_operator &) -> binary_operator { return right_shift_operator{}; },
+                        [](const parser::logical_and_operator &) -> binary_operator {
+                            throw std::logic_error("logical and operator Not implemented");
+                        },
+                        [](const parser::logical_or_operator &) -> binary_operator {
+                            throw std::logic_error("logical or operator Not implemented");
+                        },
+                        [](const parser::equals_operator &) -> binary_operator {
+                            throw std::logic_error("equals operator Not implemented");
+                        },
+                        [](const parser::not_equals_operator &) -> binary_operator {
+                            throw std::logic_error("not equals operator Not implemented");
+                        },
+                        [](const parser::less_than_operator &) -> binary_operator {
+                            throw std::logic_error("Less Than operator Not implemented");
+                        },
+                        [](const parser::less_than_or_equal_operator &) -> binary_operator {
+                            throw std::logic_error("Less than or Equal operator Not implemented");
+                        },
+                        [](const parser::greater_than_operator &) -> binary_operator {
+                            throw std::logic_error("Greater Than operator Not implemented");
+                        },
+                        [](const parser::greater_than_or_equal_operator &) -> binary_operator {
+                            throw std::logic_error("Greater Than or Equaloperator Not implemented");
+                        },
                       },
                       op);
 }

@@ -61,7 +61,34 @@ struct bitwise_or_operator
 struct bitwise_xor_operator
 {
 };
+struct equals_operator
+{
+};
+struct greater_than_operator
+{
+};
+struct greater_than_or_equal_operator
+{
+};
+struct less_than_operator
+{
+};
+struct less_than_or_equal_operator
+{
+};
+struct logical_and_operator
+{
+};
+struct logical_not_operator
+{
+};
+struct logical_or_operator
+{
+};
 struct negate_operator
+{
+};
+struct not_equals_operator
 {
 };
 struct plus_operator
@@ -85,7 +112,7 @@ struct left_shift_operator
 struct right_shift_operator
 {
 };
-using unary_operator = std::variant<bitwise_complement_operator, negate_operator>;
+using unary_operator = std::variant<bitwise_complement_operator, negate_operator, logical_not_operator>;
 
 using binary_operator = std::variant<plus_operator,
                                      subtract_operator,
@@ -96,7 +123,15 @@ using binary_operator = std::variant<plus_operator,
                                      bitwise_or_operator,
                                      bitwise_xor_operator,
                                      left_shift_operator,
-                                     right_shift_operator>;
+                                     right_shift_operator,
+                                     logical_and_operator,
+                                     logical_or_operator,
+                                     equals_operator,
+                                     not_equals_operator,
+                                     less_than_operator,
+                                     less_than_or_equal_operator,
+                                     greater_than_operator,
+                                     greater_than_or_equal_operator>;
 struct binary_node;
 struct unary_node;
 

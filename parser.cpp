@@ -170,6 +170,23 @@ std::expected<binary_operator, parser_error> parse_binary_operator(tokens &token
             return left_shift_operator{};
         case lexer::token_type::right_shift_operator:
             return right_shift_operator{};
+        case lexer::token_type::and_operator:
+            return logical_and_operator{};
+        case lexer::token_type::or_operator:
+            return logical_or_operator{};
+        case lexer::token_type::equals_operator:
+            return equals_operator{};
+        case lexer::token_type::not_equals_operator:
+            return not_equals_operator{};
+        case lexer::token_type::less_than_operator:
+            return less_than_operator{};
+        case lexer::token_type::less_than_or_equal_operator:
+            return less_than_or_equal_operator{};
+        case lexer::token_type::greater_than_operator:
+            return greater_than_operator{};
+        case lexer::token_type::greater_than_or_equal_operator:
+            return greater_than_or_equal_operator{};
+
         default:
             auto msg = fmt::format("Expected Binary Operator but found '{}'", t->text);
             return std::unexpected{ parser_error{ msg } };
@@ -190,6 +207,9 @@ std::expected<std::unique_ptr<unary_node>, parser_error> parse_unary_node(tokens
             break;
         case lexer::token_type::negation_operator:
             op = negate_operator{};
+            break;
+        case lexer::token_type::not_operator:
+            op = logical_not_operator{};
             break;
 
         default:
@@ -225,6 +245,7 @@ std::expected<expression, parser_error> parse_factor(tokens &tokens)
         }
         case lexer::token_type::bitwise_complement_operator:
         case lexer::token_type::negation_operator:
+        case lexer::token_type::not_operator:
         {
             auto u = parse_unary_node(tokens);
             if (u.has_value() == false)
@@ -264,7 +285,9 @@ std::expected<expression, parser_error> parse_expression(tokens &tokens, int32_t
         return type == plus_operator || type == negation_operator || type == multiplication_operator ||
                type == division_operator || type == remainder_operator || type == bitwise_and_operator ||
                type == bitwise_or_operator || type == bitwise_xor_operator || type == left_shift_operator ||
-               type == right_shift_operator;
+               type == right_shift_operator || type == and_operator || type == or_operator || type == equals_operator ||
+               type == not_equals_operator || type == less_than_operator || type == less_than_or_equal_operator ||
+               type == greater_than_operator || type == greater_than_or_equal_operator;
         ;
     };
 
@@ -272,12 +295,24 @@ std::expected<expression, parser_error> parse_expression(tokens &tokens, int32_t
         using enum lexer::token_type;
         switch (type)
         {
+            case or_operator:
+                return 5;
+            case and_operator:
+                return 10;
             case bitwise_or_operator:
                 return 15;
             case bitwise_xor_operator:
                 return 20;
             case bitwise_and_operator:
                 return 25;
+            case equals_operator:
+            case not_equals_operator:
+                return 30;
+            case less_than_operator:
+            case less_than_or_equal_operator:
+            case greater_than_operator:
+            case greater_than_or_equal_operator:
+                return 35;
             case left_shift_operator:
             case right_shift_operator:
                 return 40;
@@ -377,25 +412,38 @@ std::string pretty_print(const unary_operator &node, int32_t ident)
     return std::visit(
       wccff::visitor{
         [ident](const bitwise_complement_operator &) { return wccff::format_indented(ident, "Complement"); },
-        [ident](const negate_operator &) { return wccff::format_indented(ident, "Negate"); } },
+        [ident](const negate_operator &) { return wccff::format_indented(ident, "Negate"); },
+        [ident](const logical_not_operator &) { return wccff::format_indented(ident, "Not"); },
+      },
       node);
 }
 
 std::string pretty_print(const binary_operator &node, int32_t ident)
 {
-    return std::visit(wccff::visitor{
-                        [ident](const plus_operator &) { return wccff::format_indented(ident, "Plus"); },
-                        [ident](const subtract_operator &) { return wccff::format_indented(ident, "Subtract"); },
-                        [ident](const multiply_operator &) { return wccff::format_indented(ident, "Multiply"); },
-                        [ident](const divide_operator &) { return wccff::format_indented(ident, "Divide"); },
-                        [ident](const remainder_operator &) { return wccff::format_indented(ident, "Remainder"); },
-                        [ident](const bitwise_and_operator &) { return wccff::format_indented(ident, "Bitwise And"); },
-                        [ident](const bitwise_or_operator &) { return wccff::format_indented(ident, "Bitwise Or"); },
-                        [ident](const bitwise_xor_operator &) { return wccff::format_indented(ident, "Bitwise Xor"); },
-                        [ident](const left_shift_operator &) { return wccff::format_indented(ident, "Left Shift"); },
-                        [ident](const right_shift_operator &) { return wccff::format_indented(ident, "Right Shift"); },
-                      },
-                      node);
+    return std::visit(
+      wccff::visitor{
+        [ident](const plus_operator &) { return wccff::format_indented(ident, "Plus"); },
+        [ident](const subtract_operator &) { return wccff::format_indented(ident, "Subtract"); },
+        [ident](const multiply_operator &) { return wccff::format_indented(ident, "Multiply"); },
+        [ident](const divide_operator &) { return wccff::format_indented(ident, "Divide"); },
+        [ident](const remainder_operator &) { return wccff::format_indented(ident, "Remainder"); },
+        [ident](const bitwise_and_operator &) { return wccff::format_indented(ident, "Bitwise And"); },
+        [ident](const bitwise_or_operator &) { return wccff::format_indented(ident, "Bitwise Or"); },
+        [ident](const bitwise_xor_operator &) { return wccff::format_indented(ident, "Bitwise Xor"); },
+        [ident](const left_shift_operator &) { return wccff::format_indented(ident, "Left Shift"); },
+        [ident](const right_shift_operator &) { return wccff::format_indented(ident, "Right Shift"); },
+        [ident](const logical_and_operator &) { return wccff::format_indented(ident, "Logic And"); },
+        [ident](const logical_or_operator &) { return wccff::format_indented(ident, "Logic Or"); },
+        [ident](const equals_operator &) { return wccff::format_indented(ident, "Equals"); },
+        [ident](const not_equals_operator &) { return wccff::format_indented(ident, "Not Equals"); },
+        [ident](const less_than_operator &) { return wccff::format_indented(ident, "Less Than"); },
+        [ident](const less_than_or_equal_operator &) { return wccff::format_indented(ident, "Less Than or Equals"); },
+        [ident](const greater_than_operator &) { return wccff::format_indented(ident, "Greater Than"); },
+        [ident](const greater_than_or_equal_operator &) {
+            return wccff::format_indented(ident, "Greater Than or Equals");
+        },
+      },
+      node);
 }
 
 std::string pretty_print(const std::unique_ptr<unary_node> &node, int32_t ident)
