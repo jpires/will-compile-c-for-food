@@ -354,6 +354,88 @@ TEST_CASE("Operators", "[lexer]")
         REQUIRE(result.value().at(0).type == wccff::lexer::token_type::right_shift_operator);
         REQUIRE(result.value().at(0).text == ">>");
     }
+
+    SECTION("Not Operator")
+    {
+        std::string_view input{ "!" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::not_operator);
+        REQUIRE(result.value().at(0).text == "!");
+    }
+    SECTION("And Operator")
+    {
+        std::string_view input{ "&&" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::and_operator);
+        REQUIRE(result.value().at(0).text == "&&");
+    }
+    SECTION("Or Operator")
+    {
+        std::string_view input{ "||" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::or_operator);
+        REQUIRE(result.value().at(0).text == "||");
+    }
+    SECTION("Equals Operator")
+    {
+        std::string_view input{ "==" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::equals_operator);
+        REQUIRE(result.value().at(0).text == "==");
+    }
+    SECTION("Not Equals Operator")
+    {
+        std::string_view input{ "!=" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::not_equals_operator);
+        REQUIRE(result.value().at(0).text == "!=");
+    }
+    SECTION("Less Than Operator")
+    {
+        std::string_view input{ "<" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::less_than_operator);
+        REQUIRE(result.value().at(0).text == "<");
+    }
+    SECTION("Less Than or Equal Operator")
+    {
+        std::string_view input{ "<=" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::less_than_or_equal_operator);
+        REQUIRE(result.value().at(0).text == "<=");
+    }
+    SECTION("Greater Than Operator")
+    {
+        std::string_view input{ ">" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::greater_than_operator);
+        REQUIRE(result.value().at(0).text == ">");
+    }
+    SECTION("Greater Than or Equal Operator")
+    {
+        std::string_view input{ ">=" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::greater_than_or_equal_operator);
+        REQUIRE(result.value().at(0).text == ">=");
+    }
 }
 
 TEST_CASE("Other tokens", "[lexer]")

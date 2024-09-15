@@ -45,6 +45,15 @@ enum class token_type
     remainder_operator,
     left_shift_operator,
     right_shift_operator,
+    not_operator,
+    and_operator,
+    or_operator,
+    equals_operator,
+    not_equals_operator,
+    less_than_operator,
+    less_than_or_equal_operator,
+    greater_than_operator,
+    greater_than_or_equal_operator,
 };
 
 struct lexer_error
@@ -155,6 +164,33 @@ struct fmt::formatter<wccff::lexer::token_type> : formatter<string_view>
                 break;
             case token_type::right_shift_operator:
                 str = "Right Shift Operator";
+                break;
+            case token_type::not_operator:
+                str = "Not Operator";
+                break;
+            case token_type::and_operator:
+                str = "And Operator";
+                break;
+            case token_type::or_operator:
+                str = "Or Operator";
+                break;
+            case token_type::equals_operator:
+                str = "Equals Operator";
+                break;
+            case token_type::not_equals_operator:
+                str = "Not Equals Operator";
+                break;
+            case token_type::less_than_operator:
+                str = "Less Than Operator";
+                break;
+            case token_type::less_than_or_equal_operator:
+                str = "Lestt Than or Equal To Operator";
+                break;
+            case token_type::greater_than_operator:
+                str = "Greater Than Operator";
+                break;
+            case token_type::greater_than_or_equal_operator:
+                str = "Greater Than or Equal To Operator";
                 break;
         }
         return formatter<string_view>::format(str, ctx);
