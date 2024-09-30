@@ -35,6 +35,9 @@ struct binary_xor_operator
 struct negate_operator
 {
 };
+struct not_operator
+{
+};
 
 struct plus_operator
 {
@@ -57,7 +60,26 @@ struct left_shift_operator
 struct right_shift_operator
 {
 };
-using unary_operator = std::variant<binary_complement_operator, negate_operator>;
+struct equal_operator
+{
+};
+struct not_equal_operator
+{
+};
+struct less_than_operator
+{
+};
+struct less_than_or_equal_operator
+{
+};
+struct greater_than_operator
+{
+};
+struct greater_than_or_equal_operator
+{
+};
+
+using unary_operator = std::variant<binary_complement_operator, negate_operator, not_operator>;
 using binary_operator = std::variant<plus_operator,
                                      subtract_operator,
                                      multiply_operator,
@@ -67,7 +89,13 @@ using binary_operator = std::variant<plus_operator,
                                      binary_or_operator,
                                      binary_xor_operator,
                                      left_shift_operator,
-                                     right_shift_operator>;
+                                     right_shift_operator,
+                                     equal_operator,
+                                     not_equal_operator,
+                                     less_than_operator,
+                                     less_than_or_equal_operator,
+                                     greater_than_operator,
+                                     greater_than_or_equal_operator>;
 struct constant
 {
     int32_t value;
@@ -112,7 +140,65 @@ struct binary_statement
     val dst;
 };
 
-using instruction = std::variant<return_statement, unary_statement, binary_statement>;
+struct copy_statement
+{
+    copy_statement(val src_, val dst_)
+      : src(std::move(src_))
+      , dst(std::move(dst_))
+    {
+    }
+    val src;
+    val dst;
+};
+
+struct jump_statement
+{
+    explicit jump_statement(identifier target_)
+      : target(std::move(target_))
+    {
+    }
+    identifier target;
+};
+
+struct jump_if_zero_statement
+{
+    explicit jump_if_zero_statement(val condition_, identifier target_)
+      : condition(std::move(condition_))
+      , target(std::move(target_))
+    {
+    }
+    val condition;
+    identifier target;
+};
+
+struct jump_if_not_zero_statement
+{
+    explicit jump_if_not_zero_statement(val condition_, identifier target_)
+      : condition(std::move(condition_))
+      , target(std::move(target_))
+    {
+    }
+    val condition;
+    identifier target;
+};
+
+struct label_statement
+{
+    explicit label_statement(identifier target_)
+      : target(std::move(target_))
+    {
+    }
+    identifier target;
+};
+
+using instruction = std::variant<return_statement,
+                                 unary_statement,
+                                 binary_statement,
+                                 copy_statement,
+                                 jump_statement,
+                                 jump_if_zero_statement,
+                                 jump_if_not_zero_statement,
+                                 label_statement>;
 
 struct function_definition
 {
@@ -141,6 +227,12 @@ std::string pretty_print(const var &val, int32_t ident = 0);
 std::string pretty_print(const val &val, int32_t ident = 0);
 std::string pretty_print(const return_statement &instruction, int32_t ident = 0);
 std::string pretty_print(const unary_statement &instruction, int32_t ident = 0);
+std::string pretty_print(const binary_statement &i, int32_t ident = 0);
+std::string pretty_print(const copy_statement &i, int32_t ident = 0);
+std::string pretty_print(const jump_statement &i, int32_t ident = 0);
+std::string pretty_print(const jump_if_zero_statement &i, int32_t ident = 0);
+std::string pretty_print(const jump_if_not_zero_statement &i, int32_t ident = 0);
+std::string pretty_print(const label_statement &i, int32_t ident = 0);
 std::string pretty_print(const instruction &instruction, int32_t ident = 0);
 std::string pretty_print(const std::vector<instruction> &instructions, int32_t ident = 0);
 std::string pretty_print(const function_definition &f, int32_t ident = 0);

@@ -56,8 +56,13 @@ std::vector<instruction> process_statement(const wccff::tacky::return_statement 
 
 unary_operator process_unary_operator(const wccff::tacky::unary_operator &op)
 {
-    return std::visit(visitor{ [](const tacky::binary_complement_operator &) -> unary_operator { return not_op{}; },
-                               [](const tacky::negate_operator &) -> unary_operator { return neg_op{}; } },
+    return std::visit(visitor{
+                        [](const tacky::binary_complement_operator &) -> unary_operator { return not_op{}; },
+                        [](const tacky::negate_operator &) -> unary_operator { return neg_op{}; },
+                        [](const tacky::not_operator &) -> unary_operator {
+                            throw std::logic_error("logical not operator Not implemented");
+                        },
+                      },
                       op);
 }
 
@@ -74,6 +79,25 @@ binary_operator process_binary_operator(const wccff::tacky::binary_operator &op)
                         [](const tacky::binary_xor_operator &) -> binary_operator { return binary_xor{}; },
                         [](const tacky::left_shift_operator &) -> binary_operator { return left_shift{}; },
                         [](const tacky::right_shift_operator &) -> binary_operator { return right_shift{}; },
+                        [](const tacky::equal_operator &) -> binary_operator {
+                            throw std::logic_error("Equal operator Not implemented");
+                        },
+                        [](const tacky::not_equal_operator &) -> binary_operator {
+                            throw std::logic_error("Not Equal operator Not implemented");
+                        },
+                        [](const tacky::less_than_operator &) -> binary_operator {
+                            throw std::logic_error("Less Than operator Not implemented");
+                        },
+                        [](const tacky::less_than_or_equal_operator &) -> binary_operator {
+                            throw std::logic_error("Less Than or Equal operator Not implemented");
+                        },
+                        [](const tacky::greater_than_operator &) -> binary_operator {
+                            throw std::logic_error("Greater Than  operator Not implemented");
+                        },
+                        [](const tacky::greater_than_or_equal_operator &) -> binary_operator {
+                            throw std::logic_error("Greater Than or Equal operator Not implemented");
+                        },
+
                       },
                       op);
 }
@@ -114,9 +138,26 @@ std::vector<instruction> process_statement(const wccff::tacky::binary_statement 
 
 std::vector<instruction> process_statement(const tacky::instruction &i)
 {
-    return std::visit(visitor{ [](const tacky::return_statement &n) { return process_statement(n); },
-                               [](const tacky::unary_statement &n) { return process_statement(n); },
-                               [](const tacky::binary_statement &n) { return process_statement(n); } },
+    return std::visit(visitor{
+                        [](const tacky::return_statement &n) { return process_statement(n); },
+                        [](const tacky::unary_statement &n) { return process_statement(n); },
+                        [](const tacky::binary_statement &n) { return process_statement(n); },
+                        [](const tacky::copy_statement &) -> std::vector<instruction> {
+                            throw std::logic_error("Copy Statement Not implemented");
+                        },
+                        [](const tacky::jump_statement &) -> std::vector<instruction> {
+                            throw std::logic_error("Jump Statement Not implemented");
+                        },
+                        [](const tacky::jump_if_zero_statement &) -> std::vector<instruction> {
+                            throw std::logic_error("Jump if Zero Statement Not implemented");
+                        },
+                        [](const tacky::jump_if_not_zero_statement &) -> std::vector<instruction> {
+                            throw std::logic_error("Jump if not Zero Statement Not implemented");
+                        },
+                        [](const tacky::label_statement &) -> std::vector<instruction> {
+                            throw std::logic_error("Label Statement Not implemented");
+                        },
+                      },
                       i);
 }
 

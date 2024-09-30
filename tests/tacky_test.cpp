@@ -191,4 +191,120 @@ TEST_CASE("process_binary_node", "[tacky]")
         REQUIRE(std::get<tacky::constant>(inst.src2).value == 2);
         REQUIRE(std::holds_alternative<tacky::var>(inst.dst));
     }
+
+    SECTION("Equals Operator")
+    {
+        auto left = wccff::parser::int_constant{ 1 };
+        auto right = wccff::parser::int_constant{ 2 };
+        auto binary_expr = std::make_unique<parser::binary_node>(parser::equals_operator{}, left, right);
+
+        std::vector<wccff::tacky::instruction> instructions;
+        auto result = tacky::process_binary_node(binary_expr, instructions);
+
+        REQUIRE(instructions.size() == 1);
+        REQUIRE(std::holds_alternative<tacky::binary_statement>(instructions.at(0)));
+        auto inst = std::get<tacky::binary_statement>(instructions.at(0));
+
+        REQUIRE(std::holds_alternative<tacky::equal_operator>(inst.op));
+        REQUIRE(std::holds_alternative<tacky::constant>(inst.src1));
+        REQUIRE(std::get<tacky::constant>(inst.src1).value == 1);
+        REQUIRE(std::get<tacky::constant>(inst.src2).value == 2);
+        REQUIRE(std::holds_alternative<tacky::var>(inst.dst));
+    }
+
+    SECTION("Not Equals Operator")
+    {
+        auto left = wccff::parser::int_constant{ 1 };
+        auto right = wccff::parser::int_constant{ 2 };
+        auto binary_expr = std::make_unique<parser::binary_node>(parser::not_equals_operator{}, left, right);
+
+        std::vector<wccff::tacky::instruction> instructions;
+        auto result = tacky::process_binary_node(binary_expr, instructions);
+
+        REQUIRE(instructions.size() == 1);
+        REQUIRE(std::holds_alternative<tacky::binary_statement>(instructions.at(0)));
+        auto inst = std::get<tacky::binary_statement>(instructions.at(0));
+
+        REQUIRE(std::holds_alternative<tacky::not_equal_operator>(inst.op));
+        REQUIRE(std::holds_alternative<tacky::constant>(inst.src1));
+        REQUIRE(std::get<tacky::constant>(inst.src1).value == 1);
+        REQUIRE(std::get<tacky::constant>(inst.src2).value == 2);
+        REQUIRE(std::holds_alternative<tacky::var>(inst.dst));
+    }
+    SECTION("Less Than Operator")
+    {
+        auto left = wccff::parser::int_constant{ 1 };
+        auto right = wccff::parser::int_constant{ 2 };
+        auto binary_expr = std::make_unique<parser::binary_node>(parser::less_than_operator{}, left, right);
+
+        std::vector<wccff::tacky::instruction> instructions;
+        auto result = tacky::process_binary_node(binary_expr, instructions);
+
+        REQUIRE(instructions.size() == 1);
+        REQUIRE(std::holds_alternative<tacky::binary_statement>(instructions.at(0)));
+        auto inst = std::get<tacky::binary_statement>(instructions.at(0));
+
+        REQUIRE(std::holds_alternative<tacky::less_than_operator>(inst.op));
+        REQUIRE(std::holds_alternative<tacky::constant>(inst.src1));
+        REQUIRE(std::get<tacky::constant>(inst.src1).value == 1);
+        REQUIRE(std::get<tacky::constant>(inst.src2).value == 2);
+        REQUIRE(std::holds_alternative<tacky::var>(inst.dst));
+    }
+    SECTION("Less Than or Equal Operator")
+    {
+        auto left = wccff::parser::int_constant{ 1 };
+        auto right = wccff::parser::int_constant{ 2 };
+        auto binary_expr = std::make_unique<parser::binary_node>(parser::less_than_or_equal_operator{}, left, right);
+
+        std::vector<wccff::tacky::instruction> instructions;
+        auto result = tacky::process_binary_node(binary_expr, instructions);
+
+        REQUIRE(instructions.size() == 1);
+        REQUIRE(std::holds_alternative<tacky::binary_statement>(instructions.at(0)));
+        auto inst = std::get<tacky::binary_statement>(instructions.at(0));
+
+        REQUIRE(std::holds_alternative<tacky::less_than_or_equal_operator>(inst.op));
+        REQUIRE(std::holds_alternative<tacky::constant>(inst.src1));
+        REQUIRE(std::get<tacky::constant>(inst.src1).value == 1);
+        REQUIRE(std::get<tacky::constant>(inst.src2).value == 2);
+        REQUIRE(std::holds_alternative<tacky::var>(inst.dst));
+    }
+    SECTION("Greater Than Operator")
+    {
+        auto left = wccff::parser::int_constant{ 1 };
+        auto right = wccff::parser::int_constant{ 2 };
+        auto binary_expr = std::make_unique<parser::binary_node>(parser::greater_than_operator{}, left, right);
+
+        std::vector<wccff::tacky::instruction> instructions;
+        auto result = tacky::process_binary_node(binary_expr, instructions);
+
+        REQUIRE(instructions.size() == 1);
+        REQUIRE(std::holds_alternative<tacky::binary_statement>(instructions.at(0)));
+        auto inst = std::get<tacky::binary_statement>(instructions.at(0));
+
+        REQUIRE(std::holds_alternative<tacky::greater_than_operator>(inst.op));
+        REQUIRE(std::holds_alternative<tacky::constant>(inst.src1));
+        REQUIRE(std::get<tacky::constant>(inst.src1).value == 1);
+        REQUIRE(std::get<tacky::constant>(inst.src2).value == 2);
+        REQUIRE(std::holds_alternative<tacky::var>(inst.dst));
+    }
+    SECTION("Greater Than or Equal Operator")
+    {
+        auto left = wccff::parser::int_constant{ 1 };
+        auto right = wccff::parser::int_constant{ 2 };
+        auto binary_expr = std::make_unique<parser::binary_node>(parser::greater_than_or_equal_operator{}, left, right);
+
+        std::vector<wccff::tacky::instruction> instructions;
+        auto result = tacky::process_binary_node(binary_expr, instructions);
+
+        REQUIRE(instructions.size() == 1);
+        REQUIRE(std::holds_alternative<tacky::binary_statement>(instructions.at(0)));
+        auto inst = std::get<tacky::binary_statement>(instructions.at(0));
+
+        REQUIRE(std::holds_alternative<tacky::greater_than_or_equal_operator>(inst.op));
+        REQUIRE(std::holds_alternative<tacky::constant>(inst.src1));
+        REQUIRE(std::get<tacky::constant>(inst.src1).value == 1);
+        REQUIRE(std::get<tacky::constant>(inst.src2).value == 2);
+        REQUIRE(std::holds_alternative<tacky::var>(inst.dst));
+    }
 }
