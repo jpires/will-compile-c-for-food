@@ -46,6 +46,27 @@ operand process_val(const wccff::tacky::val &v)
                       },
                       v);
 }
+
+std::vector<instruction> process_statement(const wccff::tacky::copy_statement &stmt)
+{
+    return { mov_instruction{ process_val(stmt.src), process_val(stmt.dst) } };
+}
+std::vector<instruction> process_statement(const wccff::tacky::jump_statement &stmt)
+{
+    return { jmp{ process_identifier(stmt.target) } };
+}
+std::vector<instruction> process_statement(const wccff::tacky::jump_if_zero_statement &stmt)
+{
+    return { cmp{ immediate{ 0 }, process_val(stmt.condition) }, jmpcc{ E{}, process_identifier(stmt.target) } };
+}
+std::vector<instruction> process_statement(const wccff::tacky::jump_if_not_zero_statement &stmt)
+{
+    return { cmp{ immediate{ 0 }, process_val(stmt.condition) }, jmpcc{ NE{}, process_identifier(stmt.target) } };
+}
+std::vector<instruction> process_statement(const wccff::tacky::label_statement &stmt)
+{
+    return { label{ process_identifier(stmt.target) } };
+}
 std::vector<instruction> process_statement(const wccff::tacky::return_statement &stmt)
 {
     mov_instruction mov{ process_val(stmt.val), ax{} };
@@ -68,42 +89,51 @@ unary_operator process_unary_operator(const wccff::tacky::unary_operator &op)
 
 binary_operator process_binary_operator(const wccff::tacky::binary_operator &op)
 {
-    return std::visit(visitor{
-                        [](const tacky::plus_operator &) -> binary_operator { return add{}; },
-                        [](const tacky::subtract_operator &) -> binary_operator { return sub{}; },
-                        [](const tacky::multiply_operator &) -> binary_operator { return mul{}; },
-                        [](const tacky::divide_operator &) -> binary_operator { return sub{}; },
-                        [](const tacky::remainder_operator &) -> binary_operator { return mul{}; },
-                        [](const tacky::binary_and_operator &) -> binary_operator { return binary_and{}; },
-                        [](const tacky::binary_or_operator &) -> binary_operator { return binary_or{}; },
-                        [](const tacky::binary_xor_operator &) -> binary_operator { return binary_xor{}; },
-                        [](const tacky::left_shift_operator &) -> binary_operator { return left_shift{}; },
-                        [](const tacky::right_shift_operator &) -> binary_operator { return right_shift{}; },
-                        [](const tacky::equal_operator &) -> binary_operator {
-                            throw std::logic_error("Equal operator Not implemented");
-                        },
-                        [](const tacky::not_equal_operator &) -> binary_operator {
-                            throw std::logic_error("Not Equal operator Not implemented");
-                        },
-                        [](const tacky::less_than_operator &) -> binary_operator {
-                            throw std::logic_error("Less Than operator Not implemented");
-                        },
-                        [](const tacky::less_than_or_equal_operator &) -> binary_operator {
-                            throw std::logic_error("Less Than or Equal operator Not implemented");
-                        },
-                        [](const tacky::greater_than_operator &) -> binary_operator {
-                            throw std::logic_error("Greater Than  operator Not implemented");
-                        },
-                        [](const tacky::greater_than_or_equal_operator &) -> binary_operator {
-                            throw std::logic_error("Greater Than or Equal operator Not implemented");
-                        },
-
-                      },
-                      op);
+    return std::visit(
+      visitor{
+        [](const tacky::plus_operator &) -> binary_operator { return add{}; },
+        [](const tacky::subtract_operator &) -> binary_operator { return sub{}; },
+        [](const tacky::multiply_operator &) -> binary_operator { return mul{}; },
+        [](const tacky::divide_operator &) -> binary_operator { return sub{}; },
+        [](const tacky::remainder_operator &) -> binary_operator { return mul{}; },
+        [](const tacky::binary_and_operator &) -> binary_operator { return binary_and{}; },
+        [](const tacky::binary_or_operator &) -> binary_operator { return binary_or{}; },
+        [](const tacky::binary_xor_operator &) -> binary_operator { return binary_xor{}; },
+        [](const tacky::left_shift_operator &) -> binary_operator { return left_shift{}; },
+        [](const tacky::right_shift_operator &) -> binary_operator { return right_shift{}; },
+        [](const tacky::equal_operator &) -> binary_operator {
+            throw std::logic_error("Equal operator is not converted into a binary operator");
+        },
+        [](const tacky::not_equal_operator &) -> binary_operator {
+            throw std::logic_error("Not Equal operator is not converted into a binary operator");
+        },
+        [](const tacky::less_than_operator &) -> binary_operator {
+            throw std::logic_error("Less Than operator is not converted into a binary operator");
+        },
+        [](const tacky::less_than_or_equal_operator &) -> binary_operator {
+            throw std::logic_error("Less Than or Equal operator is not converted into a binary operator");
+        },
+        [](const tacky::greater_than_operator &) -> binary_operator {
+            throw std::logic_error("Greater Than operator is not converted into a binary operator");
+        },
+        [](const tacky::greater_than_or_equal_operator &) -> binary_operator {
+            throw std::logic_error("Greater Than or Equal operator is not converted into a binary operator");
+        },
+      },
+      op);
 }
 
 std::vector<instruction> process_statement(const wccff::tacky::unary_statement &stmt)
 {
+    std::vector<instruction> instructions;
+    if (std::holds_alternative<tacky::not_operator>(stmt.op))
+    {
+        instructions.emplace_back(cmp{ operand{ immediate{ 0 } }, process_val(stmt.src) });
+        instructions.emplace_back(mov_instruction{ immediate{ 0 }, process_val(stmt.dst) });
+        instructions.emplace_back(setcc{ E{}, process_val(stmt.dst) });
+        return instructions;
+    }
+
     mov_instruction mov{ process_val(stmt.src), process_val(stmt.dst) };
     unary ret{ process_unary_operator(stmt.op), process_val(stmt.dst) };
 
@@ -112,6 +142,44 @@ std::vector<instruction> process_statement(const wccff::tacky::unary_statement &
 
 std::vector<instruction> process_statement(const wccff::tacky::binary_statement &stmt)
 {
+    auto is_relational_operator = [](tacky::binary_operator op) {
+        return std::visit(visitor{
+                            [](tacky::equal_operator) { return true; },
+                            [](tacky::not_equal_operator) { return true; },
+                            [](tacky::less_than_operator) { return true; },
+                            [](tacky::less_than_or_equal_operator) { return true; },
+                            [](tacky::greater_than_operator) { return true; },
+                            [](tacky::greater_than_or_equal_operator) { return true; },
+                            [](auto) { return false; },
+                          },
+                          op);
+    };
+
+    auto convert_tacky_op = [](tacky::binary_operator op) {
+        return std::visit(visitor{
+                            [](tacky::equal_operator) -> cond_code { return E{}; },
+                            [](tacky::not_equal_operator) -> cond_code { return NE{}; },
+                            [](tacky::less_than_operator) -> cond_code { return L{}; },
+                            [](tacky::less_than_or_equal_operator) -> cond_code { return LE{}; },
+                            [](tacky::greater_than_operator) -> cond_code { return G{}; },
+                            [](tacky::greater_than_or_equal_operator) -> cond_code { return GE{}; },
+                            [](auto) -> cond_code {
+                                throw std::logic_error("Binary operator is not converted into a binary operator");
+                            },
+                          },
+                          op);
+    };
+
+    if (is_relational_operator(stmt.op))
+    {
+        std::vector<instruction> instructions;
+        instructions.emplace_back(cmp{ process_val(stmt.src2), process_val(stmt.src1) });
+        instructions.emplace_back(mov_instruction{ immediate{ 0 }, process_val(stmt.dst) });
+        instructions.emplace_back(setcc{ convert_tacky_op(stmt.op), process_val(stmt.dst) });
+
+        return instructions;
+    }
+
     if (std::holds_alternative<wccff::tacky::divide_operator>(stmt.op))
     {
         mov_instruction mov1{ process_val(stmt.src1), ax{} };
@@ -142,21 +210,11 @@ std::vector<instruction> process_statement(const tacky::instruction &i)
                         [](const tacky::return_statement &n) { return process_statement(n); },
                         [](const tacky::unary_statement &n) { return process_statement(n); },
                         [](const tacky::binary_statement &n) { return process_statement(n); },
-                        [](const tacky::copy_statement &) -> std::vector<instruction> {
-                            throw std::logic_error("Copy Statement Not implemented");
-                        },
-                        [](const tacky::jump_statement &) -> std::vector<instruction> {
-                            throw std::logic_error("Jump Statement Not implemented");
-                        },
-                        [](const tacky::jump_if_zero_statement &) -> std::vector<instruction> {
-                            throw std::logic_error("Jump if Zero Statement Not implemented");
-                        },
-                        [](const tacky::jump_if_not_zero_statement &) -> std::vector<instruction> {
-                            throw std::logic_error("Jump if not Zero Statement Not implemented");
-                        },
-                        [](const tacky::label_statement &) -> std::vector<instruction> {
-                            throw std::logic_error("Label Statement Not implemented");
-                        },
+                        [](const tacky::copy_statement &n) { return process_statement(n); },
+                        [](const tacky::jump_statement &n) { return process_statement(n); },
+                        [](const tacky::jump_if_zero_statement &n) { return process_statement(n); },
+                        [](const tacky::jump_if_not_zero_statement &n) { return process_statement(n); },
+                        [](const tacky::label_statement &n) { return process_statement(n); },
                       },
                       i);
 }
@@ -220,6 +278,20 @@ void replace_pseudo_registers_q(binary &i)
         i.dst = stack{ table.get_address(r.name) };
     }
 }
+void replace_pseudo_registers_q(cmp &i)
+{
+    if (std::holds_alternative<pseudo>(i.lhs))
+    {
+        auto r = std::get<pseudo>(i.lhs);
+        i.lhs = stack{ table.get_address(r.name) };
+    }
+
+    if (std::holds_alternative<pseudo>(i.rhs))
+    {
+        auto r = std::get<pseudo>(i.rhs);
+        i.rhs = stack{ table.get_address(r.name) };
+    }
+}
 void replace_pseudo_registers_q(idiv &i)
 {
     if (std::holds_alternative<pseudo>(i.src))
@@ -229,6 +301,17 @@ void replace_pseudo_registers_q(idiv &i)
     }
 }
 void replace_pseudo_registers_q(cdq &i) {}
+void replace_pseudo_registers_q(jmp &i) {}
+void replace_pseudo_registers_q(jmpcc &i) {}
+void replace_pseudo_registers_q(setcc &i)
+{
+    if (std::holds_alternative<pseudo>(i.dst))
+    {
+        auto r = std::get<pseudo>(i.dst);
+        i.dst = stack{ table.get_address(r.name) };
+    }
+}
+void replace_pseudo_registers_q(label &i) {}
 void replace_pseudo_registers_q(allocate_stack &i) {}
 void replace_pseudo_registers_q(ret_instruction &i) {}
 
@@ -249,6 +332,31 @@ std::optional<std::vector<instruction>> fixing_up_instructions11(const mov_instr
         mov_instruction m2{ R10{}, n.dst };
         ret_insts.emplace_back(m1);
         ret_insts.emplace_back(m2);
+        return ret_insts;
+    }
+
+    return std::nullopt;
+}
+
+std::optional<std::vector<instruction>> fixing_up_instructions11(const cmp &n)
+{
+    if (std::holds_alternative<stack>(n.lhs) && std::holds_alternative<stack>(n.rhs))
+    {
+        std::vector<instruction> ret_insts;
+        mov_instruction m1{ n.lhs, R10{} };
+        cmp b1{ R10{}, n.rhs };
+        ret_insts.emplace_back(m1);
+        ret_insts.emplace_back(b1);
+        return ret_insts;
+    }
+
+    if (std::holds_alternative<immediate>(n.rhs))
+    {
+        std::vector<instruction> ret_insts;
+        mov_instruction m1{ n.rhs, R11{} };
+        cmp b1{ n.lhs, R11{} };
+        ret_insts.emplace_back(m1);
+        ret_insts.emplace_back(b1);
         return ret_insts;
     }
 
@@ -321,8 +429,13 @@ std::optional<std::vector<instruction>> fixing_up_instructions1(const instructio
         [](const mov_instruction &n) -> std::optional<std::vector<instruction>> { return fixing_up_instructions11(n); },
         [](const unary &) -> std::optional<std::vector<instruction>> { return std::nullopt; },
         [](const binary &i) -> std::optional<std::vector<instruction>> { return fixing_up_instructions_binary(i); },
+        [](const cmp &i) -> std::optional<std::vector<instruction>> { return fixing_up_instructions11(i); },
         [](const idiv &i) -> std::optional<std::vector<instruction>> { return fixing_up_instructions_idiv(i); },
         [](const cdq &) -> std::optional<std::vector<instruction>> { return std::nullopt; },
+        [](const jmp &) -> std::optional<std::vector<instruction>> { return std::nullopt; },
+        [](const jmpcc &) -> std::optional<std::vector<instruction>> { return std::nullopt; },
+        [](const setcc &) -> std::optional<std::vector<instruction>> { return std::nullopt; },
+        [](const label &) -> std::optional<std::vector<instruction>> { return std::nullopt; },
         [](const allocate_stack &) -> std::optional<std::vector<instruction>> { return std::nullopt; },
         [](const ret_instruction &) -> std::optional<std::vector<instruction>> { return std::nullopt; } },
       node);
@@ -357,6 +470,40 @@ void fixing_up_instructions(function &node)
 void fixing_up_instructions(program &node)
 {
     fixing_up_instructions(node.function);
+}
+
+std::string pretty_print(const cmp &node)
+{
+    return fmt::format("Cmp({}, {})", pretty_print(node.lhs), pretty_print(node.lhs));
+}
+
+std::string pretty_print(const cond_code &node)
+{
+    return std::visit(wccff::visitor{
+                        [](E) { return "E"; },
+                        [](NE) { return "NE"; },
+                        [](L) { return "L"; },
+                        [](LE) { return "LE"; },
+                        [](G) { return "G"; },
+                        [](GE) { return "GE"; },
+                      },
+                      node);
+}
+std::string pretty_print(const jmp &node)
+{
+    return fmt::format("Jmp({})", pretty_print(node.name));
+}
+std::string pretty_print(const jmpcc &node)
+{
+    return fmt::format("JmpCC({}, {})", pretty_print(node.cond), pretty_print(node.name));
+}
+std::string pretty_print(const label &node)
+{
+    return fmt::format("Label({})", pretty_print(node.name));
+}
+std::string pretty_print(const setcc &node)
+{
+    return fmt::format("SetCC({}, {})", pretty_print(node.cond), pretty_print(node.dst));
 }
 
 std::string pretty_print(const identifier &node)
@@ -461,8 +608,13 @@ std::string pretty_print(const instruction &node)
     return std::visit(visitor{ [](const mov_instruction &n) { return pretty_print(n); },
                                [](const unary &n) { return pretty_print(n); },
                                [](const binary &n) { return pretty_print(n); },
+                               [](const cmp &n) { return pretty_print(n); },
                                [](const idiv &n) { return pretty_print(n); },
                                [](const cdq &n) { return pretty_print(n); },
+                               [](const jmp &n) { return pretty_print(n); },
+                               [](const jmpcc &n) { return pretty_print(n); },
+                               [](const setcc &n) { return pretty_print(n); },
+                               [](const label &n) { return pretty_print(n); },
                                [](const allocate_stack &n) { return pretty_print(n); },
                                [](const ret_instruction &n) { return pretty_print(n); } },
                       node);

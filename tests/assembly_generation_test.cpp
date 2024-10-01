@@ -129,4 +129,66 @@ TEST_CASE("Binary Operations", "[assembly_generation]")
         REQUIRE(std::holds_alternative<wccff::assembly_generation::pseudo>(inst2.dst));
         REQUIRE(std::get<wccff::assembly_generation::pseudo>(inst2.dst).name.name == "tacky-1");
     }
+
+    SECTION("equal_operator")
+    {
+        using namespace wccff;
+        tacky::constant src1{ 1 };
+        tacky::constant src2{ 2 };
+        tacky::var dst{ "tacky-1" };
+        tacky::binary_statement stmt{ tacky::equal_operator{}, src1, src2, dst };
+        auto instructions = assembly_generation::process_statement(stmt);
+        REQUIRE(instructions.size() == 3);
+
+        REQUIRE(std::holds_alternative<assembly_generation::cmp>(instructions.at(0)));
+        auto inst1 = std::get<assembly_generation::cmp>(instructions.at(0));
+        REQUIRE(std::holds_alternative<assembly_generation::immediate>(inst1.lhs));
+        REQUIRE(std::get<assembly_generation::immediate>(inst1.lhs).value == 2);
+        REQUIRE(std::holds_alternative<assembly_generation::immediate>(inst1.rhs));
+        REQUIRE(std::get<assembly_generation::immediate>(inst1.rhs).value == 1);
+
+        REQUIRE(std::holds_alternative<assembly_generation::mov_instruction>(instructions.at(1)));
+        auto inst2 = std::get<assembly_generation::mov_instruction>(instructions.at(1));
+        REQUIRE(std::holds_alternative<assembly_generation::immediate>(inst2.src));
+        REQUIRE(std::get<assembly_generation::immediate>(inst2.src).value == 0);
+        REQUIRE(std::holds_alternative<assembly_generation::pseudo>(inst2.dst));
+        REQUIRE(std::get<assembly_generation::pseudo>(inst2.dst).name.name == "tacky-1");
+
+        REQUIRE(std::holds_alternative<assembly_generation::setcc>(instructions.at(2)));
+        auto inst3 = std::get<assembly_generation::setcc>(instructions.at(2));
+        REQUIRE(std::holds_alternative<assembly_generation::E>(inst3.cond));
+        REQUIRE(std::get<assembly_generation::pseudo>(inst3.dst).name.name == "tacky-1");
+    }
+}
+
+TEST_CASE("Unary Operations", "[assembly_generation]")
+{
+    using namespace wccff;
+    SECTION("not_operator")
+    {
+        tacky::constant src1{ 1 };
+        tacky::var dst{ "tacky-1" };
+        tacky::unary_statement stmt{ tacky::not_operator{}, src1, dst };
+        auto instructions = assembly_generation::process_statement(stmt);
+        REQUIRE(instructions.size() == 3);
+
+        REQUIRE(std::holds_alternative<assembly_generation::cmp>(instructions.at(0)));
+        auto inst1 = std::get<assembly_generation::cmp>(instructions.at(0));
+        REQUIRE(std::holds_alternative<assembly_generation::immediate>(inst1.lhs));
+        REQUIRE(std::get<assembly_generation::immediate>(inst1.lhs).value == 0);
+        REQUIRE(std::holds_alternative<assembly_generation::immediate>(inst1.rhs));
+        REQUIRE(std::get<assembly_generation::immediate>(inst1.rhs).value == 1);
+
+        REQUIRE(std::holds_alternative<assembly_generation::mov_instruction>(instructions.at(1)));
+        auto inst2 = std::get<assembly_generation::mov_instruction>(instructions.at(1));
+        REQUIRE(std::holds_alternative<assembly_generation::immediate>(inst2.src));
+        REQUIRE(std::get<assembly_generation::immediate>(inst2.src).value == 0);
+        REQUIRE(std::holds_alternative<assembly_generation::pseudo>(inst2.dst));
+        REQUIRE(std::get<assembly_generation::pseudo>(inst2.dst).name.name == "tacky-1");
+
+        REQUIRE(std::holds_alternative<assembly_generation::setcc>(instructions.at(2)));
+        auto inst3 = std::get<assembly_generation::setcc>(instructions.at(2));
+        REQUIRE(std::holds_alternative<assembly_generation::E>(inst3.cond));
+        REQUIRE(std::get<assembly_generation::pseudo>(inst3.dst).name.name == "tacky-1");
+    }
 }

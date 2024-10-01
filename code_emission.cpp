@@ -120,16 +120,28 @@ std::string process_allocate_stack(const assembly_generation::allocate_stack &no
 
 std::string process_instruction(const assembly_generation::instruction &instruction)
 {
-    return std::visit(visitor{
-                        [](const assembly_generation::mov_instruction &mov) { return process_mov_instruction(mov); },
-                        [](const assembly_generation::unary &node) { return process_unary(node); },
-                        [](const assembly_generation::binary &node) { return process_binary(node); },
-                        [](const assembly_generation::idiv &node) { return process_idiv(node); },
-                        [](const assembly_generation::cdq &node) { return process_cdq(node); },
-                        [](const assembly_generation::allocate_stack &node) { return process_allocate_stack(node); },
-                        [](const assembly_generation::ret_instruction &ret) { return process_ret_instruction(ret); },
-                      },
-                      instruction);
+    return std::visit(
+      visitor{
+        [](const assembly_generation::mov_instruction &mov) { return process_mov_instruction(mov); },
+        [](const assembly_generation::unary &node) { return process_unary(node); },
+        [](const assembly_generation::binary &node) { return process_binary(node); },
+        [](const assembly_generation::cmp &node) -> std::string { throw std::runtime_error("cmp not implemented"); },
+        [](const assembly_generation::idiv &node) { return process_idiv(node); },
+        [](const assembly_generation::cdq &node) { return process_cdq(node); },
+        [](const assembly_generation::jmp &node) -> std::string { throw std::runtime_error("jmp not implemented"); },
+        [](const assembly_generation::jmpcc &node) -> std::string {
+            throw std::runtime_error("jmpcc not implemented");
+        },
+        [](const assembly_generation::setcc &node) -> std::string {
+            throw std::runtime_error("setcc not implemented");
+        },
+        [](const assembly_generation::label &node) -> std::string {
+            throw std::runtime_error("label not implemented");
+        },
+        [](const assembly_generation::allocate_stack &node) { return process_allocate_stack(node); },
+        [](const assembly_generation::ret_instruction &ret) { return process_ret_instruction(ret); },
+      },
+      instruction);
 }
 
 std::string process_function(const assembly_generation::function &f)

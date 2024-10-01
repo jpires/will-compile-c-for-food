@@ -84,6 +84,27 @@ struct right_shift
 {
 };
 using binary_operator = std::variant<add, sub, mul, binary_and, binary_or, binary_xor, left_shift, right_shift>;
+
+struct E
+{
+};
+struct NE
+{
+};
+struct G
+{
+};
+struct GE
+{
+};
+struct L
+{
+};
+struct LE
+{
+};
+using cond_code = std::variant<E, NE, G, GE, L, LE>;
+
 struct unary
 {
     unary_operator op;
@@ -96,6 +117,12 @@ struct binary
     operand dst;
 };
 
+struct cmp
+{
+    operand lhs;
+    operand rhs;
+};
+
 struct idiv
 {
     operand src;
@@ -103,6 +130,25 @@ struct idiv
 struct cdq
 {
 };
+struct jmp
+{
+    identifier name;
+};
+struct jmpcc
+{
+    cond_code cond;
+    identifier name;
+};
+struct setcc
+{
+    cond_code cond;
+    operand dst;
+};
+struct label
+{
+    identifier name;
+};
+
 struct mov_instruction
 {
     operand src;
@@ -118,7 +164,8 @@ struct allocate_stack
     immediate size;
 };
 
-using instruction = std::variant<mov_instruction, unary, binary, idiv, cdq, allocate_stack, ret_instruction>;
+using instruction = std::
+  variant<mov_instruction, unary, binary, cmp, idiv, cdq, jmp, jmpcc, setcc, label, allocate_stack, ret_instruction>;
 
 struct function
 {
@@ -131,6 +178,7 @@ struct program
     function function;
 };
 
+std::vector<instruction> process_statement(const wccff::tacky::copy_statement &stmt);
 std::vector<instruction> process_statement(const wccff::tacky::return_statement &stmt);
 std::vector<instruction> process_statement(const wccff::tacky::binary_statement &stmt);
 std::vector<instruction> process_statement(const wccff::tacky::unary_statement &stmt);
@@ -144,6 +192,13 @@ void replace_pseudo_registers(program &node);
 void fixing_up_instructions(std::vector<instruction> &node);
 void fixing_up_instructions(function &node);
 void fixing_up_instructions(program &program);
+
+std::string pretty_print(const cmp &node);
+std::string pretty_print(const cond_code &node);
+std::string pretty_print(const jmp &node);
+std::string pretty_print(const jmpcc &node);
+std::string pretty_print(const label &node);
+std::string pretty_print(const setcc &node);
 
 std::string pretty_print(const identifier &node);
 std::string pretty_print(const unary_operator &node);
