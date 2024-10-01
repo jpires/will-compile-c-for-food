@@ -2,7 +2,7 @@
   "version": 4,
   "cmakeMinimumRequired": {
     "major": 3,
-    "minor": 23,
+    "minor": 29,
     "patch": 0
   },
   "configurePresets": [
@@ -16,19 +16,7 @@
     {
       "name": "vcpkg",
       "hidden": true,
-      "toolchainFile":  "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
-    },
-    {
-      "name": "dev",
-      "binaryDir": "${sourceDir}/build/dev",
-      "inherits": ["vcpkg", "debug-build"],
-      "generator": "Ninja",
-      "cacheVariables": {
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
-      },
-      "environment": {
-        "VCPKG_ROOT" : "/Users/joao/workspace/vcpkg"
-      }
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
     }
   ]
 }

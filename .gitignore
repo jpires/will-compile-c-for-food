@@ -6,3 +6,6 @@ cmake-build-*/
 
 #Build folders. e.g. build-debug for testing
 build*/
+
+# Ignore User CMake Presets
+CMakeUserPresets.json
