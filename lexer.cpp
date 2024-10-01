@@ -36,6 +36,7 @@ constexpr auto less_than_operator_pattern{ R"((<))" };
 constexpr auto less_than_or_equal_operator_pattern{ R"((<=))" };
 constexpr auto greater_than_operator_pattern{ R"((>))" };
 constexpr auto greater_than_or_equal_operator_pattern{ R"((>=))" };
+constexpr auto assignment_operator_pattern{ R"((=))" };
 
 constexpr auto get_patters()
 {
@@ -70,6 +71,7 @@ constexpr auto get_patters()
         bitwise_xor_operator_pattern,
         less_than_operator_pattern,
         greater_than_operator_pattern,
+        assignment_operator_pattern,
     };
 }
 
@@ -377,6 +379,15 @@ consteval std::ptrdiff_t get_greater_than_or_equal_operator_pattern_position()
 
     return std::distance(patterns.begin(), f) + 1;
 }
+consteval std::ptrdiff_t get_assignment_operator_pattern_position()
+{
+    auto patterns = get_patters();
+    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
+        return str_compare(i, assignment_operator_pattern);
+    });
+
+    return std::distance(patterns.begin(), f) + 1;
+}
 
 std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, file_location location) noexcept
 {
@@ -565,6 +576,11 @@ std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, fil
             {
                 std::cout << "Found Greater Than or Equal Operator" << '\n';
                 result.emplace_back(token_type::greater_than_or_equal_operator, m, location);
+            }
+            if (ctre::get<get_assignment_operator_pattern_position()>(m))
+            {
+                std::cout << "Found Assignment Operator" << '\n';
+                result.emplace_back(token_type::assignment_operator, m, location);
             }
 
             if (result.empty())

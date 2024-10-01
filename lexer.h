@@ -54,6 +54,7 @@ enum class token_type
     less_than_or_equal_operator,
     greater_than_operator,
     greater_than_or_equal_operator,
+    assignment_operator,
 };
 
 struct lexer_error
@@ -191,6 +192,9 @@ struct fmt::formatter<wccff::lexer::token_type> : formatter<string_view>
                 break;
             case token_type::greater_than_or_equal_operator:
                 str = "Greater Than or Equal To Operator";
+                break;
+            case token_type::assignment_operator:
+                str = "Assignment Operator";
                 break;
         }
         return formatter<string_view>::format(str, ctx);

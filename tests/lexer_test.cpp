@@ -436,6 +436,15 @@ TEST_CASE("Operators", "[lexer]")
         REQUIRE(result.value().at(0).type == wccff::lexer::token_type::greater_than_or_equal_operator);
         REQUIRE(result.value().at(0).text == ">=");
     }
+    SECTION("assignment Operator")
+    {
+        std::string_view input{ "=" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::assignment_operator);
+        REQUIRE(result.value().at(0).text == "=");
+    }
 }
 
 TEST_CASE("Other tokens", "[lexer]")
