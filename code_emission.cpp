@@ -16,17 +16,20 @@ std::string process_immediate(const assembly_generation::immediate &immediate)
 
 std::string process_register(const assembly_generation::reg &node, operand_size size = operand_size::four_bytes)
 {
-    return std::visit(visitor{ [](const assembly_generation::ax &) { return "%eax"; },
-                               [size](const assembly_generation::cx &) {
-                                   if (size == operand_size::one_byte)
-                                   {
-                                       return "%cl";
-                                   }
-                                   return "%ecx";
-                               },
-                               [](const assembly_generation::dx &) { return "%edx"; },
-                               [](const assembly_generation::R10 &) { return "%r10d"; },
-                               [](const assembly_generation::R11 &) { return "%r11d"; } },
+    if (size == operand_size::four_bytes)
+    {
+        return std::visit(visitor{ [](const assembly_generation::ax &) { return "%eax"; },
+                                   [](const assembly_generation::cx &) { return "%ecx"; },
+                                   [](const assembly_generation::dx &) { return "%edx"; },
+                                   [](const assembly_generation::R10 &) { return "%r10d"; },
+                                   [](const assembly_generation::R11 &) { return "%r11d"; } },
+                          node);
+    }
+    return std::visit(visitor{ [](const assembly_generation::ax &) { return "%al"; },
+                               [](const assembly_generation::cx &) { return "%cl"; },
+                               [](const assembly_generation::dx &) { return "%dl"; },
+                               [](const assembly_generation::R10 &) { return "%r10b"; },
+                               [](const assembly_generation::R11 &) { return "%r11b"; } },
                       node);
 }
 std::string process_pseudo(const assembly_generation::pseudo &node)
@@ -36,6 +39,19 @@ std::string process_pseudo(const assembly_generation::pseudo &node)
 std::string process_stack(const assembly_generation::stack &node)
 {
     return fmt::format("{}(%rbp)", node.value.value);
+}
+
+std::string process_cond_code(assembly_generation::cond_code cond)
+{
+    return std::visit(visitor{
+                        [](const assembly_generation::E &) { return "e"; },
+                        [](const assembly_generation::NE &) { return "ne"; },
+                        [](const assembly_generation::L &) { return "l"; },
+                        [](const assembly_generation::LE &) { return "le"; },
+                        [](const assembly_generation::G &) { return "g"; },
+                        [](const assembly_generation::GE &) { return "ge"; },
+                      },
+                      cond);
 }
 
 std::string process_operand(const assembly_generation::operand &operand, operand_size size = operand_size::four_bytes)
@@ -104,6 +120,11 @@ std::string process_binary(const assembly_generation::binary &node)
                        process_operand(node.dst));
 }
 
+std::string process_cmp(const assembly_generation::cmp &node)
+{
+    return fmt::format("cmpl {}, {}", process_operand(node.lhs), process_operand(node.rhs));
+}
+
 std::string process_idiv(const assembly_generation::idiv &node)
 {
     return fmt::format("idivl {}", process_operand(node.src));
@@ -112,7 +133,22 @@ std::string process_cdq(const assembly_generation::cdq &node)
 {
     return fmt::format("cdq");
 }
-
+std::string process_jmp(const assembly_generation::jmp &node)
+{
+    return fmt::format("jmp L{}", process_identifier(node.name));
+}
+std::string process_jmpcc(const assembly_generation::jmpcc &node)
+{
+    return fmt::format("j{} L{}", process_cond_code(node.cond), process_identifier(node.name));
+}
+std::string process_setcc(const assembly_generation::setcc &node)
+{
+    return fmt::format("set{} {}", process_cond_code(node.cond), process_operand(node.dst, operand_size::one_byte));
+}
+std::string process_label(const assembly_generation::label &node)
+{
+    return fmt::format("L{}:", process_identifier(node.name));
+}
 std::string process_allocate_stack(const assembly_generation::allocate_stack &node)
 {
     return fmt::format("subq ${}, %rsp", -node.size.value);
@@ -120,28 +156,21 @@ std::string process_allocate_stack(const assembly_generation::allocate_stack &no
 
 std::string process_instruction(const assembly_generation::instruction &instruction)
 {
-    return std::visit(
-      visitor{
-        [](const assembly_generation::mov_instruction &mov) { return process_mov_instruction(mov); },
-        [](const assembly_generation::unary &node) { return process_unary(node); },
-        [](const assembly_generation::binary &node) { return process_binary(node); },
-        [](const assembly_generation::cmp &node) -> std::string { throw std::runtime_error("cmp not implemented"); },
-        [](const assembly_generation::idiv &node) { return process_idiv(node); },
-        [](const assembly_generation::cdq &node) { return process_cdq(node); },
-        [](const assembly_generation::jmp &node) -> std::string { throw std::runtime_error("jmp not implemented"); },
-        [](const assembly_generation::jmpcc &node) -> std::string {
-            throw std::runtime_error("jmpcc not implemented");
-        },
-        [](const assembly_generation::setcc &node) -> std::string {
-            throw std::runtime_error("setcc not implemented");
-        },
-        [](const assembly_generation::label &node) -> std::string {
-            throw std::runtime_error("label not implemented");
-        },
-        [](const assembly_generation::allocate_stack &node) { return process_allocate_stack(node); },
-        [](const assembly_generation::ret_instruction &ret) { return process_ret_instruction(ret); },
-      },
-      instruction);
+    return std::visit(visitor{
+                        [](const assembly_generation::mov_instruction &mov) { return process_mov_instruction(mov); },
+                        [](const assembly_generation::unary &node) { return process_unary(node); },
+                        [](const assembly_generation::binary &node) { return process_binary(node); },
+                        [](const assembly_generation::cmp &node) { return process_cmp(node); },
+                        [](const assembly_generation::idiv &node) { return process_idiv(node); },
+                        [](const assembly_generation::cdq &node) { return process_cdq(node); },
+                        [](const assembly_generation::jmp &node) { return process_jmp(node); },
+                        [](const assembly_generation::jmpcc &node) { return process_jmpcc(node); },
+                        [](const assembly_generation::setcc &node) { return process_setcc(node); },
+                        [](const assembly_generation::label &node) { return process_label(node); },
+                        [](const assembly_generation::allocate_stack &node) { return process_allocate_stack(node); },
+                        [](const assembly_generation::ret_instruction &ret) { return process_ret_instruction(ret); },
+                      },
+                      instruction);
 }
 
 std::string process_function(const assembly_generation::function &f)
