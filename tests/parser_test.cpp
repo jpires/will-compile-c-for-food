@@ -368,8 +368,12 @@ TEST_CASE("Parser complex test", "[parser]")
         auto r = wccff::parser::parse(tokens);
         REQUIRE(r.has_value());
         REQUIRE(r->f.function_name.name == "main");
-        REQUIRE(std::holds_alternative<wccff::parser::return_node>(r->f.body));
-        auto ret_node = std::move(std::get<wccff::parser::return_node>(r->f.body));
+        REQUIRE(r->f.body.size() == 1);
+        auto &block_item1 = r->f.body.at(0);
+        REQUIRE(std::holds_alternative<wccff::parser::statement>(block_item1));
+        auto &stmt1 = std::get<wccff::parser::statement>(block_item1);
+        REQUIRE(std::holds_alternative<wccff::parser::return_node>(stmt1));
+        auto &ret_node = std::get<wccff::parser::return_node>(stmt1);
         REQUIRE(std::holds_alternative<wccff::parser::int_constant>(ret_node.e));
         REQUIRE(std::get<wccff::parser::int_constant>(ret_node.e).value == 2);
     }

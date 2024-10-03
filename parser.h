@@ -38,6 +38,7 @@ class tokens
       : m_tokens(std::move(tokens_))
     {
     }
+    void discard_token() { m_index++; }
 
     [[nodiscard]] std::size_t remaining_tokens() const { return m_tokens.size() - m_index; }
     wccff::lexer::token get_next_token_safe() { return m_tokens.at(m_index++); }
@@ -153,12 +154,34 @@ using binary_operator = std::variant<plus_operator,
                                      greater_than_or_equal_operator>;
 struct binary_node;
 struct unary_node;
+struct assignment_node;
 
 struct int_constant
 {
     int32_t value;
 };
-using expression = std::variant<int_constant, std::unique_ptr<unary_node>, std::unique_ptr<binary_node>>;
+
+struct var
+{
+    identifier name;
+};
+
+using expression = std::variant<int_constant,
+                                var,
+                                std::unique_ptr<unary_node>,
+                                std::unique_ptr<binary_node>,
+                                std::unique_ptr<assignment_node>>;
+
+struct assignment_node
+{
+    assignment_node(expression lhs_, expression rhs_)
+      : lhs(std::move(lhs_))
+      , rhs(std::move(rhs_))
+    {
+    }
+    expression lhs;
+    expression rhs;
+};
 
 struct unary_node
 {
@@ -190,12 +213,20 @@ struct return_node
     expression e;
 };
 
-using statement = std::variant<return_node>;
+using statement = std::variant<return_node, expression, std::monostate>;
+
+struct declaration
+{
+    identifier name;
+    std::optional<expression> init;
+};
+
+using block_item = std::variant<declaration, statement, std::monostate>;
 
 struct function
 {
     identifier function_name;
-    statement body;
+    std::vector<block_item> body;
 };
 
 struct program
@@ -203,18 +234,26 @@ struct program
     function f;
 };
 
+std::expected<block_item, parser_error> parse_block_item(tokens &tokens);
 std::expected<int_constant, parser_error> parse_constant(tokens &tokens);
+std::expected<declaration, parser_error> parse_declaration(tokens &tokens);
 std::expected<identifier, parser_error> parse_identifier(tokens &tokens);
 std::expected<expression, parser_error> parse_expression(tokens &tokens, int32_t min_precedence = 0);
 std::expected<expression, parser_error> parse_factor(tokens &tokens);
+std::optional<parser_error> parse_semicolon(tokens &tokens);
 std::expected<statement, parser_error> parse_statement(tokens &tokens);
 std::expected<std::unique_ptr<unary_node>, parser_error> parse_unary_node(tokens &tokens);
 
 std::expected<program, parser_error> parse(tokens &tokens);
 
+std::string pretty_print(const declaration &node, int32_t ident = 0);
 std::string pretty_print(const expression &node, int32_t ident);
 std::string pretty_print(const function &node, int32_t ident);
 std::string pretty_print(const program &node, int32_t ident = 0);
+std::string pretty_print(const std::unique_ptr<assignment_node> &node, int32_t ident = 0);
+std::string pretty_print(const std::vector<block_item> &node, int32_t ident = 0);
+std::string pretty_print(const var &node, int32_t ident = 0);
+
 } // namespace wccff::parser
 
 #endif // PARSER_H

@@ -173,13 +173,19 @@ val process_binary_node(const std::unique_ptr<parser::binary_node> &node, std::v
 
 val process_expression(const wccff::parser::expression &exp, std::vector<instruction> &instructions)
 {
-    return std::visit(visitor{ [](const parser::int_constant &c) -> val { return process_int_constant(c); },
-                               [&instructions](const std::unique_ptr<parser::unary_node> &n) -> val {
-                                   return process_unary_node(n, instructions);
-                               },
-                               [&instructions](const std::unique_ptr<parser::binary_node> &n) -> val {
-                                   return process_binary_node(n, instructions);
-                               } },
+    return std::visit(visitor{
+                        [](const parser::int_constant &c) -> val { return process_int_constant(c); },
+                        [](const parser::var &c) -> val { throw std::runtime_error{ "Var not implemented" }; },
+                        [&instructions](const std::unique_ptr<parser::unary_node> &n) -> val {
+                            return process_unary_node(n, instructions);
+                        },
+                        [&instructions](const std::unique_ptr<parser::binary_node> &n) -> val {
+                            return process_binary_node(n, instructions);
+                        },
+                        [](const std::unique_ptr<parser::assignment_node> &) -> val {
+                            throw std::runtime_error{ "Assignment_node not implemented" };
+                        },
+                      },
                       exp);
 }
 
@@ -197,7 +203,8 @@ std::vector<instruction> process_statement(const wccff::parser::statement &s)
 }
 function_definition process_function_definition(const parser::function &f)
 {
-    return { process_identifier(f.function_name), process_statement(f.body) };
+    auto &stmt = std::get<wccff::parser::statement>(f.body.at(0));
+    return { process_identifier(f.function_name), process_statement(stmt) };
 }
 
 program process(const parser::program &input)
