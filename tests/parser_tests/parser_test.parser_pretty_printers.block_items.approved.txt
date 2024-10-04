@@ -1,0 +1,6 @@
+DeclVar(var_name
+        NO_INIT
+)
+Return(
+       IntConstant(55)
+)

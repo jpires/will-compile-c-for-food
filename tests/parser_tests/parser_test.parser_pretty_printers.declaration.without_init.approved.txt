@@ -1,0 +1,3 @@
+DeclVar(var_name
+        NO_INIT
+)

@@ -246,12 +246,20 @@ std::expected<std::unique_ptr<unary_node>, parser_error> parse_unary_node(tokens
 
 std::expected<program, parser_error> parse(tokens &tokens);
 
+std::string pretty_print(const binary_operator &node, int32_t ident = 0);
 std::string pretty_print(const declaration &node, int32_t ident = 0);
-std::string pretty_print(const expression &node, int32_t ident);
-std::string pretty_print(const function &node, int32_t ident);
+std::string pretty_print(const expression &node, int32_t ident = 0);
+std::string pretty_print(const function &node, int32_t ident = 0);
+std::string pretty_print(const identifier &node, int32_t ident = 0);
+std::string pretty_print(const int_constant &node, int32_t ident = 0);
 std::string pretty_print(const program &node, int32_t ident = 0);
+std::string pretty_print(const statement &node, int32_t ident = 0);
+std::string pretty_print(const return_node &node, int32_t ident = 0);
 std::string pretty_print(const std::unique_ptr<assignment_node> &node, int32_t ident = 0);
+std::string pretty_print(const std::unique_ptr<binary_node> &node, int32_t ident = 0);
+std::string pretty_print(const std::unique_ptr<unary_node> &node, int32_t ident = 0);
 std::string pretty_print(const std::vector<block_item> &node, int32_t ident = 0);
+std::string pretty_print(const unary_operator &node, int32_t ident = 0);
 std::string pretty_print(const var &node, int32_t ident = 0);
 
 } // namespace wccff::parser

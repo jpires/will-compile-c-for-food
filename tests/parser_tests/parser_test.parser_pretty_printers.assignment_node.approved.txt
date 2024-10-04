@@ -1,0 +1,3 @@
+Assign(IntConstant(55)
+       Var(var_name)
+)

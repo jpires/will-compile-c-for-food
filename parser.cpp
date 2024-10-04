@@ -539,34 +539,6 @@ std::expected<program, parser_error> parse(tokens &tokens)
     return p;
 }
 
-std::string pretty_print(const declaration &node, int32_t ident)
-{
-    auto name = wccff::format_indented(0, "{}", node.name.name);
-    std::string init;
-    if (node.init.has_value())
-    {
-        init = pretty_print(node.init.value(), ident + 8);
-    }
-    else
-    {
-        init = format_indented(ident + 8, "NO_INIT");
-    }
-    auto sufix = wccff::format_indented(ident, ")");
-
-    return format_indented(ident, "DeclVar({}\n{}\n{}\n", name, init, sufix);
-}
-
-std::string pretty_print(const unary_operator &node, int32_t ident)
-{
-    return std::visit(
-      wccff::visitor{
-        [ident](const bitwise_complement_operator &) { return wccff::format_indented(ident, "Complement"); },
-        [ident](const negate_operator &) { return wccff::format_indented(ident, "Negate"); },
-        [ident](const logical_not_operator &) { return wccff::format_indented(ident, "Not"); },
-      },
-      node);
-}
-
 std::string pretty_print(const binary_operator &node, int32_t ident)
 {
     return std::visit(
@@ -595,13 +567,91 @@ std::string pretty_print(const binary_operator &node, int32_t ident)
       node);
 }
 
-std::string pretty_print(const std::unique_ptr<unary_node> &node, int32_t ident)
+std::string pretty_print(const block_item &node, int32_t ident)
 {
-    auto prefix = wccff::format_indented(ident, "Unary({}", pretty_print(node->op, 0));
-    auto inner = wccff::format_indented(0, "{}", pretty_print(node->exp, ident + 6));
+    return std::visit(visitor{
+                        [ident](const declaration &n) { return pretty_print(n, ident); },
+                        [ident](const statement &n) { return pretty_print(n, ident); },
+                        [ident](const std::monostate &) { return wccff::format_indented(ident, "EMPTY Block item"); },
+                      },
+                      node);
+}
+
+std::string pretty_print(const declaration &node, int32_t ident)
+{
+    auto name = wccff::format_indented(0, "{}", pretty_print(node.name));
+    std::string init;
+    if (node.init.has_value())
+    {
+        init = pretty_print(node.init.value(), ident + 8);
+    }
+    else
+    {
+        init = format_indented(ident + 8, "NO_INIT");
+    }
     auto sufix = wccff::format_indented(ident, ")");
 
-    return fmt::format("{}\n{}\n{}", prefix, inner, sufix);
+    return format_indented(ident, "DeclVar({}\n{}\n{}", name, init, sufix);
+}
+
+std::string pretty_print(const expression &node, int32_t ident)
+{
+    return std::visit(wccff::visitor{
+                        [ident](const var &n) { return pretty_print(n, ident); },
+                        [ident](const int_constant &n) { return pretty_print(n, ident); },
+                        [ident](const std::unique_ptr<unary_node> &n) { return pretty_print(n, ident); },
+                        [ident](const std::unique_ptr<binary_node> &n) { return pretty_print(n, ident); },
+                        [ident](const std::unique_ptr<assignment_node> &n) { return pretty_print(n, ident); },
+                      },
+                      node);
+}
+
+std::string pretty_print(const function &node, int32_t ident)
+{
+    auto prefix = wccff::format_indented(ident, "Function({}", pretty_print(node.function_name));
+    auto left = wccff::format_indented(0, "{}", pretty_print(node.body, ident + 9));
+    auto sufix = wccff::format_indented(ident, ")");
+
+    return fmt::format("{}\n{}\n{}", prefix, left, sufix);
+}
+std::string pretty_print(const identifier &node, int32_t ident)
+{
+    return wccff::format_indented(ident, "{}", node.name);
+}
+std::string pretty_print(const int_constant &node, int32_t ident)
+{
+    return wccff::format_indented(ident, "IntConstant({})", node.value);
+}
+std::string pretty_print(const program &node, int32_t ident)
+{
+    return pretty_print(node.f, ident);
+}
+
+std::string pretty_print(const statement &node, int32_t ident)
+{
+    return std::visit(visitor{
+                        [ident](const return_node &n) { return pretty_print(n, ident); },
+                        [ident](const expression &n) { return pretty_print(n, ident); },
+                        [ident](const std::monostate &) { return wccff::format_indented(ident, "EMPTY STATEMENT\n"); },
+                      },
+                      node);
+}
+
+std::string pretty_print(const return_node &node, int32_t ident)
+{
+    auto prefix = wccff::format_indented(ident, "Return(");
+    auto a = pretty_print(node.e, ident + 7);
+    auto sufix = wccff::format_indented(ident, ")");
+    return fmt::format("{}\n{}\n{}", prefix, a, sufix);
+}
+
+std::string pretty_print(const std::unique_ptr<assignment_node> &node, int32_t ident)
+{
+    auto prefix = wccff::format_indented(ident, "Assign({}", pretty_print(node->lhs, 0));
+    auto left = wccff::format_indented(0, "{}", pretty_print(node->rhs, ident + 7));
+    auto sufix = wccff::format_indented(ident, ")");
+
+    return fmt::format("{}\n{}\n{}", prefix, left, sufix);
 }
 
 std::string pretty_print(const std::unique_ptr<binary_node> &node, int32_t ident)
@@ -613,66 +663,45 @@ std::string pretty_print(const std::unique_ptr<binary_node> &node, int32_t ident
 
     return fmt::format("{}\n{}\n{}\n{}", prefix, left, right, sufix);
 }
-std::string pretty_print(const expression &node, int32_t ident)
+
+std::string pretty_print(const std::unique_ptr<unary_node> &node, int32_t ident)
 {
-    return std::visit(
-      wccff::visitor{
-        [ident](const var &n) { return pretty_print(n, ident); },
-        [ident](const int_constant &n) { return wccff::format_indented(ident, "Constant({})", n.value); },
-        [ident](const std::unique_ptr<unary_node> &n) { return pretty_print(n, ident); },
-        [ident](const std::unique_ptr<binary_node> &n) { return pretty_print(n, ident); },
-        [ident](const std::unique_ptr<assignment_node> &n) { return pretty_print(n, ident); },
-      },
-      node);
-}
-std::string pretty_print(const statement &node, int32_t ident)
-{
-    return std::visit(visitor{
-                        [ident](const return_node &n) {
-                            return wccff::format_indented(ident, "Return\n{}", pretty_print(n.e, ident + 4));
-                        },
-                        [ident](const expression &n) { return pretty_print(n, ident); },
-                        [ident](const std::monostate &) { return wccff::format_indented(ident, "EMPTY STATEMENT\n"); },
-                      },
-                      node);
-}
-std::string pretty_print(const function &node, int32_t ident)
-{
-    return wccff::format_indented(ident,
-                                  "Function({})\n{}",
-                                  node.function_name.name,
-                                  pretty_print(node.body, ident + 4));
-}
-std::string pretty_print(const program &node, int32_t ident)
-{
-    return pretty_print(node.f, ident);
-}
-std::string pretty_print(const std::unique_ptr<assignment_node> &node, int32_t ident)
-{
-    auto prefix = wccff::format_indented(ident, "Assign({}", pretty_print(node->lhs, 0));
-    auto left = wccff::format_indented(0, "{}", pretty_print(node->rhs, ident + 7));
+    auto prefix = wccff::format_indented(ident, "Unary({}", pretty_print(node->op, 0));
+    auto inner = wccff::format_indented(0, "{}", pretty_print(node->exp, ident + 6));
     auto sufix = wccff::format_indented(ident, ")");
 
-    return fmt::format("{}\n{}\n{}\n", prefix, left, sufix);
+    return fmt::format("{}\n{}\n{}", prefix, inner, sufix);
 }
+
 std::string pretty_print(const std::vector<block_item> &node, int32_t ident)
 {
     std::string output;
     for (const auto &item : node)
     {
-        output += std::visit(
-          visitor{
-            [ident](const declaration &n) { return pretty_print(n, ident); },
-            [ident](const statement &n) { return pretty_print(n, ident); },
-            [ident](const std::monostate &) { return wccff::format_indented(ident, "EMPTY Block item"); },
-          },
-          item);
+        output += pretty_print(item, ident);
+        output += "\n";
+    }
+    if (node.empty() == false)
+    {
+        output.erase(output.size() - 1);
     }
 
     return output;
 }
+
+std::string pretty_print(const unary_operator &node, int32_t ident)
+{
+    return std::visit(
+      wccff::visitor{
+        [ident](const bitwise_complement_operator &) { return wccff::format_indented(ident, "Complement"); },
+        [ident](const negate_operator &) { return wccff::format_indented(ident, "Negate"); },
+        [ident](const logical_not_operator &) { return wccff::format_indented(ident, "Not"); },
+      },
+      node);
+}
+
 std::string pretty_print(const var &node, int32_t ident)
 {
-    return wccff::format_indented(ident, "Var({})", node.name.name);
+    return wccff::format_indented(ident, "Var({})", pretty_print(node.name));
 }
 } // namespace wccff::parser

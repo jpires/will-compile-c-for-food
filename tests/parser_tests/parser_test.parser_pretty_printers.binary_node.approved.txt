@@ -1,0 +1,4 @@
+Binary(Logic And
+       IntConstant(55)
+       Var(var_name)
+)

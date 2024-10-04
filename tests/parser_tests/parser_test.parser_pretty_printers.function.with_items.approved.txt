@@ -1,0 +1,5 @@
+Function(var_name
+         Return(
+                IntConstant(32)
+         )
+)

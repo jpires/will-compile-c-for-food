@@ -1,4 +1,7 @@
 #include "../parser.h"
+#include "../tacky.h"
+
+#include <ApprovalTests.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("Parser", "[parser]")
@@ -486,5 +489,172 @@ TEST_CASE("Binary Operators", "[parser]")
         REQUIRE(std::get<wccff::parser::int_constant>(exp->left).value == 1);
         REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->right));
         REQUIRE(std::get<wccff::parser::int_constant>(exp->right).value == 2);
+    }
+}
+
+TEST_CASE("parser_pretty_printers", "[parser]")
+{
+    using wccff::parser::pretty_print;
+    auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("parser_tests");
+
+    SECTION("assignment_node")
+    {
+        using wccff::parser::assignment_node;
+        using wccff::parser::int_constant;
+        using wccff::parser::var;
+
+        auto value = int_constant{ 55 };
+        auto variable = var{ "var_name" };
+
+        auto assignment = std::make_unique<assignment_node>(value, variable);
+
+        ApprovalTests::Approvals::verify(pretty_print(assignment));
+    }
+
+    SECTION("binary_node")
+    {
+        using wccff::parser::binary_node;
+        using wccff::parser::int_constant;
+        using wccff::parser::logical_and_operator;
+        using wccff::parser::var;
+
+        auto value = int_constant{ 55 };
+        auto variable = var{ "var_name" };
+
+        auto assignment = std::make_unique<binary_node>(logical_and_operator{}, value, variable);
+
+        ApprovalTests::Approvals::verify(pretty_print(assignment));
+    }
+
+    SECTION("binary_operators")
+    {
+        REQUIRE(pretty_print(wccff::parser::plus_operator{}) == "Plus");
+        REQUIRE(pretty_print(wccff::parser::subtract_operator{}) == "Subtract");
+        REQUIRE(pretty_print(wccff::parser::multiply_operator{}) == "Multiply");
+        REQUIRE(pretty_print(wccff::parser::divide_operator{}) == "Divide");
+        REQUIRE(pretty_print(wccff::parser::remainder_operator{}) == "Remainder");
+        REQUIRE(pretty_print(wccff::parser::bitwise_and_operator{}) == "Bitwise And");
+        REQUIRE(pretty_print(wccff::parser::bitwise_or_operator{}) == "Bitwise Or");
+        REQUIRE(pretty_print(wccff::parser::bitwise_xor_operator{}) == "Bitwise Xor");
+        REQUIRE(pretty_print(wccff::parser::left_shift_operator{}) == "Left Shift");
+        REQUIRE(pretty_print(wccff::parser::right_shift_operator{}) == "Right Shift");
+        REQUIRE(pretty_print(wccff::parser::logical_and_operator{}) == "Logic And");
+        REQUIRE(pretty_print(wccff::parser::logical_or_operator{}) == "Logic Or");
+        REQUIRE(pretty_print(wccff::parser::equals_operator{}) == "Equals");
+        REQUIRE(pretty_print(wccff::parser::not_equals_operator{}) == "Not Equals");
+        REQUIRE(pretty_print(wccff::parser::less_than_operator{}) == "Less Than");
+        REQUIRE(pretty_print(wccff::parser::less_than_or_equal_operator{}) == "Less Than or Equals");
+        REQUIRE(pretty_print(wccff::parser::greater_than_operator{}) == "Greater Than");
+        REQUIRE(pretty_print(wccff::parser::greater_than_or_equal_operator{}) == "Greater Than or Equals");
+    }
+
+    SECTION("block_items")
+    {
+        using wccff::parser::declaration;
+        using wccff::parser::identifier;
+        using wccff::parser::int_constant;
+        using wccff::parser::return_node;
+        std::vector<wccff::parser::block_item> items;
+
+        identifier var_name{ "var_name" };
+        int_constant value{ 55 };
+        items.emplace_back(declaration{ var_name, std::nullopt });
+        items.emplace_back(return_node{ value });
+
+        ApprovalTests::Approvals::verify(pretty_print(items));
+    }
+
+    SECTION("declaration")
+    {
+        using wccff::parser::declaration;
+        using wccff::parser::identifier;
+
+        auto name = identifier("var_name");
+        SECTION("with_init")
+        {
+            wccff::parser::int_constant init{ 42 };
+            auto dec = declaration(name, init);
+            ApprovalTests::Approvals::verify(pretty_print(dec));
+        }
+        SECTION("without_init")
+        {
+            auto dec = declaration(name, std::nullopt);
+            ApprovalTests::Approvals::verify(pretty_print(dec));
+        }
+    }
+
+    SECTION("function")
+    {
+        using wccff::parser::function;
+        using wccff::parser::identifier;
+
+        auto name = identifier("var_name");
+        SECTION("without_items")
+        {
+            std::vector<wccff::parser::block_item> items;
+
+            auto dec = function{ name, std::move(items) };
+            ApprovalTests::Approvals::verify(pretty_print(dec));
+        }
+        SECTION("with_items")
+        {
+            wccff::parser::int_constant ret_value{ 32 };
+            std::vector<wccff::parser::block_item> items;
+            wccff::parser::return_node ret{ ret_value };
+            items.emplace_back(std::move(ret));
+            auto dec = function{ name, std::move(items) };
+            ApprovalTests::Approvals::verify(pretty_print(dec));
+        }
+    }
+
+    SECTION("identifier")
+    {
+        using wccff::parser::identifier;
+        REQUIRE(pretty_print(identifier{ "var_name" }) == "var_name");
+        REQUIRE(pretty_print(identifier{ "var_name" }, 4) == "    var_name");
+    }
+
+    SECTION("int_constant")
+    {
+        using wccff::parser::int_constant;
+        REQUIRE(pretty_print(int_constant{ 55 }) == "IntConstant(55)");
+        REQUIRE(pretty_print(int_constant{ 55 }, 4) == "    IntConstant(55)");
+    }
+    SECTION("return_node")
+    {
+        using wccff::parser::int_constant;
+        using wccff::parser::return_node;
+
+        auto ret = return_node{ int_constant{ 55 } };
+        ApprovalTests::Approvals::verify(pretty_print(ret));
+    }
+
+    SECTION("unary_node")
+    {
+        using wccff::parser::int_constant;
+        using wccff::parser::negate_operator;
+        using wccff::parser::unary_node;
+        using wccff::parser::var;
+
+        auto value = int_constant{ 55 };
+        auto variable = var{ "var_name" };
+
+        auto assignment = std::make_unique<unary_node>(negate_operator{}, value);
+
+        ApprovalTests::Approvals::verify(pretty_print(assignment));
+    }
+    SECTION("unary_operators")
+    {
+        REQUIRE(pretty_print(wccff::parser::bitwise_complement_operator{}) == "Complement");
+        REQUIRE(pretty_print(wccff::parser::negate_operator{}) == "Negate");
+        REQUIRE(pretty_print(wccff::parser::logical_not_operator{}) == "Not");
+    }
+
+    SECTION("var")
+    {
+        using wccff::parser::var;
+        auto variable = var{ "var_name" };
+
+        REQUIRE(pretty_print(variable) == "Var(var_name)");
     }
 }
