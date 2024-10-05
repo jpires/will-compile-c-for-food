@@ -147,263 +147,10 @@ consteval auto create_regex_pattern()
     return ctll::fixed_string{ final_pattern };
 }
 
-consteval std::ptrdiff_t get_identifier_position()
+consteval std::ptrdiff_t get_pattern_position(const char *p)
 {
     auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, identifier_pattern);
-    });
-    return std::distance(patterns.begin(), f) + 1;
-}
-consteval std::ptrdiff_t get_constant_position()
-{
-    auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, constant_pattern);
-    });
-
-    return std::distance(patterns.begin(), f) + 1;
-}
-consteval std::ptrdiff_t get_open_parenthesis_position()
-{
-    auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, open_parenthesis_pattern);
-    });
-
-    return std::distance(patterns.begin(), f) + 1;
-}
-consteval std::ptrdiff_t get_close_parenthesis_position()
-{
-    auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, close_parenthesis_pattern);
-    });
-
-    return std::distance(patterns.begin(), f) + 1;
-}
-consteval std::ptrdiff_t get_open_braces_position()
-{
-    auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, open_brace_pattern);
-    });
-
-    return std::distance(patterns.begin(), f) + 1;
-}
-consteval std::ptrdiff_t get_close_braces_position()
-{
-    auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, close_brace_pattern);
-    });
-
-    return std::distance(patterns.begin(), f) + 1;
-}
-consteval std::ptrdiff_t get_semicolon_position()
-{
-    auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, semicolon_pattern);
-    });
-
-    return std::distance(patterns.begin(), f) + 1;
-}
-consteval std::ptrdiff_t get_and_operator_pattern_position()
-{
-    auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, and_operator_pattern);
-    });
-
-    return std::distance(patterns.begin(), f) + 1;
-}
-consteval std::ptrdiff_t get_or_operator_pattern_position()
-{
-    auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, or_operator_pattern);
-    });
-
-    return std::distance(patterns.begin(), f) + 1;
-}
-consteval std::ptrdiff_t get_equals_operator_pattern_position()
-{
-    auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, equals_operator_pattern);
-    });
-
-    return std::distance(patterns.begin(), f) + 1;
-}
-consteval std::ptrdiff_t get_not_equals_operator_pattern_position()
-{
-    auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, not_equals_operator_pattern);
-    });
-
-    return std::distance(patterns.begin(), f) + 1;
-}
-consteval std::ptrdiff_t get_decrement_operator_position()
-{
-    auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, decrement_operator_pattern);
-    });
-
-    return std::distance(patterns.begin(), f) + 1;
-}
-consteval std::ptrdiff_t get_negate_operator_position()
-{
-    auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, negate_operator_pattern);
-    });
-
-    return std::distance(patterns.begin(), f) + 1;
-}
-consteval std::ptrdiff_t get_not_operator_position()
-{
-    auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, not_operator_pattern);
-    });
-
-    return std::distance(patterns.begin(), f) + 1;
-}
-consteval std::ptrdiff_t get_bitwise_complement_operator_position()
-{
-    auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, bitwise_complement_operator_pattern);
-    });
-
-    return std::distance(patterns.begin(), f) + 1;
-}
-consteval std::ptrdiff_t get_plus_operator_position()
-{
-    auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, plus_operator_pattern);
-    });
-
-    return std::distance(patterns.begin(), f) + 1;
-}
-consteval std::ptrdiff_t get_multiplication_operator_position()
-{
-    auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, multiplication_operator_pattern);
-    });
-
-    return std::distance(patterns.begin(), f) + 1;
-}
-consteval std::ptrdiff_t get_division_operator_position()
-{
-    auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, division_operator_pattern);
-    });
-
-    return std::distance(patterns.begin(), f) + 1;
-}
-consteval std::ptrdiff_t get_remainder_operator_position()
-{
-    auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, remainder_operator_pattern);
-    });
-
-    return std::distance(patterns.begin(), f) + 1;
-}
-consteval std::ptrdiff_t get_bitwise_and_operator_position()
-{
-    auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, bitwise_and_operator_pattern);
-    });
-
-    return std::distance(patterns.begin(), f) + 1;
-}
-consteval std::ptrdiff_t get_bitwise_or_operator_position()
-{
-    auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, bitwise_or_operator_pattern);
-    });
-
-    return std::distance(patterns.begin(), f) + 1;
-}
-consteval std::ptrdiff_t get_bitwise_xor_operator_position()
-{
-    auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, bitwise_xor_operator_pattern);
-    });
-
-    return std::distance(patterns.begin(), f) + 1;
-}
-consteval std::ptrdiff_t get_left_shift_operator_position()
-{
-    auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, left_shift_operator_pattern);
-    });
-
-    return std::distance(patterns.begin(), f) + 1;
-}
-consteval std::ptrdiff_t get_right_shift_operator_position()
-{
-    auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, right_shift_operator_pattern);
-    });
-
-    return std::distance(patterns.begin(), f) + 1;
-}
-consteval std::ptrdiff_t get_less_than_operator_pattern_position()
-{
-    auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, less_than_operator_pattern);
-    });
-
-    return std::distance(patterns.begin(), f) + 1;
-}
-consteval std::ptrdiff_t get_less_than_or_equal_operator_pattern_position()
-{
-    auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, less_than_or_equal_operator_pattern);
-    });
-
-    return std::distance(patterns.begin(), f) + 1;
-}
-consteval std::ptrdiff_t get_greater_than_operator_pattern_position()
-{
-    auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, greater_than_operator_pattern);
-    });
-
-    return std::distance(patterns.begin(), f) + 1;
-}
-consteval std::ptrdiff_t get_greater_than_or_equal_operator_pattern_position()
-{
-    auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, greater_than_or_equal_operator_pattern);
-    });
-
-    return std::distance(patterns.begin(), f) + 1;
-}
-consteval std::ptrdiff_t get_assignment_operator_pattern_position()
-{
-    auto patterns = get_patters();
-    auto f = std::find_if(patterns.begin(), patterns.end(), [](const char *i) {
-        return str_compare(i, assignment_operator_pattern);
-    });
+    auto f = std::find_if(patterns.begin(), patterns.end(), [p](const char *i) { return str_compare(i, p); });
 
     return std::distance(patterns.begin(), f) + 1;
 }
@@ -435,7 +182,7 @@ std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, fil
         auto m = ctre::starts_with<create_regex_pattern()>(input);
         if (m)
         {
-            if (ctre::get<get_identifier_position()>(m))
+            if (ctre::get<get_pattern_position(identifier_pattern)>(m))
             {
                 if (m == "int")
                 {
@@ -459,144 +206,144 @@ std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, fil
                 }
             }
 
-            if (ctre::get<get_constant_position()>(m))
+            if (ctre::get<get_pattern_position(constant_pattern)>(m))
             {
                 std::cout << "Found Constan" << '\n';
                 result.emplace_back(token_type::constant, m, location);
             }
 
-            if (ctre::get<get_open_parenthesis_position()>(m))
+            if (ctre::get<get_pattern_position(open_parenthesis_pattern)>(m))
             {
                 std::cout << "Found Open Parenthesis" << '\n';
                 result.emplace_back(token_type::open_parenthesis, m, location);
             }
 
-            if (ctre::get<get_close_parenthesis_position()>(m))
+            if (ctre::get<get_pattern_position(close_parenthesis_pattern)>(m))
             {
                 std::cout << "Found Close Parenthesis" << '\n';
                 result.emplace_back(token_type::close_parenthesis, m, location);
             }
-            if (ctre::get<get_open_braces_position()>(m))
+            if (ctre::get<get_pattern_position(open_brace_pattern)>(m))
             {
                 std::cout << "Found Open Brace" << '\n';
                 result.emplace_back(token_type::open_brace, m, location);
             }
-            if (ctre::get<get_close_braces_position()>(m))
+            if (ctre::get<get_pattern_position(close_brace_pattern)>(m))
             {
                 std::cout << "Found Close Brace" << '\n';
                 result.emplace_back(token_type::close_brace, m, location);
             }
-            if (ctre::get<get_semicolon_position()>(m))
+            if (ctre::get<get_pattern_position(semicolon_pattern)>(m))
             {
                 std::cout << "Found Semicolon" << '\n';
                 result.emplace_back(token_type::semicolon, m, location);
             }
-            if (ctre::get<get_and_operator_pattern_position()>(m))
+            if (ctre::get<get_pattern_position(and_operator_pattern)>(m))
             {
                 std::cout << "Found decrement Operator" << '\n';
                 result.emplace_back(token_type::and_operator, m, location);
             }
-            if (ctre::get<get_or_operator_pattern_position()>(m))
+            if (ctre::get<get_pattern_position(or_operator_pattern)>(m))
             {
                 std::cout << "Found decrement Operator" << '\n';
                 result.emplace_back(token_type::or_operator, m, location);
             }
-            if (ctre::get<get_equals_operator_pattern_position()>(m))
+            if (ctre::get<get_pattern_position(equals_operator_pattern)>(m))
             {
                 std::cout << "Found decrement Operator" << '\n';
                 result.emplace_back(token_type::equals_operator, m, location);
             }
-            if (ctre::get<get_not_equals_operator_pattern_position()>(m))
+            if (ctre::get<get_pattern_position(not_equals_operator_pattern)>(m))
             {
                 std::cout << "Found decrement Operator" << '\n';
                 result.emplace_back(token_type::not_equals_operator, m, location);
             }
-            if (ctre::get<get_decrement_operator_position()>(m))
+            if (ctre::get<get_pattern_position(decrement_operator_pattern)>(m))
             {
                 std::cout << "Found decrement Operator" << '\n';
                 result.emplace_back(token_type::decrement_operator, m, location);
             }
-            if (ctre::get<get_negate_operator_position()>(m))
+            if (ctre::get<get_pattern_position(negate_operator_pattern)>(m))
             {
                 std::cout << "Found Negation Operator" << '\n';
                 result.emplace_back(token_type::negation_operator, m, location);
             }
-            if (ctre::get<get_not_operator_position()>(m))
+            if (ctre::get<get_pattern_position(not_operator_pattern)>(m))
             {
                 std::cout << "Found Not Operator" << '\n';
                 result.emplace_back(token_type::not_operator, m, location);
             }
-            if (ctre::get<get_bitwise_complement_operator_position()>(m))
+            if (ctre::get<get_pattern_position(bitwise_complement_operator_pattern)>(m))
             {
                 std::cout << "Found Bitwise Complement Operator" << '\n';
                 result.emplace_back(token_type::bitwise_complement_operator, m, location);
             }
-            if (ctre::get<get_plus_operator_position()>(m))
+            if (ctre::get<get_pattern_position(plus_operator_pattern)>(m))
             {
                 std::cout << "Found Plus Operator" << '\n';
                 result.emplace_back(token_type::plus_operator, m, location);
             }
-            if (ctre::get<get_multiplication_operator_position()>(m))
+            if (ctre::get<get_pattern_position(multiplication_operator_pattern)>(m))
             {
                 std::cout << "Found Multiplication Operator" << '\n';
                 result.emplace_back(token_type::multiplication_operator, m, location);
             }
-            if (ctre::get<get_division_operator_position()>(m))
+            if (ctre::get<get_pattern_position(division_operator_pattern)>(m))
             {
                 std::cout << "Found Division Operator" << '\n';
                 result.emplace_back(token_type::division_operator, m, location);
             }
-            if (ctre::get<get_remainder_operator_position()>(m))
+            if (ctre::get<get_pattern_position(remainder_operator_pattern)>(m))
             {
                 std::cout << "Found Remainder Operator" << '\n';
                 result.emplace_back(token_type::remainder_operator, m, location);
             }
-            if (ctre::get<get_bitwise_and_operator_position()>(m))
+            if (ctre::get<get_pattern_position(bitwise_and_operator_pattern)>(m))
             {
                 std::cout << "Found Bitwise And Operator" << '\n';
                 result.emplace_back(token_type::bitwise_and_operator, m, location);
             }
-            if (ctre::get<get_bitwise_or_operator_position()>(m))
+            if (ctre::get<get_pattern_position(bitwise_or_operator_pattern)>(m))
             {
                 std::cout << "Found Bitwise Or Operator" << '\n';
                 result.emplace_back(token_type::bitwise_or_operator, m, location);
             }
-            if (ctre::get<get_bitwise_xor_operator_position()>(m))
+            if (ctre::get<get_pattern_position(bitwise_xor_operator_pattern)>(m))
             {
                 std::cout << "Found Bitwise Xor Operator" << '\n';
                 result.emplace_back(token_type::bitwise_xor_operator, m, location);
             }
-            if (ctre::get<get_left_shift_operator_position()>(m))
+            if (ctre::get<get_pattern_position(left_shift_operator_pattern)>(m))
             {
                 std::cout << "Found Left Shift Operator" << '\n';
                 result.emplace_back(token_type::left_shift_operator, m, location);
             }
-            if (ctre::get<get_right_shift_operator_position()>(m))
+            if (ctre::get<get_pattern_position(right_shift_operator_pattern)>(m))
             {
                 std::cout << "Found Right Shift Operator" << '\n';
                 result.emplace_back(token_type::right_shift_operator, m, location);
             }
-            if (ctre::get<get_less_than_operator_pattern_position()>(m))
+            if (ctre::get<get_pattern_position(less_than_operator_pattern)>(m))
             {
                 std::cout << "Found Less Than Operator" << '\n';
                 result.emplace_back(token_type::less_than_operator, m, location);
             }
-            if (ctre::get<get_less_than_or_equal_operator_pattern_position()>(m))
+            if (ctre::get<get_pattern_position(less_than_or_equal_operator_pattern)>(m))
             {
                 std::cout << "Found Less Than or Equal Operator" << '\n';
                 result.emplace_back(token_type::less_than_or_equal_operator, m, location);
             }
-            if (ctre::get<get_greater_than_operator_pattern_position()>(m))
+            if (ctre::get<get_pattern_position(greater_than_operator_pattern)>(m))
             {
                 std::cout << "Found Greater Than Operator" << '\n';
                 result.emplace_back(token_type::greater_than_operator, m, location);
             }
-            if (ctre::get<get_greater_than_or_equal_operator_pattern_position()>(m))
+            if (ctre::get<get_pattern_position(greater_than_or_equal_operator_pattern)>(m))
             {
                 std::cout << "Found Greater Than or Equal Operator" << '\n';
                 result.emplace_back(token_type::greater_than_or_equal_operator, m, location);
             }
-            if (ctre::get<get_assignment_operator_pattern_position()>(m))
+            if (ctre::get<get_pattern_position(assignment_operator_pattern)>(m))
             {
                 std::cout << "Found Assignment Operator" << '\n';
                 result.emplace_back(token_type::assignment_operator, m, location);
