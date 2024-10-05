@@ -1,0 +1,5 @@
+Assign(Var(a)
+       Assign(Var(b)
+              IntConstant(2)
+       )
+)

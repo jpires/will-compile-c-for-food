@@ -384,6 +384,7 @@ TEST_CASE("Parser complex test", "[parser]")
 
 TEST_CASE("Binary Operators", "[parser]")
 {
+    auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("parser_tests");
     SECTION("Bitwise And Operator")
     {
         wccff::lexer::file_location location{ 1, 2 };
@@ -489,6 +490,40 @@ TEST_CASE("Binary Operators", "[parser]")
         REQUIRE(std::get<wccff::parser::int_constant>(exp->left).value == 1);
         REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->right));
         REQUIRE(std::get<wccff::parser::int_constant>(exp->right).value == 2);
+    }
+
+    SECTION("Single Assignment")
+    {
+        wccff::lexer::file_location location{ 1, 3 };
+        std::vector<wccff::lexer::token> tokens_vector;
+
+        tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "a", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::assignment_operator, "=", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "2", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
+
+        wccff::parser::tokens tokens{ tokens_vector };
+        auto result = wccff::parser::parse_expression(tokens);
+        REQUIRE(result.has_value());
+        ApprovalTests::Approvals::verify(wccff::parser::pretty_print(result.value()));
+    }
+
+    SECTION("Multiple Assignment")
+    {
+        wccff::lexer::file_location location{ 1, 3 };
+        std::vector<wccff::lexer::token> tokens_vector;
+
+        tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "a", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::assignment_operator, "=", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "b", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::assignment_operator, "=", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "2", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
+
+        wccff::parser::tokens tokens{ tokens_vector };
+        auto result = wccff::parser::parse_expression(tokens);
+        REQUIRE(result.has_value());
+        ApprovalTests::Approvals::verify(wccff::parser::pretty_print(result.value()));
     }
 }
 

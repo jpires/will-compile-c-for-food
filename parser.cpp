@@ -451,7 +451,7 @@ std::expected<expression, parser_error> parse_expression(tokens &tokens, int32_t
     }
 
     auto next_token = tokens.peek();
-    while (is_binary_operator(next_token.type) && min_precedence < get_precedende(next_token.type))
+    while (is_binary_operator(next_token.type) && min_precedence <= get_precedende(next_token.type))
     {
         if (next_token.type == lexer::token_type::assignment_operator)
         {
