@@ -236,8 +236,11 @@ unary_operator process_unary_operator(const parser::unary_operator &op);
 binary_operator process_binary_operator(const parser::binary_operator &op);
 val process_binary_node(const std::unique_ptr<parser::binary_node> &node, std::vector<instruction> &instructions);
 val process_unary_node(const std::unique_ptr<parser::unary_node> &node, std::vector<instruction> &instructions);
-
 val process_expression(const wccff::parser::expression &exp, std::vector<instruction> &instructions);
+function_definition process_function_definition(const parser::function &f);
+void process_return_node(const wccff::parser::return_node &stmt, std::vector<instruction> &instructions);
+void process_statement(const wccff::parser::statement &s, std::vector<instruction> &instructions);
+
 program process(const parser::program &input);
 
 std::string pretty_print(const unary_operator &val, int32_t ident = 0);

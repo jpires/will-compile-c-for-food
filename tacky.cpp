@@ -175,36 +175,75 @@ val process_expression(const wccff::parser::expression &exp, std::vector<instruc
 {
     return std::visit(visitor{
                         [](const parser::int_constant &c) -> val { return process_int_constant(c); },
-                        [](const parser::var &c) -> val { throw std::runtime_error{ "Var not implemented" }; },
+                        [](const parser::var &c) -> val { return var{ process_identifier(c.name) }; },
                         [&instructions](const std::unique_ptr<parser::unary_node> &n) -> val {
                             return process_unary_node(n, instructions);
                         },
                         [&instructions](const std::unique_ptr<parser::binary_node> &n) -> val {
                             return process_binary_node(n, instructions);
                         },
-                        [](const std::unique_ptr<parser::assignment_node> &) -> val {
-                            throw std::runtime_error{ "Assignment_node not implemented" };
+                        [&instructions](const std::unique_ptr<parser::assignment_node> &n) -> val {
+                            auto right = process_expression(n->rhs, instructions);
+                            // The previous pass ensures that the left side of an assignment is a var.
+                            // If it's not, then just terminate.
+                            auto left = std::get<parser::var>(n->lhs);
+                            auto dst = var{ process_identifier(left.name) };
+                            instructions.emplace_back(copy_statement{ right, dst });
+                            return dst;
                         },
                       },
                       exp);
 }
 
-std::vector<instruction> process_return_node(const wccff::parser::return_node &stmt)
+void process_return_node(const wccff::parser::return_node &stmt, std::vector<instruction> &instructions)
 {
-    std::vector<instruction> instructions;
     auto node = return_statement{ process_expression(stmt.e, instructions) };
     instructions.emplace_back(return_statement{ node });
-    return instructions;
 }
 
-std::vector<instruction> process_statement(const wccff::parser::statement &s)
+void process_statement(const wccff::parser::statement &s, std::vector<instruction> &instructions)
 {
-    return process_return_node(std::get<wccff::parser::return_node>(s));
+    std::visit(visitor{
+                 [&instructions](const parser::return_node &n) { process_return_node(n, instructions); },
+                 [&instructions](const parser::expression &n) { process_expression(n, instructions); },
+                 [](const std::monostate) {},
+               },
+               s);
 }
+
+void process_declaration(const wccff::parser::declaration &s, std::vector<instruction> &instructions)
+{
+    if (s.init.has_value() == false)
+    {
+        return;
+    }
+
+    auto src = process_expression(s.init.value(), instructions);
+    auto dst = var{ process_identifier(s.name) };
+    instructions.emplace_back(copy_statement{ src, dst });
+}
+
+void process_block_item(const parser::block_item &s, std::vector<instruction> &instructions)
+{
+    std::visit(visitor{
+                 [&instructions](const parser::declaration &n) { process_declaration(n, instructions); },
+                 [&instructions](const parser::statement &n) { process_statement(n, instructions); },
+                 [](const std::monostate n) {},
+               },
+               s);
+}
+
 function_definition process_function_definition(const parser::function &f)
 {
-    auto &stmt = std::get<wccff::parser::statement>(f.body.at(0));
-    return { process_identifier(f.function_name), process_statement(stmt) };
+    std::vector<instruction> instructions;
+    for (const auto &i : f.body)
+    {
+        process_block_item(i, instructions);
+    }
+
+    instructions.emplace_back(return_statement{ constant{ 0 } });
+
+    return { process_identifier(f.function_name), instructions };
 }
 
 program process(const parser::program &input)
