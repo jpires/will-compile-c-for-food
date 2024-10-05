@@ -56,6 +56,17 @@ constexpr auto less_than_or_equal_operator_pattern{ R"((<=))" };
 constexpr auto greater_than_operator_pattern{ R"((>))" };
 constexpr auto greater_than_or_equal_operator_pattern{ R"((>=))" };
 constexpr auto assignment_operator_pattern{ R"((=))" };
+constexpr auto compound_plus_pattern{ R"((\+=))" };
+constexpr auto compound_minus_pattern{ R"((-=))" };
+constexpr auto compound_multiplication_pattern{ R"((\*=))" };
+constexpr auto compound_division_pattern{ R"((/=))" };
+constexpr auto compound_remainder_pattern{ R"((%=))" };
+constexpr auto compound_bitwise_and_pattern{ R"((&=))" };
+constexpr auto compound_bitwise_or_pattern{ R"((\|=))" };
+constexpr auto compound_bitwise_xor_pattern{ R"((\^=))" };
+constexpr auto compound_left_shift_pattern{ R"((<<=))" };
+constexpr auto compound_right_shift_pattern{ R"((>>=))" };
+constexpr auto increment_operator_pattern{ R"((\+\+))" };
 
 constexpr auto get_patters()
 {
@@ -67,6 +78,9 @@ constexpr auto get_patters()
         open_brace_pattern,
         close_brace_pattern,
         semicolon_pattern,
+        // Three chars operators
+        compound_left_shift_pattern,
+        compound_right_shift_pattern,
         // Two chars operators
         and_operator_pattern,
         or_operator_pattern,
@@ -77,7 +91,17 @@ constexpr auto get_patters()
         greater_than_or_equal_operator_pattern,
         left_shift_operator_pattern,
         right_shift_operator_pattern,
-        // One char Operator
+        compound_plus_pattern,
+        compound_minus_pattern,
+        compound_multiplication_pattern,
+        compound_division_pattern,
+        compound_remainder_pattern,
+        compound_bitwise_and_pattern,
+        compound_bitwise_and_pattern,
+        compound_bitwise_or_pattern,
+        compound_bitwise_xor_pattern,
+        increment_operator_pattern,
+        //  One char Operator
         negate_operator_pattern,
         not_operator_pattern,
         bitwise_complement_operator_pattern,
@@ -240,22 +264,22 @@ std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, fil
             }
             if (ctre::get<get_pattern_position(and_operator_pattern)>(m))
             {
-                std::cout << "Found decrement Operator" << '\n';
+                std::cout << "Found And Operator" << '\n';
                 result.emplace_back(token_type::and_operator, m, location);
             }
             if (ctre::get<get_pattern_position(or_operator_pattern)>(m))
             {
-                std::cout << "Found decrement Operator" << '\n';
+                std::cout << "Found Or Operator" << '\n';
                 result.emplace_back(token_type::or_operator, m, location);
             }
             if (ctre::get<get_pattern_position(equals_operator_pattern)>(m))
             {
-                std::cout << "Found decrement Operator" << '\n';
+                std::cout << "Found Equals Operator" << '\n';
                 result.emplace_back(token_type::equals_operator, m, location);
             }
             if (ctre::get<get_pattern_position(not_equals_operator_pattern)>(m))
             {
-                std::cout << "Found decrement Operator" << '\n';
+                std::cout << "Found Not Equals Operator" << '\n';
                 result.emplace_back(token_type::not_equals_operator, m, location);
             }
             if (ctre::get<get_pattern_position(decrement_operator_pattern)>(m))
@@ -347,6 +371,61 @@ std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, fil
             {
                 std::cout << "Found Assignment Operator" << '\n';
                 result.emplace_back(token_type::assignment_operator, m, location);
+            }
+            if (ctre::get<get_pattern_position(compound_plus_pattern)>(m))
+            {
+                std::cout << "Found Compound Plus Operator" << '\n';
+                result.emplace_back(token_type::compound_plus, m, location);
+            }
+            if (ctre::get<get_pattern_position(compound_minus_pattern)>(m))
+            {
+                std::cout << "Found Compound Minus Operator" << '\n';
+                result.emplace_back(token_type::compound_minus, m, location);
+            }
+            if (ctre::get<get_pattern_position(compound_multiplication_pattern)>(m))
+            {
+                std::cout << "Found Compound Multiplication Operator" << '\n';
+                result.emplace_back(token_type::compound_multiplication, m, location);
+            }
+            if (ctre::get<get_pattern_position(compound_division_pattern)>(m))
+            {
+                std::cout << "Found Compound Division Operator" << '\n';
+                result.emplace_back(token_type::compound_division, m, location);
+            }
+            if (ctre::get<get_pattern_position(compound_remainder_pattern)>(m))
+            {
+                std::cout << "Found Compound Remainder Operator" << '\n';
+                result.emplace_back(token_type::compound_remainder, m, location);
+            }
+            if (ctre::get<get_pattern_position(compound_bitwise_and_pattern)>(m))
+            {
+                std::cout << "Found Compound Bitwise And Operator" << '\n';
+                result.emplace_back(token_type::compound_bitwise_and, m, location);
+            }
+            if (ctre::get<get_pattern_position(compound_bitwise_or_pattern)>(m))
+            {
+                std::cout << "Found Compound Bitwise Or Operator" << '\n';
+                result.emplace_back(token_type::compound_bitwise_or, m, location);
+            }
+            if (ctre::get<get_pattern_position(compound_bitwise_xor_pattern)>(m))
+            {
+                std::cout << "Found Compound Bitwise Xor Operator" << '\n';
+                result.emplace_back(token_type::compound_bitwise_xor, m, location);
+            }
+            if (ctre::get<get_pattern_position(compound_left_shift_pattern)>(m))
+            {
+                std::cout << "Found Compound Left Shift Operator" << '\n';
+                result.emplace_back(token_type::compound_left_shift, m, location);
+            }
+            if (ctre::get<get_pattern_position(compound_right_shift_pattern)>(m))
+            {
+                std::cout << "Found Compound Right Shift Operator" << '\n';
+                result.emplace_back(token_type::compound_right_shift, m, location);
+            }
+            if (ctre::get<get_pattern_position(increment_operator_pattern)>(m))
+            {
+                std::cout << "Found Increment Operator" << '\n';
+                result.emplace_back(token_type::increment_operator, m, location);
             }
 
             if (result.empty())

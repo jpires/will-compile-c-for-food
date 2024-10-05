@@ -445,6 +445,105 @@ TEST_CASE("Operators", "[lexer]")
         REQUIRE(result.value().at(0).type == wccff::lexer::token_type::assignment_operator);
         REQUIRE(result.value().at(0).text == "=");
     }
+    SECTION("Compound Plus Operator")
+    {
+        std::string_view input{ "+=" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::compound_plus);
+        REQUIRE(result.value().at(0).text == "+=");
+    }
+    SECTION("Compound Minus Operator")
+    {
+        std::string_view input{ "-=" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::compound_minus);
+        REQUIRE(result.value().at(0).text == "-=");
+    }
+    SECTION("Compound Multiplication Operator")
+    {
+        std::string_view input{ "*=" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::compound_multiplication);
+        REQUIRE(result.value().at(0).text == "*=");
+    }
+    SECTION("Compound Division Operator")
+    {
+        std::string_view input{ "/=" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::compound_division);
+        REQUIRE(result.value().at(0).text == "/=");
+    }
+    SECTION("Compound Remainder Operator")
+    {
+        std::string_view input{ "%=" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::compound_remainder);
+        REQUIRE(result.value().at(0).text == "%=");
+    }
+    SECTION("Compound Bitwise And Operator")
+    {
+        std::string_view input{ "&=" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::compound_bitwise_and);
+        REQUIRE(result.value().at(0).text == "&=");
+    }
+    SECTION("Compound Bitwise Or Operator")
+    {
+        std::string_view input{ "|=" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::compound_bitwise_or);
+        REQUIRE(result.value().at(0).text == "|=");
+    }
+    SECTION("Compound Bitwise Xor Operator")
+    {
+        std::string_view input{ "^=" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::compound_bitwise_xor);
+        REQUIRE(result.value().at(0).text == "^=");
+    }
+    SECTION("Compound Left Shift Operator")
+    {
+        std::string_view input{ "<<=" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::compound_left_shift);
+        REQUIRE(result.value().at(0).text == "<<=");
+    }
+    SECTION("Compound Right Shift Operator")
+    {
+        std::string_view input{ ">>=" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::compound_right_shift);
+        REQUIRE(result.value().at(0).text == ">>=");
+    }
+    SECTION("Increment Operator")
+    {
+        std::string_view input{ "++" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::increment_operator);
+        REQUIRE(result.value().at(0).text == "++");
+    }
 }
 
 TEST_CASE("Other tokens", "[lexer]")

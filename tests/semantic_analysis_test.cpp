@@ -25,12 +25,13 @@ TEST_CASE("Variable Resolution", "[semantic_analysis]")
     using namespace wccff;
 
     wccff::sema::variable_map map;
+    using wccff::parser::assignment_operator;
     SECTION("resolve_assignment_node")
     {
         parser::int_constant value1{ 42 };
         parser::int_constant value2{ 43 };
 
-        auto original = std::make_unique<parser::assignment_node>(value1, value2);
+        auto original = std::make_unique<parser::assignment_node>(assignment_operator{}, value1, value2);
         auto result = sema::resolve_assignment_node(original, map);
         REQUIRE(result.has_value() == false);
     }

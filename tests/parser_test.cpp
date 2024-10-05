@@ -535,13 +535,14 @@ TEST_CASE("parser_pretty_printers", "[parser]")
     SECTION("assignment_node")
     {
         using wccff::parser::assignment_node;
+        using wccff::parser::assignment_operator;
         using wccff::parser::int_constant;
         using wccff::parser::var;
 
         auto value = int_constant{ 55 };
         auto variable = var{ "var_name" };
 
-        auto assignment = std::make_unique<assignment_node>(value, variable);
+        auto assignment = std::make_unique<assignment_node>(assignment_operator{}, value, variable);
 
         ApprovalTests::Approvals::verify(pretty_print(assignment));
     }

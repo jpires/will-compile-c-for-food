@@ -74,6 +74,17 @@ enum class token_type
     greater_than_operator,
     greater_than_or_equal_operator,
     assignment_operator,
+    compound_plus,
+    compound_minus,
+    compound_multiplication,
+    compound_division,
+    compound_remainder,
+    compound_bitwise_and,
+    compound_bitwise_or,
+    compound_bitwise_xor,
+    compound_left_shift,
+    compound_right_shift,
+    increment_operator,
 };
 
 struct lexer_error
@@ -214,6 +225,39 @@ struct fmt::formatter<wccff::lexer::token_type> : formatter<string_view>
                 break;
             case token_type::assignment_operator:
                 str = "Assignment Operator";
+                break;
+            case token_type::compound_plus:
+                str = "Compound Plus Operator";
+                break;
+            case token_type::compound_minus:
+                str = "Compound Minus Operator";
+                break;
+            case token_type::compound_multiplication:
+                str = "Compound Multiplication Operator";
+                break;
+            case token_type::compound_division:
+                str = "Compound Division Operator";
+                break;
+            case token_type::compound_remainder:
+                str = "Compound Remainder Operator";
+                break;
+            case token_type::compound_bitwise_and:
+                str = "Compound Bitwise And Operator";
+                break;
+            case token_type::compound_bitwise_or:
+                str = "Compound Bitwise Or Operator";
+                break;
+            case token_type::compound_bitwise_xor:
+                str = "Compound Bitwise Xor Operator";
+                break;
+            case token_type::compound_left_shift:
+                str = "Compound Left Shift Operator";
+                break;
+            case token_type::compound_right_shift:
+                str = "Compound Right Shift Operator";
+                break;
+            case token_type::increment_operator:
+                str = "Increment Operator";
                 break;
         }
         return formatter<string_view>::format(str, ctx);

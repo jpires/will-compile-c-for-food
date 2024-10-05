@@ -54,6 +54,46 @@ identifier get_or_end_label()
     return { fmt::format("or_end_{}", ++counter) };
 }
 
+/*
+
+auto v1 = process_expression(node->left, instructions);
+auto v2 = process_expression(node->right, instructions);
+auto dst = var{ get_temporary_name() };
+auto op = process_binary_operator(node->op);
+instructions.emplace_back(binary_statement{ op, v1, v2, dst });
+return dst;*/
+
+val process_assignment_node(const std::unique_ptr<parser::assignment_node> &node,
+                            std::vector<instruction> &instructions)
+{
+    if (std::holds_alternative<parser::assignment_operator>(node->op))
+    {
+        auto right = process_expression(node->rhs, instructions);
+        // The previous pass ensures that the left side of an assignment is a var.
+        // If it's not, then just terminate.
+        auto left = std::get<parser::var>(node->lhs);
+        auto dst = var{ process_identifier(left.name) };
+        instructions.emplace_back(copy_statement{ right, dst });
+        return dst;
+    }
+
+    auto right = process_expression(node->rhs, instructions);
+    // The previous pass ensures that the left side of an assignment is a var.
+    // If it's not, then just terminate.
+    auto left = std::get<parser::var>(node->lhs);
+    auto dst = var{ process_identifier(left.name) };
+    auto tmp = var{ get_temporary_name() };
+    auto op = process_binary_operator(node->op);
+    instructions.emplace_back(binary_statement{ op, dst, right, tmp });
+    instructions.emplace_back(copy_statement{ tmp, dst });
+    return dst;
+
+    // Process right side.
+    // Process Left side
+    // Ren Binary Operation, of left and right save in tmp
+    // copy tmp to left
+}
+
 identifier process_identifier(const parser::identifier &id)
 {
     return { id.name };
@@ -71,6 +111,18 @@ unary_operator process_unary_operator(const parser::unary_operator &op)
         [](const parser::bitwise_complement_operator &) -> unary_operator { return binary_complement_operator{}; },
         [](const parser::negate_operator &) -> unary_operator { return negate_operator{}; },
         [](const parser::logical_not_operator &) -> unary_operator { return not_operator{}; },
+        [](const parser::postfix_decrement_operator &) -> unary_operator {
+            throw std::logic_error("logical_not_operator");
+        },
+        [](const parser::postfix_increment_operator &) -> unary_operator {
+            throw std::logic_error("logical_not_operator");
+        },
+        [](const parser::prefix_decrement_operator &) -> unary_operator {
+            throw std::logic_error("logical_not_operator");
+        },
+        [](const parser::prefix_increment_operator &) -> unary_operator {
+            throw std::logic_error("logical_not_operator");
+        },
       },
       op);
 }
@@ -103,12 +155,75 @@ binary_operator process_binary_operator(const parser::binary_operator &op)
         [](const parser::greater_than_or_equal_operator &) -> binary_operator {
             return greater_than_or_equal_operator{};
         },
+        [](const parser::assignment_operator &) -> binary_operator {
+            throw std::logic_error("Assignment operator not converted");
+        },
+        [](const parser::compound_plus_operator &) -> binary_operator { return plus_operator{}; },
+        [](const parser::compound_subtract_operator &) -> binary_operator { return subtract_operator{}; },
+        [](const parser::compound_multiply_operator &) -> binary_operator { return multiply_operator{}; },
+        [](const parser::compound_divide_operator &) -> binary_operator { return divide_operator{}; },
+        [](const parser::compound_remainder_operator &) -> binary_operator { return remainder_operator{}; },
+        [](const parser::compound_bitwise_and_operator &) -> binary_operator { return binary_and_operator{}; },
+        [](const parser::compound_bitwise_or_operator &) -> binary_operator { return binary_or_operator{}; },
+        [](const parser::compound_bitwise_xor_operator &) -> binary_operator { return binary_xor_operator{}; },
+        [](const parser::compound_left_shift_operator &) -> binary_operator { return left_shift_operator{}; },
+        [](const parser::compound_right_shift_operator &) -> binary_operator { return right_shift_operator{}; },
       },
       op);
 }
 
+val process_prefix_unary(const std::unique_ptr<parser::unary_node> &node, std::vector<instruction> &instructions)
+{
+    binary_operator op;
+    if (std::holds_alternative<parser::prefix_increment_operator>(node->op))
+    {
+        op = plus_operator{};
+    }
+    else
+    {
+        op = subtract_operator{};
+    }
+    auto src = process_expression(node->exp, instructions);
+    auto dst = var{ get_temporary_name() };
+    instructions.emplace_back(binary_statement{ op, src, constant{ 1 }, dst });
+    instructions.emplace_back(copy_statement(dst, src));
+    return dst;
+}
+
+val process_postfix_unary(const std::unique_ptr<parser::unary_node> &node, std::vector<instruction> &instructions)
+{
+    binary_operator op;
+    if (std::holds_alternative<parser::postfix_increment_operator>(node->op))
+    {
+        op = plus_operator{};
+    }
+    else
+    {
+        op = subtract_operator{};
+    }
+    auto src = process_expression(node->exp, instructions);
+    auto dst = var{ get_temporary_name() };
+    auto tmp = var{ get_temporary_name() };
+    instructions.emplace_back(copy_statement(src, dst));
+    instructions.emplace_back(binary_statement{ op, src, constant{ 1 }, tmp });
+    instructions.emplace_back(copy_statement(tmp, src));
+    return dst;
+}
+
 val process_unary_node(const std::unique_ptr<parser::unary_node> &node, std::vector<instruction> &instructions)
 {
+    if (std::holds_alternative<parser::prefix_increment_operator>(node->op) ||
+        std::holds_alternative<parser::prefix_decrement_operator>(node->op))
+    {
+        return process_prefix_unary(node, instructions);
+    }
+
+    if (std::holds_alternative<parser::postfix_increment_operator>(node->op) ||
+        std::holds_alternative<parser::postfix_decrement_operator>(node->op))
+    {
+        return process_postfix_unary(node, instructions);
+    }
+
     auto src = process_expression(node->exp, instructions);
     auto dst = var{ get_temporary_name() };
     auto op = process_unary_operator(node->op);
@@ -183,13 +298,7 @@ val process_expression(const wccff::parser::expression &exp, std::vector<instruc
                             return process_binary_node(n, instructions);
                         },
                         [&instructions](const std::unique_ptr<parser::assignment_node> &n) -> val {
-                            auto right = process_expression(n->rhs, instructions);
-                            // The previous pass ensures that the left side of an assignment is a var.
-                            // If it's not, then just terminate.
-                            auto left = std::get<parser::var>(n->lhs);
-                            auto dst = var{ process_identifier(left.name) };
-                            instructions.emplace_back(copy_statement{ right, dst });
-                            return dst;
+                            return process_assignment_node(n, instructions);
                         },
                       },
                       exp);
@@ -283,6 +392,18 @@ std::string pretty_print(const binary_operator &op, int32_t ident)
         [ident](const greater_than_or_equal_operator &) {
             return wccff::format_indented(ident, "Greater That or Equal");
         },
+        [ident](const assignment_operator &) { return wccff::format_indented(ident, "Greater Than"); },
+        [ident](const compound_plus_operator &) { return wccff::format_indented(ident, "Greater Than"); },
+        [ident](const compound_minus_operator &) { return wccff::format_indented(ident, "Greater Than"); },
+        [ident](const compound_multiplication_operator &) { return wccff::format_indented(ident, "Greater Than"); },
+        [ident](const compound_division_operator &) { return wccff::format_indented(ident, "Greater Than"); },
+        [ident](const compound_remainder_operator &) { return wccff::format_indented(ident, "Greater Than"); },
+        [ident](const compound_bitwise_and_operator &) { return wccff::format_indented(ident, "Greater Than"); },
+        [ident](const compound_bitwise_or_operator &) { return wccff::format_indented(ident, "Greater Than"); },
+        [ident](const compound_bitwise_xor_operator &) { return wccff::format_indented(ident, "Greater Than"); },
+        [ident](const compound_left_shift_operator &) { return wccff::format_indented(ident, "Greater Than"); },
+        [ident](const compound_right_shift_operator &) { return wccff::format_indented(ident, "Greater Than"); },
+
       },
       op);
 }

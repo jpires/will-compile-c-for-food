@@ -1,0 +1,8 @@
+* The Postfix operator ++ and -- are not working correctly. They are not being parsed with the
+correct precedence.
+The following example fails to compile correctly
+int main(void) {
+    int a = 2;
+    int d = !(a)--;
+    return d;
+}

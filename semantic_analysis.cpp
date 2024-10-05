@@ -51,6 +51,25 @@ std::expected<parser::program, semantic_error> analyse(const parser::program &in
     return variable_resolution(input, variable_map);
 }
 
+bool is_lvalue(const std::unique_ptr<parser::binary_node> &e)
+{
+    return false;
+}
+bool is_lvalue(const std::unique_ptr<parser::unary_node> &e)
+{
+    return is_lvalue(e->exp);
+}
+bool is_lvalue(const parser::expression &e)
+{
+    return std::visit(visitor{
+                        [&](const std::unique_ptr<parser::assignment_node> &n) { return false; },
+                        [&](const std::unique_ptr<parser::binary_node> &n) { return is_lvalue(n); },
+                        [&](const std::unique_ptr<parser::unary_node> &n) { return is_lvalue(n); },
+                        [&](const parser::var &n) { return true; },
+                        [&](const parser::int_constant &n) { return false; },
+                      },
+                      e);
+}
 std::expected<std::unique_ptr<parser::assignment_node>, semantic_error> resolve_assignment_node(
   const std::unique_ptr<parser::assignment_node> &node,
   variable_map &variable_map)
@@ -71,7 +90,7 @@ std::expected<std::unique_ptr<parser::assignment_node>, semantic_error> resolve_
     {
         return std::unexpected{ right.error() };
     }
-    return std::make_unique<parser::assignment_node>(std::move(left.value()), std::move(right.value()));
+    return std::make_unique<parser::assignment_node>(node->op, std::move(left.value()), std::move(right.value()));
 }
 
 std::expected<parser::block_item, semantic_error> resolve_block_item(const parser::block_item &input,
@@ -200,11 +219,24 @@ std::expected<std::unique_ptr<parser::unary_node>, semantic_error> resolve_unary
   const std::unique_ptr<parser::unary_node> &node,
   variable_map &variable_map)
 {
+    if (std::holds_alternative<parser::prefix_decrement_operator>(node->op) ||
+        std::holds_alternative<parser::prefix_increment_operator>(node->op) ||
+        std::holds_alternative<parser::postfix_decrement_operator>(node->op) ||
+        std::holds_alternative<parser::postfix_increment_operator>(node->op))
+    {
+        if (is_lvalue(node->exp) == false)
+        {
+            return std::unexpected{ semantic_error{
+              "Not a lvalue expression on prefix or postfix increment/decrement" } };
+        }
+    }
+
     auto exp = resolve_expression(node->exp, variable_map);
     if (exp.has_value() == false)
     {
         return std::unexpected{ exp.error() };
     }
+
     return std::make_unique<parser::unary_node>(node->op, std::move(exp.value()));
 }
 

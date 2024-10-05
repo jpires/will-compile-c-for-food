@@ -138,6 +138,40 @@ binary_operator process_binary_operator(const wccff::tacky::binary_operator &op)
         [](const tacky::greater_than_or_equal_operator &) -> binary_operator {
             throw std::logic_error("Greater Than or Equal operator is not converted into a binary operator");
         },
+        [](const tacky::assignment_operator &) -> binary_operator {
+            throw std::logic_error("Assignment operator is not converted into a binary operator");
+        },
+        [](const tacky::compound_plus_operator &) -> binary_operator {
+            throw std::logic_error("Compound Plus operator is not converted into a binary operator");
+        },
+        [](const tacky::compound_minus_operator &) -> binary_operator {
+            throw std::logic_error("Compound Minus operator is not converted into a binary operator");
+        },
+        [](const tacky::compound_multiplication_operator &) -> binary_operator {
+            throw std::logic_error("Compound Multiplication operator is not converted into a binary operator");
+        },
+        [](const tacky::compound_division_operator &) -> binary_operator {
+            throw std::logic_error("Compound Division operator is not converted into a binary operator");
+        },
+        [](const tacky::compound_remainder_operator &) -> binary_operator {
+            throw std::logic_error("Compound Remainder operator is not converted into a binary operator");
+        },
+        [](const tacky::compound_bitwise_and_operator &) -> binary_operator {
+            throw std::logic_error("Compound Bitwise And operator is not converted into a binary operator");
+        },
+        [](const tacky::compound_bitwise_or_operator &) -> binary_operator {
+            throw std::logic_error("Compound Bitwise Or operator is not converted into a binary operator");
+        },
+        [](const tacky::compound_bitwise_xor_operator &) -> binary_operator {
+            throw std::logic_error("Compound Bitwise Xor operator is not converted into a binary operator");
+        },
+        [](const tacky::compound_left_shift_operator &) -> binary_operator {
+            throw std::logic_error("Compound Left Shift operator is not converted into a binary operator");
+        },
+        [](const tacky::compound_right_shift_operator &) -> binary_operator {
+            throw std::logic_error("Compound Right Shift operator is not converted into a binary operator");
+        },
+
       },
       op);
 }

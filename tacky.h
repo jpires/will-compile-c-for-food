@@ -97,6 +97,39 @@ struct greater_than_operator
 struct greater_than_or_equal_operator
 {
 };
+struct assignment_operator
+{
+};
+struct compound_plus_operator
+{
+};
+struct compound_minus_operator
+{
+};
+struct compound_multiplication_operator
+{
+};
+struct compound_division_operator
+{
+};
+struct compound_remainder_operator
+{
+};
+struct compound_bitwise_and_operator
+{
+};
+struct compound_bitwise_or_operator
+{
+};
+struct compound_bitwise_xor_operator
+{
+};
+struct compound_left_shift_operator
+{
+};
+struct compound_right_shift_operator
+{
+};
 
 using unary_operator = std::variant<binary_complement_operator, negate_operator, not_operator>;
 using binary_operator = std::variant<plus_operator,
@@ -114,7 +147,18 @@ using binary_operator = std::variant<plus_operator,
                                      less_than_operator,
                                      less_than_or_equal_operator,
                                      greater_than_operator,
-                                     greater_than_or_equal_operator>;
+                                     greater_than_or_equal_operator,
+                                     assignment_operator,
+                                     compound_plus_operator,
+                                     compound_minus_operator,
+                                     compound_multiplication_operator,
+                                     compound_division_operator,
+                                     compound_remainder_operator,
+                                     compound_bitwise_and_operator,
+                                     compound_bitwise_or_operator,
+                                     compound_bitwise_xor_operator,
+                                     compound_left_shift_operator,
+                                     compound_right_shift_operator>;
 struct constant
 {
     int32_t value;
@@ -230,6 +274,8 @@ struct program
     function_definition function;
 };
 
+val process_assignment_node(const std::unique_ptr<parser::assignment_node> &node,
+                            std::vector<instruction> &instructions);
 identifier process_identifier(const parser::identifier &id);
 constant process_int_constant(const parser::int_constant &int_con);
 unary_operator process_unary_operator(const parser::unary_operator &op);

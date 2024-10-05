@@ -291,6 +291,28 @@ std::expected<binary_operator, parser_error> parse_binary_operator(tokens &token
             return greater_than_operator{};
         case lexer::token_type::greater_than_or_equal_operator:
             return greater_than_or_equal_operator{};
+        case lexer::token_type::assignment_operator:
+            return assignment_operator{};
+        case lexer::token_type::compound_plus:
+            return compound_plus_operator{};
+        case lexer::token_type::compound_minus:
+            return compound_subtract_operator{};
+        case lexer::token_type::compound_multiplication:
+            return compound_multiply_operator{};
+        case lexer::token_type::compound_division:
+            return compound_divide_operator{};
+        case lexer::token_type::compound_remainder:
+            return compound_remainder_operator{};
+        case lexer::token_type::compound_bitwise_and:
+            return compound_bitwise_and_operator{};
+        case lexer::token_type::compound_bitwise_or:
+            return compound_bitwise_or_operator{};
+        case lexer::token_type::compound_bitwise_xor:
+            return compound_bitwise_xor_operator{};
+        case lexer::token_type::compound_left_shift:
+            return compound_left_shift_operator{};
+        case lexer::token_type::compound_right_shift:
+            return compound_right_shift_operator{};
 
         default:
             auto msg = fmt::format("Expected Binary Operator but found '{}'", t->text);
@@ -315,6 +337,12 @@ std::expected<std::unique_ptr<unary_node>, parser_error> parse_unary_node(tokens
             break;
         case lexer::token_type::not_operator:
             op = logical_not_operator{};
+            break;
+        case lexer::token_type::decrement_operator:
+            op = prefix_decrement_operator{};
+            break;
+        case lexer::token_type::increment_operator:
+            op = prefix_increment_operator{};
             break;
 
         default:
@@ -359,6 +387,8 @@ std::expected<expression, parser_error> parse_factor(tokens &tokens)
             return e.value();
         }
         case lexer::token_type::bitwise_complement_operator:
+        case lexer::token_type::decrement_operator:
+        case lexer::token_type::increment_operator:
         case lexer::token_type::negation_operator:
         case lexer::token_type::not_operator:
         {
@@ -395,6 +425,15 @@ std::expected<expression, parser_error> parse_factor(tokens &tokens)
 
 std::expected<expression, parser_error> parse_expression(tokens &tokens, int32_t min_precedence)
 {
+
+    auto is_right_associative = [](lexer::token_type type) {
+        using enum lexer::token_type;
+        return type == assignment_operator || type == compound_plus || type == compound_minus ||
+               type == compound_multiplication || type == compound_division || type == compound_remainder ||
+               type == compound_bitwise_and || type == compound_bitwise_or || type == compound_bitwise_xor ||
+               type == compound_left_shift || type == compound_right_shift;
+    };
+
     auto is_binary_operator = [](lexer::token_type type) {
         using enum lexer::token_type;
         return type == plus_operator || type == negation_operator || type == multiplication_operator ||
@@ -402,8 +441,11 @@ std::expected<expression, parser_error> parse_expression(tokens &tokens, int32_t
                type == bitwise_or_operator || type == bitwise_xor_operator || type == left_shift_operator ||
                type == right_shift_operator || type == and_operator || type == or_operator || type == equals_operator ||
                type == not_equals_operator || type == less_than_operator || type == less_than_or_equal_operator ||
-               type == greater_than_operator || type == greater_than_or_equal_operator || type == assignment_operator;
-        ;
+               type == greater_than_operator || type == greater_than_or_equal_operator || type == assignment_operator ||
+               type == compound_plus || type == compound_minus || type == compound_multiplication ||
+               type == compound_division || type == compound_remainder || type == compound_bitwise_and ||
+               type == compound_bitwise_or || type == compound_bitwise_xor || type == compound_left_shift ||
+               type == compound_right_shift;
     };
 
     auto get_precedende = [](lexer::token_type type) {
@@ -411,6 +453,16 @@ std::expected<expression, parser_error> parse_expression(tokens &tokens, int32_t
         switch (type)
         {
             case assignment_operator:
+            case compound_plus:
+            case compound_minus:
+            case compound_multiplication:
+            case compound_division:
+            case compound_remainder:
+            case compound_bitwise_and:
+            case compound_bitwise_or:
+            case compound_bitwise_xor:
+            case compound_left_shift:
+            case compound_right_shift:
                 return 1;
             case or_operator:
                 return 5;
@@ -453,16 +505,20 @@ std::expected<expression, parser_error> parse_expression(tokens &tokens, int32_t
     auto next_token = tokens.peek();
     while (is_binary_operator(next_token.type) && min_precedence <= get_precedende(next_token.type))
     {
-        if (next_token.type == lexer::token_type::assignment_operator)
+        if (is_right_associative(next_token.type))
         {
-            tokens.discard_token();
+            auto op = parse_binary_operator(tokens);
+            if (op.has_value() == false)
+            {
+                return std::unexpected{ op.error() };
+            }
             auto right = parse_expression(tokens, get_precedende(next_token.type));
             if (right.has_value() == false)
             {
                 return std::unexpected{ right.error() };
             }
 
-            left = std::make_unique<assignment_node>(std::move(left.value()), std::move(right.value()));
+            left = std::make_unique<assignment_node>(op.value(), std::move(left.value()), std::move(right.value()));
         }
         else
         {
@@ -482,6 +538,17 @@ std::expected<expression, parser_error> parse_expression(tokens &tokens, int32_t
         }
 
         next_token = tokens.peek();
+    }
+
+    if (next_token.type == lexer::token_type::decrement_operator ||
+        next_token.type == lexer::token_type::increment_operator)
+    {
+        auto op = next_token.type == lexer::token_type::increment_operator
+                    ? unary_operator{ postfix_increment_operator{} }
+                    : unary_operator{ postfix_decrement_operator{} };
+
+        tokens.discard_token();
+        return std::make_unique<unary_node>(op, std::move(left.value()));
     }
     return left;
 }
@@ -562,6 +629,37 @@ std::string pretty_print(const binary_operator &node, int32_t ident)
         [ident](const greater_than_operator &) { return wccff::format_indented(ident, "Greater Than"); },
         [ident](const greater_than_or_equal_operator &) {
             return wccff::format_indented(ident, "Greater Than or Equals");
+        },
+        [ident](const assignment_operator &) { return wccff::format_indented(ident, "Assignment"); },
+        [ident](const parser::compound_plus_operator &) -> std::string {
+            return wccff::format_indented(ident, "Compound Plus");
+        },
+        [ident](const parser::compound_subtract_operator &) -> std::string {
+            return wccff::format_indented(ident, "Compound Minus");
+        },
+        [ident](const parser::compound_multiply_operator &) -> std::string {
+            return wccff::format_indented(ident, "Compound Multiplication");
+        },
+        [ident](const parser::compound_divide_operator &) -> std::string {
+            return wccff::format_indented(ident, "Compound Division");
+        },
+        [ident](const parser::compound_remainder_operator &) -> std::string {
+            return wccff::format_indented(ident, "Compound Remainder");
+        },
+        [ident](const parser::compound_bitwise_and_operator &) -> std::string {
+            return wccff::format_indented(ident, "Compound Bitwise And");
+        },
+        [ident](const parser::compound_bitwise_or_operator &) -> std::string {
+            return wccff::format_indented(ident, "Compound Bitwise Or");
+        },
+        [ident](const parser::compound_bitwise_xor_operator &) -> std::string {
+            return wccff::format_indented(ident, "Compound Bitwise Xor");
+        },
+        [ident](const parser::compound_left_shift_operator &) -> std::string {
+            return wccff::format_indented(ident, "Compound Left Shift");
+        },
+        [ident](const parser::compound_right_shift_operator &) -> std::string {
+            return wccff::format_indented(ident, "Compound Right Shift");
         },
       },
       node);
@@ -647,11 +745,12 @@ std::string pretty_print(const return_node &node, int32_t ident)
 
 std::string pretty_print(const std::unique_ptr<assignment_node> &node, int32_t ident)
 {
-    auto prefix = wccff::format_indented(ident, "Assign({}", pretty_print(node->lhs, 0));
-    auto left = wccff::format_indented(0, "{}", pretty_print(node->rhs, ident + 7));
+    auto prefix = wccff::format_indented(ident, "Assign({}", pretty_print(node->op, 0));
+    auto left = wccff::format_indented(0, "{}", pretty_print(node->lhs, ident + 7));
+    auto right = wccff::format_indented(0, "{}", pretty_print(node->rhs, ident + 7));
     auto sufix = wccff::format_indented(ident, ")");
 
-    return fmt::format("{}\n{}\n{}", prefix, left, sufix);
+    return fmt::format("{}\n{}\n{}\n{}", prefix, left, right, sufix);
 }
 
 std::string pretty_print(const std::unique_ptr<binary_node> &node, int32_t ident)
@@ -696,6 +795,10 @@ std::string pretty_print(const unary_operator &node, int32_t ident)
         [ident](const bitwise_complement_operator &) { return wccff::format_indented(ident, "Complement"); },
         [ident](const negate_operator &) { return wccff::format_indented(ident, "Negate"); },
         [ident](const logical_not_operator &) { return wccff::format_indented(ident, "Not"); },
+        [ident](const postfix_decrement_operator &) { return wccff::format_indented(ident, "Postfix Decrement"); },
+        [ident](const postfix_increment_operator &) { return wccff::format_indented(ident, "Postfix Increment"); },
+        [ident](const prefix_decrement_operator &) { return wccff::format_indented(ident, "Prefix Decrement"); },
+        [ident](const prefix_increment_operator &) { return wccff::format_indented(ident, "Prefix Increment"); },
       },
       node);
 }

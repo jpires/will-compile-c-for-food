@@ -132,7 +132,59 @@ struct left_shift_operator
 struct right_shift_operator
 {
 };
-using unary_operator = std::variant<bitwise_complement_operator, negate_operator, logical_not_operator>;
+struct assignment_operator
+{
+};
+struct compound_plus_operator
+{
+};
+struct compound_subtract_operator
+{
+};
+struct compound_multiply_operator
+{
+};
+struct compound_divide_operator
+{
+};
+struct compound_remainder_operator
+{
+};
+struct compound_bitwise_and_operator
+{
+};
+struct compound_bitwise_or_operator
+{
+};
+struct compound_bitwise_xor_operator
+{
+};
+struct compound_left_shift_operator
+{
+};
+struct compound_right_shift_operator
+{
+};
+struct prefix_decrement_operator
+{
+};
+struct prefix_increment_operator
+{
+};
+struct postfix_decrement_operator
+{
+};
+struct postfix_increment_operator
+{
+};
+
+using unary_operator = std::variant<bitwise_complement_operator,
+                                    negate_operator,
+                                    logical_not_operator,
+                                    postfix_decrement_operator,
+                                    postfix_increment_operator,
+                                    prefix_decrement_operator,
+                                    prefix_increment_operator>;
 
 using binary_operator = std::variant<plus_operator,
                                      subtract_operator,
@@ -151,7 +203,18 @@ using binary_operator = std::variant<plus_operator,
                                      less_than_operator,
                                      less_than_or_equal_operator,
                                      greater_than_operator,
-                                     greater_than_or_equal_operator>;
+                                     greater_than_or_equal_operator,
+                                     assignment_operator,
+                                     compound_plus_operator,
+                                     compound_subtract_operator,
+                                     compound_multiply_operator,
+                                     compound_divide_operator,
+                                     compound_remainder_operator,
+                                     compound_bitwise_and_operator,
+                                     compound_bitwise_or_operator,
+                                     compound_bitwise_xor_operator,
+                                     compound_left_shift_operator,
+                                     compound_right_shift_operator>;
 struct binary_node;
 struct unary_node;
 struct assignment_node;
@@ -174,11 +237,13 @@ using expression = std::variant<int_constant,
 
 struct assignment_node
 {
-    assignment_node(expression lhs_, expression rhs_)
-      : lhs(std::move(lhs_))
+    assignment_node(binary_operator op_, expression lhs_, expression rhs_)
+      : op(op_)
+      , lhs(std::move(lhs_))
       , rhs(std::move(rhs_))
     {
     }
+    binary_operator op;
     expression lhs;
     expression rhs;
 };

@@ -45,6 +45,8 @@ class variable_map
 
 std::expected<parser::program, semantic_error> analyse(const parser::program &input);
 
+bool is_lvalue(const parser::expression &e);
+
 std::expected<std::unique_ptr<parser::assignment_node>, semantic_error> resolve_assignment_node(
   const std::unique_ptr<parser::assignment_node> &node,
   variable_map &variable_map);
