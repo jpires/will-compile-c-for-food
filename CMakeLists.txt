@@ -21,6 +21,8 @@ add_executable(wccff
         parser.cpp
         parser.h
         tacky.cpp
+        semantic_analysis.cpp
+        semantic_analysis.h
         tacky.h
         utils.cpp
         utils.h

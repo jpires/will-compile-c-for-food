@@ -98,6 +98,7 @@ int main(int argc, char *argv[])
     options.add_options()
     ("lex", "Run the lexer", cxxopts::value<bool>()->implicit_value("true"))
     ("parse","Run the parser",cxxopts::value<bool>()->implicit_value("true"))
+    ("validate","Run the semantic analysis",cxxopts::value<bool>()->implicit_value("true"))
     ("tacky","Run the tacky",cxxopts::value<bool>()->implicit_value("true"))
     ("codegen", "Run the codegen", cxxopts::value<bool>()->implicit_value("true"))
     ("S","Generate Assembly file",cxxopts::value<bool>()->implicit_value("true"))
@@ -129,6 +130,10 @@ int main(int argc, char *argv[])
     if (result["parse"].as<bool>())
     {
         stop_phase = wccff::stop_phase::parser;
+    }
+    if (result["validate"].as<bool>())
+    {
+        stop_phase = wccff::stop_phase::validate;
     }
     if (result["tacky"].as<bool>())
     {

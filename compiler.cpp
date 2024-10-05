@@ -22,6 +22,7 @@
 #include "code_emission.h"
 #include "lexer.h"
 #include "parser.h"
+#include "semantic_analysis.h"
 #include "tacky.h"
 #include <filesystem>
 #include <fmt/core.h>
@@ -75,6 +76,27 @@ bool compile(const std::filesystem::path &source_filename,
 
     fmt::print("\nPARSER PRETTY PRINT END\n");
     if (stop == stop_phase::parser)
+    {
+        return true;
+    }
+
+    //
+    // Semantic Analysis
+    //
+
+    auto sema_result = sema::analyse(parse_result.value());
+
+    if (sema_result.has_value() == false)
+    {
+        fmt::print("Failed to semantic analyse file {}\n", sema_result.error().message);
+        return false;
+    }
+
+    fmt::print("VALIDATE PRETTY PRINT BEGIN\n");
+    fmt::print("{}", pretty_print(sema_result.value()));
+    fmt::print("VALIDATE PRETTY PRINT END\n");
+
+    if (stop == stop_phase::validate)
     {
         return true;
     }

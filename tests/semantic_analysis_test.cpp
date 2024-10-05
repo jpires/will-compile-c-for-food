@@ -17,24 +17,21 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef COMPILER_H
-#define COMPILER_H
+#include "../semantic_analysis.h"
+#include <catch2/catch_test_macros.hpp>
 
-#include <filesystem>
-
-namespace wccff {
-enum class stop_phase
+TEST_CASE("Variable Resolution", "[semantic_analysis]")
 {
-    no_stop,
-    lexer,
-    parser,
-    validate,
-    tacky,
-    codegen
-};
+    using namespace wccff;
 
-bool compile(const std::filesystem::path &source_filename,
-             const std::filesystem::path &output_filename,
-             stop_phase stop);
-} // namespace wccff
-#endif // COMPILER_H
+    wccff::sema::variable_map map;
+    SECTION("resolve_assignment_node")
+    {
+        parser::int_constant value1{ 42 };
+        parser::int_constant value2{ 43 };
+
+        auto original = std::make_unique<parser::assignment_node>(value1, value2);
+        auto result = sema::resolve_assignment_node(original, map);
+        REQUIRE(result.has_value() == false);
+    }
+}
