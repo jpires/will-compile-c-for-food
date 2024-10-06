@@ -63,6 +63,7 @@ bool is_lvalue(const parser::expression &e)
 {
     return std::visit(visitor{
                         [&](const std::unique_ptr<parser::assignment_node> &n) { return false; },
+                        [&](const std::unique_ptr<parser::conditional_node> &n) { return false; },
                         [&](const std::unique_ptr<parser::binary_node> &n) { return is_lvalue(n); },
                         [&](const std::unique_ptr<parser::unary_node> &n) { return is_lvalue(n); },
                         [&](const parser::var &n) { return true; },
@@ -154,6 +155,10 @@ std::expected<parser::expression, semantic_error> resolve_expression(const parse
       visitor{
         [&](const std::unique_ptr<parser::assignment_node> &n) -> std::expected<parser::expression, semantic_error> {
             return resolve_assignment_node(n, variable_map);
+        },
+        [&](const std::unique_ptr<parser::conditional_node> &n) -> std::expected<parser::expression, semantic_error> {
+            // return resolve_assignment_node(n, variable_map);
+            throw std::logic_error("Not implemented");
         },
         [&](const std::unique_ptr<parser::binary_node> &n) -> std::expected<parser::expression, semantic_error> {
             return resolve_binary_node(n, variable_map);
@@ -260,6 +265,9 @@ std::expected<parser::statement, semantic_error> resolve_statement(const parser:
         },
         [&](const parser::expression &n) -> std::expected<parser::statement, semantic_error> {
             return resolve_expression(n, variable_map);
+        },
+        [&](const std::unique_ptr<parser::if_node> &n) -> std::expected<parser::statement, semantic_error> {
+            throw std::logic_error("Not a lvalue if");
         },
         [&](const std::monostate &n) -> std::expected<parser::statement, semantic_error> { return std::monostate{}; },
       },

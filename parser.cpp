@@ -65,6 +65,28 @@ std::expected<block_item, parser_error> parse_block_item(tokens &tokens)
     }
     return parse_statement(tokens);
 }
+std::expected<expression, parser_error> parse_conditional(tokens &tokens)
+{
+    tokens.discard_token();
+    auto exp = parse_expression(tokens, 0);
+    if (exp.has_value() == false)
+    {
+        return std::unexpected{ exp.error() };
+    }
+    auto next_token = tokens.get_next_token();
+    if (next_token.has_value() == false)
+    {
+        return std::unexpected{ generate_unexpected_end_of_tokens(tokens) };
+    }
+
+    if (next_token.value().type != lexer::token_type::colon)
+    {
+        auto msg = fmt::format("Parse failure at: {}. Expected ':' found {}", next_token->loc, next_token->type);
+        return std::unexpected{ parser_error{ msg } };
+    }
+
+    return exp;
+}
 
 std::expected<declaration, parser_error> parse_declaration(tokens &tokens)
 {
@@ -107,6 +129,48 @@ std::expected<declaration, parser_error> parse_declaration(tokens &tokens)
 
     auto msg = fmt::format("Parse failure at: {}. Expected '=' or ';' but found {}", next_token->loc, next_token->type);
     return std::unexpected{ parser_error{ msg } };
+}
+
+std::expected<std::unique_ptr<if_node>, parser_error> parse_if_node(tokens &tokens)
+{
+    // Discard the if keyword
+    tokens.discard_token();
+
+    auto open_parens = tokens.get_next_token();
+    if (open_parens.has_value() == false)
+    {
+        return std::unexpected{ generate_unexpected_end_of_tokens(tokens) };
+    }
+
+    auto condition = parse_expression(tokens);
+
+    auto close_parens = tokens.get_next_token();
+    if (close_parens.has_value() == false)
+    {
+        return std::unexpected{ generate_unexpected_end_of_tokens(tokens) };
+    }
+
+    auto then_stmt = parse_statement(tokens);
+    if (then_stmt.has_value() == false)
+    {
+        return std::unexpected{ then_stmt.error() };
+    }
+
+    std::optional<statement> else_stmt;
+    // Since the else is optional, don't consume the token yet.
+    auto else_token = tokens.peek();
+    if (else_token.type == lexer::token_type::else_keyword)
+    {
+        tokens.discard_token();
+        auto tmp = parse_statement(tokens);
+        if (tmp.has_value() == false)
+        {
+            return std::unexpected{ tmp.error() };
+        }
+        else_stmt = std::move(tmp.value());
+    }
+
+    return std::make_unique<if_node>(std::move(condition.value()), std::move(then_stmt.value()), std::move(else_stmt));
 }
 
 std::expected<function, parser_error> parse_function(tokens &tokens)
@@ -228,6 +292,10 @@ std::expected<statement, parser_error> parse_statement(tokens &tokens)
     {
         tokens.discard_token();
         return std::monostate{};
+    }
+    if (next_token.type == lexer::token_type::if_keyword)
+    {
+        return parse_if_node(tokens);
     }
     auto e = parse_expression(tokens);
     if (e.has_value() == false)
@@ -445,7 +513,7 @@ std::expected<expression, parser_error> parse_expression(tokens &tokens, int32_t
                type == compound_plus || type == compound_minus || type == compound_multiplication ||
                type == compound_division || type == compound_remainder || type == compound_bitwise_and ||
                type == compound_bitwise_or || type == compound_bitwise_xor || type == compound_left_shift ||
-               type == compound_right_shift;
+               type == compound_right_shift || type == question_mark;
     };
 
     auto get_precedende = [](lexer::token_type type) {
@@ -464,6 +532,8 @@ std::expected<expression, parser_error> parse_expression(tokens &tokens, int32_t
             case compound_left_shift:
             case compound_right_shift:
                 return 1;
+            case question_mark:
+                return 3;
             case or_operator:
                 return 5;
             case and_operator:
@@ -519,6 +589,22 @@ std::expected<expression, parser_error> parse_expression(tokens &tokens, int32_t
             }
 
             left = std::make_unique<assignment_node>(op.value(), std::move(left.value()), std::move(right.value()));
+        }
+        else if (next_token.type == lexer::token_type::question_mark)
+        {
+            auto middle = parse_conditional(tokens);
+            if (middle.has_value() == false)
+            {
+                return std::unexpected{ middle.error() };
+            }
+            auto right = parse_expression(tokens, get_precedende(next_token.type));
+            if (right.has_value() == false)
+            {
+                return std::unexpected{ right.error() };
+            }
+            left = std::make_unique<conditional_node>(std::move(left.value()),
+                                                      std::move(middle.value()),
+                                                      std::move(right.value()));
         }
         else
         {
@@ -700,6 +786,7 @@ std::string pretty_print(const expression &node, int32_t ident)
                         [ident](const std::unique_ptr<unary_node> &n) { return pretty_print(n, ident); },
                         [ident](const std::unique_ptr<binary_node> &n) { return pretty_print(n, ident); },
                         [ident](const std::unique_ptr<assignment_node> &n) { return pretty_print(n, ident); },
+                        [ident](const std::unique_ptr<conditional_node> &n) { return pretty_print(n, ident); },
                       },
                       node);
 }
@@ -730,6 +817,7 @@ std::string pretty_print(const statement &node, int32_t ident)
     return std::visit(visitor{
                         [ident](const return_node &n) { return pretty_print(n, ident); },
                         [ident](const expression &n) { return pretty_print(n, ident); },
+                        [ident](const std::unique_ptr<if_node> &n) { return pretty_print(n, ident); },
                         [ident](const std::monostate &) { return wccff::format_indented(ident, "EMPTY STATEMENT\n"); },
                       },
                       node);
@@ -761,6 +849,32 @@ std::string pretty_print(const std::unique_ptr<binary_node> &node, int32_t ident
     auto sufix = wccff::format_indented(ident, ")");
 
     return fmt::format("{}\n{}\n{}\n{}", prefix, left, right, sufix);
+}
+
+std::string pretty_print(const std::unique_ptr<conditional_node> &node, int32_t ident)
+{
+    auto prefix = wccff::format_indented(ident, "Conditional({}", pretty_print(node->condition, 0));
+    auto middle = wccff::format_indented(0, "{}", pretty_print(node->e1, ident + 7));
+    auto right = wccff::format_indented(0, "{}", pretty_print(node->e2, ident + 7));
+    auto sufix = wccff::format_indented(ident, ")");
+
+    return fmt::format("{}\n{}\n{}\n{}", prefix, middle, right, sufix);
+}
+
+std::string pretty_print(const std::unique_ptr<if_node> &node, int32_t ident)
+{
+    auto prefix = wccff::format_indented(ident, "If({}", pretty_print(node->op, 0));
+    auto then_stmt = wccff::format_indented(0, "{}", pretty_print(node->then_stmt, ident + 7));
+
+    std::string else_stmt;
+    if (node->else_stmt.has_value())
+    {
+        else_stmt = wccff::format_indented(ident, "Else\n");
+        else_stmt += wccff::format_indented(0, "{}", pretty_print(node->else_stmt.value(), ident + 7));
+    }
+    auto sufix = wccff::format_indented(ident, ")");
+
+    return fmt::format("{}\n{}\n{}\n{}", prefix, then_stmt, else_stmt, sufix);
 }
 
 std::string pretty_print(const std::unique_ptr<unary_node> &node, int32_t ident)

@@ -300,6 +300,10 @@ val process_expression(const wccff::parser::expression &exp, std::vector<instruc
                         [&instructions](const std::unique_ptr<parser::assignment_node> &n) -> val {
                             return process_assignment_node(n, instructions);
                         },
+                        [&instructions](const std::unique_ptr<parser::conditional_node> &n) -> val {
+                            // return process_assignment_node(n, instructions);
+                            throw std::runtime_error("conditional not implemented");
+                        },
                       },
                       exp);
 }
@@ -315,6 +319,7 @@ void process_statement(const wccff::parser::statement &s, std::vector<instructio
     std::visit(visitor{
                  [&instructions](const parser::return_node &n) { process_return_node(n, instructions); },
                  [&instructions](const parser::expression &n) { process_expression(n, instructions); },
+                 [&](const std::unique_ptr<parser::if_node> &n) { throw std::logic_error("Not a lvalue if"); },
                  [](const std::monostate) {},
                },
                s);
