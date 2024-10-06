@@ -184,6 +184,24 @@ TEST_CASE("Identifiers", "[lexer]")
 
 TEST_CASE("Keywords", "[lexer]")
 {
+    SECTION("else")
+    {
+        std::string_view input{ "else" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::else_keyword);
+        REQUIRE(result.value().at(0).text == "else");
+    }
+    SECTION("if")
+    {
+        std::string_view input{ "if" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::if_keyword);
+        REQUIRE(result.value().at(0).text == "if");
+    }
     SECTION("void")
     {
         std::string_view input{ "void" };
@@ -596,5 +614,25 @@ TEST_CASE("Other tokens", "[lexer]")
         REQUIRE(result.value().size() == 1);
         REQUIRE(result.value().at(0).type == wccff::lexer::token_type::close_parenthesis);
         REQUIRE(result.value().at(0).text == ")");
+    }
+
+    SECTION("Question Mark")
+    {
+        std::string_view input{ "?" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::question_mark);
+        REQUIRE(result.value().at(0).text == "?");
+    }
+
+    SECTION("Colon")
+    {
+        std::string_view input{ ":" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::colon);
+        REQUIRE(result.value().at(0).text == ":");
     }
 }

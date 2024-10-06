@@ -67,6 +67,8 @@ constexpr auto compound_bitwise_xor_pattern{ R"((\^=))" };
 constexpr auto compound_left_shift_pattern{ R"((<<=))" };
 constexpr auto compound_right_shift_pattern{ R"((>>=))" };
 constexpr auto increment_operator_pattern{ R"((\+\+))" };
+constexpr auto question_mark_pattern{ R"((\?))" };
+constexpr auto colon_pattern{ R"((:))" };
 
 constexpr auto get_patters()
 {
@@ -115,6 +117,8 @@ constexpr auto get_patters()
         less_than_operator_pattern,
         greater_than_operator_pattern,
         assignment_operator_pattern,
+        question_mark_pattern,
+        colon_pattern,
     };
 }
 
@@ -208,7 +212,17 @@ std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, fil
         {
             if (ctre::get<get_pattern_position(identifier_pattern)>(m))
             {
-                if (m == "int")
+                if (m == "else")
+                {
+                    std::cout << "else keyword" << '\n';
+                    result.emplace_back(token_type::else_keyword, m, location);
+                }
+                else if (m == "if")
+                {
+                    std::cout << "if keyword" << '\n';
+                    result.emplace_back(token_type::if_keyword, m, location);
+                }
+                else if (m == "int")
                 {
                     std::cout << "int keyword" << '\n';
                     result.emplace_back(token_type::int_keyword, m, location);
@@ -426,6 +440,16 @@ std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, fil
             {
                 std::cout << "Found Increment Operator" << '\n';
                 result.emplace_back(token_type::increment_operator, m, location);
+            }
+            if (ctre::get<get_pattern_position(question_mark_pattern)>(m))
+            {
+                std::cout << "Found question mark" << '\n';
+                result.emplace_back(token_type::question_mark, m, location);
+            }
+            if (ctre::get<get_pattern_position(colon_pattern)>(m))
+            {
+                std::cout << "Found question mark" << '\n';
+                result.emplace_back(token_type::colon, m, location);
             }
 
             if (result.empty())

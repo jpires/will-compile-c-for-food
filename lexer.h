@@ -44,6 +44,8 @@ enum class token_type
 {
     identifier,
     constant,
+    else_keyword,
+    if_keyword,
     int_keyword,
     void_keyword,
     return_keyword,
@@ -85,6 +87,8 @@ enum class token_type
     compound_left_shift,
     compound_right_shift,
     increment_operator,
+    question_mark,
+    colon,
 };
 
 struct lexer_error
@@ -135,6 +139,12 @@ struct fmt::formatter<wccff::lexer::token_type> : formatter<string_view>
                 break;
             case token_type::constant:
                 str = "Constant";
+                break;
+            case token_type::else_keyword:
+                str = "Else Keyword";
+                break;
+            case token_type::if_keyword:
+                str = "If Keyword";
                 break;
             case token_type::int_keyword:
                 str = "Int Keyword";
@@ -258,6 +268,12 @@ struct fmt::formatter<wccff::lexer::token_type> : formatter<string_view>
                 break;
             case token_type::increment_operator:
                 str = "Increment Operator";
+                break;
+            case token_type::question_mark:
+                str = "Question Mark";
+                break;
+            case token_type::colon:
+                str = "Colon";
                 break;
         }
         return formatter<string_view>::format(str, ctx);
