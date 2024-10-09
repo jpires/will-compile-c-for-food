@@ -122,6 +122,31 @@ std::expected<parser::block_item, semantic_error> resolve_block_item(const parse
       input);
 }
 
+std::expected<std::unique_ptr<parser::conditional_node>, semantic_error> resolve_conditional_node(
+  const std::unique_ptr<parser::conditional_node> &node,
+  variable_map &variable_map)
+{
+    auto cond = resolve_expression(node->condition, variable_map);
+    if (cond.has_value() == false)
+    {
+        return std::unexpected{ cond.error() };
+    }
+    auto e1 = resolve_expression(node->e1, variable_map);
+    if (e1.has_value() == false)
+    {
+        return std::unexpected{ e1.error() };
+    }
+
+    auto e2 = resolve_expression(node->e2, variable_map);
+    if (e2.has_value() == false)
+    {
+        return std::unexpected{ e2.error() };
+    }
+
+    return std::make_unique<parser::conditional_node>(std::move(cond.value()),
+                                                      std::move(e1.value()),
+                                                      std::move(e2.value()));
+}
 std::expected<parser::declaration, semantic_error> resolve_declaration(const parser::declaration &input,
                                                                        variable_map &variable_map)
 {
@@ -157,8 +182,7 @@ std::expected<parser::expression, semantic_error> resolve_expression(const parse
             return resolve_assignment_node(n, variable_map);
         },
         [&](const std::unique_ptr<parser::conditional_node> &n) -> std::expected<parser::expression, semantic_error> {
-            // return resolve_assignment_node(n, variable_map);
-            throw std::logic_error("Not implemented");
+            return resolve_conditional_node(n, variable_map);
         },
         [&](const std::unique_ptr<parser::binary_node> &n) -> std::expected<parser::expression, semantic_error> {
             return resolve_binary_node(n, variable_map);
@@ -189,6 +213,34 @@ std::expected<parser::function, semantic_error> resolve_function(const parser::f
     }
 
     return parser::function{ input.function_name, std::move(items) };
+}
+
+std::expected<std::unique_ptr<parser::if_node>, semantic_error> resolve_if_node(
+  const std::unique_ptr<parser::if_node> &node,
+  variable_map &variable_map)
+{
+    auto op = resolve_expression(node->op, variable_map);
+    if (op.has_value() == false)
+    {
+        return std::unexpected{ op.error() };
+    }
+    auto then_stmt = resolve_statement(node->then_stmt, variable_map);
+    if (then_stmt.has_value() == false)
+    {
+        return std::unexpected{ then_stmt.error() };
+    }
+    if (node->else_stmt.has_value())
+    {
+        auto else_stmt = resolve_statement(node->else_stmt.value(), variable_map);
+        if (else_stmt.has_value() == false)
+        {
+            return std::unexpected{ else_stmt.error() };
+        }
+        return std::make_unique<parser::if_node>(std::move(op.value()),
+                                                 std::move(then_stmt.value()),
+                                                 std::move(else_stmt.value()));
+    }
+    return std::make_unique<parser::if_node>(std::move(op.value()), std::move(then_stmt.value()), std::nullopt);
 }
 
 std::expected<parser::return_node, semantic_error> resolve_return_node(const parser::return_node &input,
@@ -267,7 +319,7 @@ std::expected<parser::statement, semantic_error> resolve_statement(const parser:
             return resolve_expression(n, variable_map);
         },
         [&](const std::unique_ptr<parser::if_node> &n) -> std::expected<parser::statement, semantic_error> {
-            throw std::logic_error("Not a lvalue if");
+            return resolve_if_node(n, variable_map);
         },
         [&](const std::monostate &n) -> std::expected<parser::statement, semantic_error> { return std::monostate{}; },
       },

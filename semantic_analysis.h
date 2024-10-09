@@ -54,6 +54,10 @@ std::expected<std::unique_ptr<parser::assignment_node>, semantic_error> resolve_
 std::expected<parser::block_item, semantic_error> resolve_block_item(const parser::block_item &input,
                                                                      variable_map &variable_map);
 
+std::expected<std::unique_ptr<parser::conditional_node>, semantic_error> resolve_conditional_node(
+  const std::unique_ptr<parser::conditional_node> &node,
+  variable_map &variable_map);
+
 std::expected<parser::declaration, semantic_error> resolve_declaration(const parser::declaration &input,
                                                                        variable_map &variable_map);
 
@@ -62,6 +66,10 @@ std::expected<parser::expression, semantic_error> resolve_expression(const parse
 
 std::expected<parser::function, semantic_error> resolve_function(const parser::function &input,
                                                                  variable_map &variable_map);
+
+std::expected<std::unique_ptr<parser::if_node>, semantic_error> resolve_if_node(
+  const std::unique_ptr<parser::if_node> &node,
+  variable_map &variable_map);
 
 std::expected<parser::return_node, semantic_error> resolve_return_node(const parser::return_node &input,
                                                                        variable_map &variable_map);
