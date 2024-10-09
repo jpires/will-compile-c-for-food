@@ -42,6 +42,30 @@ identifier get_and_end_label()
     return { fmt::format("and_end_{}", ++counter) };
 }
 
+identifier get_conditional_e2_label()
+{
+    static int counter = 0;
+    return { fmt::format("conditional_e2_{}", ++counter) };
+}
+
+identifier get_conditional_end_label()
+{
+    static int counter = 0;
+    return { fmt::format("conditional_end_{}", ++counter) };
+}
+
+identifier get_if_else_label()
+{
+    static int counter = 0;
+    return { fmt::format("if_else_{}", ++counter) };
+}
+
+identifier get_if_end_label()
+{
+    static int counter = 0;
+    return { fmt::format("if_end_{}", ++counter) };
+}
+
 identifier get_or_false_label()
 {
     static int counter = 0;
@@ -94,9 +118,54 @@ val process_assignment_node(const std::unique_ptr<parser::assignment_node> &node
     // copy tmp to left
 }
 
+val process_conditional_node(const std::unique_ptr<parser::conditional_node> &node,
+                             std::vector<instruction> &instructions)
+{
+    auto e2_label = identifier{ get_conditional_e2_label() };
+    auto end_label = identifier{ get_conditional_end_label() };
+    auto result = var{ get_temporary_name() };
+    auto c = process_expression(node->condition, instructions);
+
+    instructions.emplace_back(jump_if_zero_statement{ c, e2_label });
+    auto r_e1 = process_expression(node->e1, instructions);
+    instructions.emplace_back(copy_statement{ r_e1, result });
+    instructions.emplace_back(jump_statement{ end_label });
+    instructions.emplace_back(label_statement{ e2_label });
+    auto r_e2 = process_expression(node->e2, instructions);
+    instructions.emplace_back(copy_statement{ r_e2, result });
+    instructions.emplace_back(label_statement{ end_label });
+
+    return result;
+}
+
 identifier process_identifier(const parser::identifier &id)
 {
     return { id.name };
+}
+
+void process_if(const std::unique_ptr<parser::if_node> &node, std::vector<instruction> &instructions)
+{
+    // Create both else and end label, so that the numbering don't get out of sync.
+    // i.e. both labels will have the same number no matter if the 'if' doesn't have an 'else'
+    auto else_label = identifier{ get_if_else_label() };
+    auto end_label = identifier{ get_if_end_label() };
+    auto result = process_expression(node->op, instructions);
+
+    if (node->else_stmt.has_value())
+    {
+        instructions.emplace_back(jump_if_zero_statement{ result, else_label });
+        process_statement(node->then_stmt, instructions);
+        instructions.emplace_back(jump_statement{ end_label });
+        instructions.emplace_back(label_statement{ else_label });
+        process_statement(node->else_stmt.value(), instructions);
+        instructions.emplace_back(label_statement{ end_label });
+    }
+    else
+    {
+        instructions.emplace_back(jump_if_zero_statement{ result, end_label });
+        process_statement(node->then_stmt, instructions);
+        instructions.emplace_back(label_statement{ end_label });
+    }
 }
 
 constant process_int_constant(const parser::int_constant &int_con)
@@ -301,8 +370,7 @@ val process_expression(const wccff::parser::expression &exp, std::vector<instruc
                             return process_assignment_node(n, instructions);
                         },
                         [&instructions](const std::unique_ptr<parser::conditional_node> &n) -> val {
-                            // return process_assignment_node(n, instructions);
-                            throw std::runtime_error("conditional not implemented");
+                            return process_conditional_node(n, instructions);
                         },
                       },
                       exp);
@@ -319,7 +387,7 @@ void process_statement(const wccff::parser::statement &s, std::vector<instructio
     std::visit(visitor{
                  [&instructions](const parser::return_node &n) { process_return_node(n, instructions); },
                  [&instructions](const parser::expression &n) { process_expression(n, instructions); },
-                 [&](const std::unique_ptr<parser::if_node> &n) { throw std::logic_error("Not a lvalue if"); },
+                 [&](const std::unique_ptr<parser::if_node> &n) { process_if(n, instructions); },
                  [](const std::monostate) {},
                },
                s);

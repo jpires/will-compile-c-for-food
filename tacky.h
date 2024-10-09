@@ -276,7 +276,10 @@ struct program
 
 val process_assignment_node(const std::unique_ptr<parser::assignment_node> &node,
                             std::vector<instruction> &instructions);
+val process_conditional_node(const std::unique_ptr<parser::conditional_node> &node,
+                             std::vector<instruction> &instructions);
 identifier process_identifier(const parser::identifier &id);
+void process_if(const std::unique_ptr<parser::if_node> &id, std::vector<instruction> &instructions);
 constant process_int_constant(const parser::int_constant &int_con);
 unary_operator process_unary_operator(const parser::unary_operator &op);
 binary_operator process_binary_operator(const parser::binary_operator &op);
