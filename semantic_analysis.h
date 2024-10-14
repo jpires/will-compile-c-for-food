@@ -21,8 +21,9 @@
 #define SEMANTIC_ANALYSIS_H
 
 #include "parser.h"
-
 #include <unordered_map>
+#include <vector>
+
 namespace wccff::sema {
 
 struct semantic_error
@@ -32,15 +33,36 @@ struct semantic_error
 class variable_map
 {
   public:
-    void add(const parser::identifier &name, const parser::identifier &unique_name);
-    bool contains(const parser::identifier &name) const;
+    enum class scopes
+    {
+        all_scopes,
+        current_scope,
+    };
+    variable_map() { m_map.emplace_back(); }
+    parser::identifier add(const parser::identifier &name);
+    bool contains(const parser::identifier &name, scopes on_current_scope = scopes::all_scopes) const;
+    void create_scope();
+    void destroy_scope();
     parser::identifier get_unique_name(const parser::identifier &name) const;
+
+  private:
+    struct symbol
+    {
+        symbol(std::string name, std::string unique_name)
+          : name(std::move(name))
+          , unique_name(std::move(unique_name))
+        {
+        }
+
+        std::string name;
+        std::string unique_name;
+    };
 
     parser::identifier generate_unique_name(const parser::identifier &name);
 
-  private:
-    std::unordered_map<std::string, std::string> m_map;
+    std::vector<std::unordered_map<std::string, symbol>> m_map;
     int32_t m_counter = 0;
+    int32_t m_scope_counter = 0;
 };
 
 std::expected<parser::program, semantic_error> analyse(const parser::program &input);

@@ -8,6 +8,7 @@ add_executable(unit_tests
         parser_test.cpp
         semantic_analysis_test.cpp
         tacky_test.cpp
+        variable_map_test.cpp
         ../assembly_generation.cpp
         ../lexer.cpp
         ../parser.cpp

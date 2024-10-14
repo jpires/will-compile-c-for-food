@@ -18,8 +18,10 @@
  */
 
 #include "semantic_analysis.h"
-
 #include "visitor.h"
+#include <algorithm>
+#include <ranges>
+
 namespace wccff::sema {
 
 static std::unexpected<semantic_error> generate_unknown_variable(parser::identifier var_name)
@@ -28,17 +30,49 @@ static std::unexpected<semantic_error> generate_unknown_variable(parser::identif
     return std::unexpected<semantic_error>(msg);
 }
 
-void variable_map::add(const parser::identifier &name, const parser::identifier &unique_name)
+parser::identifier variable_map::add(const parser::identifier &name)
 {
-    m_map.insert({ name.name, unique_name.name });
+    auto unique_name = generate_unique_name(name);
+    symbol s{ name.name, unique_name.name };
+
+    m_map.back().insert({ name.name, s });
+
+    return unique_name;
 }
-bool variable_map::contains(const parser::identifier &name) const
+bool variable_map::contains(const parser::identifier &name, scopes on_current_scope) const
 {
-    return m_map.contains(name.name);
+    // In this situation, we want to know if this variable exists in the current scope.
+    // So, we only need to check the latest entry.
+    if (on_current_scope == scopes::current_scope)
+    {
+        return m_map.back().contains(name.name);
+    }
+
+    // We want to look at all scopes, going in reverse order as they were declared.
+    // i.e. a variable that is declared in two scope, then we want the innermost definition
+    // of that variable.
+    return std::ranges::any_of(m_map, [&](const auto &pair) { return pair.contains(name.name); });
+}
+void variable_map::create_scope()
+{
+    m_map.emplace_back();
+    m_scope_counter++;
+}
+void variable_map::destroy_scope()
+{
+    m_map.pop_back();
+    m_scope_counter--;
 }
 parser::identifier variable_map::get_unique_name(const parser::identifier &name) const
 {
-    return { m_map.at(name.name) };
+    for (auto const &pair : std::ranges::reverse_view(m_map))
+    {
+        if (pair.contains(name.name))
+        {
+            return { pair.at(name.name).unique_name };
+        }
+    }
+    throw std::runtime_error("variable map does not exist");
 }
 parser::identifier variable_map::generate_unique_name(const parser::identifier &name)
 {
@@ -156,8 +190,7 @@ std::expected<parser::declaration, semantic_error> resolve_declaration(const par
         return std::unexpected{ semantic_error{ msg } };
     }
 
-    parser::identifier unique_name = variable_map.generate_unique_name(input.name);
-    variable_map.add(input.name, unique_name);
+    parser::identifier unique_name = variable_map.add(input.name);
 
     std::optional<parser::expression> init;
     if (input.init.has_value())
