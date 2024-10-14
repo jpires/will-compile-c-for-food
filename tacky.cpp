@@ -118,6 +118,14 @@ val process_assignment_node(const std::unique_ptr<parser::assignment_node> &node
     // copy tmp to left
 }
 
+void process_block(const parser::block &node, std::vector<instruction> &instructions)
+{
+    for (const auto &child : node.items)
+    {
+        process_block_item(child, instructions);
+    }
+}
+
 val process_conditional_node(const std::unique_ptr<parser::conditional_node> &node,
                              std::vector<instruction> &instructions)
 {
@@ -384,13 +392,15 @@ void process_return_node(const wccff::parser::return_node &stmt, std::vector<ins
 
 void process_statement(const wccff::parser::statement &s, std::vector<instruction> &instructions)
 {
-    std::visit(visitor{
-                 [&instructions](const parser::return_node &n) { process_return_node(n, instructions); },
-                 [&instructions](const parser::expression &n) { process_expression(n, instructions); },
-                 [&](const std::unique_ptr<parser::if_node> &n) { process_if(n, instructions); },
-                 [](const std::monostate) {},
-               },
-               s);
+    std::visit(
+      visitor{
+        [&instructions](const parser::return_node &n) { process_return_node(n, instructions); },
+        [&instructions](const parser::expression &n) { process_expression(n, instructions); },
+        [&](const std::unique_ptr<parser::if_node> &n) { process_if(n, instructions); },
+        [&](const std::unique_ptr<parser::compound_statement> &n) { process_compound_statement(n, instructions); },
+        [](const std::monostate) {},
+      },
+      s);
 }
 
 void process_declaration(const wccff::parser::declaration &s, std::vector<instruction> &instructions)
@@ -415,13 +425,16 @@ void process_block_item(const parser::block_item &s, std::vector<instruction> &i
                s);
 }
 
+void process_compound_statement(const std::unique_ptr<parser::compound_statement> &node,
+                                std::vector<instruction> &instructions)
+{
+    process_block(node->block, instructions);
+}
+
 function_definition process_function_definition(const parser::function &f)
 {
     std::vector<instruction> instructions;
-    for (const auto &i : f.body)
-    {
-        process_block_item(i, instructions);
-    }
+    process_block(f.body, instructions);
 
     instructions.emplace_back(return_statement{ constant{ 0 } });
 

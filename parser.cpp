@@ -65,6 +65,44 @@ std::expected<block_item, parser_error> parse_block_item(tokens &tokens)
     }
     return parse_statement(tokens);
 }
+std::expected<block, parser_error> parse_block(tokens &tokens)
+{
+    // Discard the '{'
+    tokens.discard_token();
+
+    block b;
+    while (tokens.peek().type != lexer::token_type::close_brace)
+    {
+        auto item = parse_block_item(tokens);
+        if (item.has_value() == false)
+        {
+            return std::unexpected{ item.error() };
+        }
+        b.items.push_back(std::move(item.value()));
+    }
+
+    auto token = tokens.get_next_token();
+    if (token.has_value() == false)
+    {
+        return std::unexpected{ generate_unexpected_end_of_tokens(tokens) };
+    }
+    if (token->type != lexer::token_type::close_brace)
+    {
+        auto msg = fmt::format("Parse failure at: {}. Expected '}}' found {}", token->loc, token->type);
+        return std::unexpected{ parser_error{ msg } };
+    }
+
+    return b;
+}
+std::expected<std::unique_ptr<compound_statement>, parser_error> parse_compound_statement(tokens &tokens)
+{
+    auto block = parse_block(tokens);
+    if (block.has_value() == false)
+    {
+        return std::unexpected{ block.error() };
+    }
+    return std::make_unique<compound_statement>(std::move(block.value()));
+}
 std::expected<expression, parser_error> parse_conditional(tokens &tokens)
 {
     tokens.discard_token();
@@ -218,27 +256,19 @@ std::expected<function, parser_error> parse_function(tokens &tokens)
         return std::unexpected{ parser_error{ msg } };
     }
 
-    t1 = tokens.get_next_token_safe();
-    if (t1->type != lexer::token_type::open_brace)
+    if (tokens.peek().type != lexer::token_type::open_brace)
     {
         auto msg = fmt::format("Parse failure at: {}. Expected '{{' found {}", t1->loc, t1->type);
         return std::unexpected{ parser_error{ msg } };
     }
 
-    std::vector<block_item> items;
-    while (tokens.peek().type != lexer::token_type::close_brace)
+    auto items = parse_block(tokens);
+    if (items.has_value() == false)
     {
-        auto statement = parse_block_item(tokens);
-        if (statement.has_value() == false)
-        {
-            return std::unexpected{ statement.error() };
-        }
-        items.push_back(std::move(statement.value()));
+        return std::unexpected{ items.error() };
     }
 
-    tokens.discard_token();
-
-    return function{ function_name.value(), std::move(items) };
+    return function{ function_name.value(), std::move(items.value()) };
 }
 
 std::expected<program, parser_error> parse_program(tokens &tokens)
@@ -297,6 +327,11 @@ std::expected<statement, parser_error> parse_statement(tokens &tokens)
     {
         return parse_if_node(tokens);
     }
+    if (next_token.type == lexer::token_type::open_brace)
+    {
+        return parse_compound_statement(tokens);
+    }
+
     auto e = parse_expression(tokens);
     if (e.has_value() == false)
     {
@@ -751,6 +786,21 @@ std::string pretty_print(const binary_operator &node, int32_t ident)
       node);
 }
 
+std::string pretty_print(const block &node, int32_t ident)
+{
+    std::string output;
+    for (const auto &item : node.items)
+    {
+        output += pretty_print(item, ident);
+        output += "\n";
+    }
+    if (node.items.empty() == false)
+    {
+        output.erase(output.size() - 1);
+    }
+
+    return output;
+}
 std::string pretty_print(const block_item &node, int32_t ident)
 {
     return std::visit(visitor{
@@ -818,6 +868,7 @@ std::string pretty_print(const statement &node, int32_t ident)
                         [ident](const return_node &n) { return pretty_print(n, ident); },
                         [ident](const expression &n) { return pretty_print(n, ident); },
                         [ident](const std::unique_ptr<if_node> &n) { return pretty_print(n, ident); },
+                        [ident](const std::unique_ptr<compound_statement> &n) { return pretty_print(n, ident); },
                         [ident](const std::monostate &) { return wccff::format_indented(ident, "EMPTY STATEMENT\n"); },
                       },
                       node);
@@ -851,6 +902,14 @@ std::string pretty_print(const std::unique_ptr<binary_node> &node, int32_t ident
     return fmt::format("{}\n{}\n{}\n{}", prefix, left, right, sufix);
 }
 
+std::string pretty_print(const std::unique_ptr<compound_statement> &node, int32_t ident)
+{
+    auto prefix = format_indented(ident, "Compound(");
+    auto middle = format_indented(0, "{}", pretty_print(node->block, ident + 9));
+    auto sufix = format_indented(ident, ")");
+
+    return fmt::format("{}\n{}\n{}", prefix, middle, sufix);
+}
 std::string pretty_print(const std::unique_ptr<conditional_node> &node, int32_t ident)
 {
     auto prefix = wccff::format_indented(ident, "Conditional({}", pretty_print(node->condition, 0));
@@ -884,22 +943,6 @@ std::string pretty_print(const std::unique_ptr<unary_node> &node, int32_t ident)
     auto sufix = wccff::format_indented(ident, ")");
 
     return fmt::format("{}\n{}\n{}", prefix, inner, sufix);
-}
-
-std::string pretty_print(const std::vector<block_item> &node, int32_t ident)
-{
-    std::string output;
-    for (const auto &item : node)
-    {
-        output += pretty_print(item, ident);
-        output += "\n";
-    }
-    if (node.empty() == false)
-    {
-        output.erase(output.size() - 1);
-    }
-
-    return output;
 }
 
 std::string pretty_print(const unary_operator &node, int32_t ident)

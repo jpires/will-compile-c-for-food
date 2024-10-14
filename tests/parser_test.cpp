@@ -353,6 +353,7 @@ TEST_CASE("Parser complex test", "[parser]")
 {
     SECTION("Main function returns 2")
     {
+        auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("parser_tests");
         wccff::lexer::file_location location{ 1, 2 };
         std::vector<wccff::lexer::token> tokens_vector;
         tokens_vector.emplace_back(wccff::lexer::token_type::int_keyword, "int", location);
@@ -370,15 +371,7 @@ TEST_CASE("Parser complex test", "[parser]")
 
         auto r = wccff::parser::parse(tokens);
         REQUIRE(r.has_value());
-        REQUIRE(r->f.function_name.name == "main");
-        REQUIRE(r->f.body.size() == 1);
-        auto &block_item1 = r->f.body.at(0);
-        REQUIRE(std::holds_alternative<wccff::parser::statement>(block_item1));
-        auto &stmt1 = std::get<wccff::parser::statement>(block_item1);
-        REQUIRE(std::holds_alternative<wccff::parser::return_node>(stmt1));
-        auto &ret_node = std::get<wccff::parser::return_node>(stmt1);
-        REQUIRE(std::holds_alternative<wccff::parser::int_constant>(ret_node.e));
-        REQUIRE(std::get<wccff::parser::int_constant>(ret_node.e).value == 2);
+        ApprovalTests::Approvals::verify(pretty_print(r.value()));
     }
 }
 
@@ -584,8 +577,9 @@ TEST_CASE("parser_pretty_printers", "[parser]")
         REQUIRE(pretty_print(wccff::parser::greater_than_or_equal_operator{}) == "Greater Than or Equals");
     }
 
-    SECTION("block_items")
+    SECTION("block")
     {
+        using wccff::parser::block;
         using wccff::parser::declaration;
         using wccff::parser::identifier;
         using wccff::parser::int_constant;
@@ -597,7 +591,30 @@ TEST_CASE("parser_pretty_printers", "[parser]")
         items.emplace_back(declaration{ var_name, std::nullopt });
         items.emplace_back(return_node{ value });
 
-        ApprovalTests::Approvals::verify(pretty_print(items));
+        block b{ std::move(items) };
+
+        ApprovalTests::Approvals::verify(pretty_print(b));
+    }
+
+    SECTION("compound_statement")
+    {
+        using wccff::parser::block;
+        using wccff::parser::compound_statement;
+        using wccff::parser::declaration;
+        using wccff::parser::identifier;
+        using wccff::parser::int_constant;
+        using wccff::parser::return_node;
+        std::vector<wccff::parser::block_item> items;
+
+        identifier var_name{ "var_name" };
+        int_constant value{ 55 };
+        items.emplace_back(declaration{ var_name, std::nullopt });
+        items.emplace_back(return_node{ value });
+
+        block b{ std::move(items) };
+        auto stmt = std::make_unique<compound_statement>(std::move(b));
+
+        ApprovalTests::Approvals::verify(pretty_print(stmt));
     }
 
     SECTION("declaration")

@@ -104,7 +104,7 @@ bool compile(const std::filesystem::path &source_filename,
     //
     // TACKY
     //
-    auto tacky_result = tacky::process(parse_result.value());
+    auto tacky_result = tacky::process(sema_result.value());
     fmt::print("{}", pretty_print(tacky_result));
     if (stop == stop_phase::tacky)
     {

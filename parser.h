@@ -216,6 +216,7 @@ using binary_operator = std::variant<plus_operator,
                                      compound_left_shift_operator,
                                      compound_right_shift_operator>;
 struct binary_node;
+struct compound_statement;
 struct conditional_node;
 struct if_node;
 struct unary_node;
@@ -288,7 +289,8 @@ struct return_node
     expression e;
 };
 
-using statement = std::variant<return_node, expression, std::unique_ptr<if_node>, std::monostate>;
+using statement =
+  std::variant<return_node, expression, std::unique_ptr<if_node>, std::unique_ptr<compound_statement>, std::monostate>;
 
 struct if_node
 {
@@ -305,10 +307,19 @@ struct declaration
 
 using block_item = std::variant<declaration, statement, std::monostate>;
 
+struct block
+{
+    std::vector<block_item> items;
+};
+
+struct compound_statement
+{
+    block block;
+};
 struct function
 {
     identifier function_name;
-    std::vector<block_item> body;
+    block body;
 };
 
 struct program
@@ -317,9 +328,12 @@ struct program
 };
 
 std::expected<block_item, parser_error> parse_block_item(tokens &tokens);
+std::expected<block, parser_error> parse_block(tokens &tokens);
+std::expected<std::unique_ptr<compound_statement>, parser_error> parse_compound_statement(tokens &tokens);
 std::expected<expression, parser_error> parse_conditional(tokens &tokens);
 std::expected<int_constant, parser_error> parse_constant(tokens &tokens);
 std::expected<declaration, parser_error> parse_declaration(tokens &tokens);
+std::expected<function, parser_error> parse_function(tokens &tokens);
 std::expected<identifier, parser_error> parse_identifier(tokens &tokens);
 std::expected<std::unique_ptr<if_node>, parser_error> parse_if_node(tokens &tokens);
 std::expected<expression, parser_error> parse_expression(tokens &tokens, int32_t min_precedence = 0);
@@ -331,6 +345,8 @@ std::expected<std::unique_ptr<unary_node>, parser_error> parse_unary_node(tokens
 std::expected<program, parser_error> parse(tokens &tokens);
 
 std::string pretty_print(const binary_operator &node, int32_t ident = 0);
+std::string pretty_print(const block &node, int32_t ident = 0);
+std::string pretty_print(const block_item &node, int32_t ident = 0);
 std::string pretty_print(const declaration &node, int32_t ident = 0);
 std::string pretty_print(const expression &node, int32_t ident = 0);
 std::string pretty_print(const function &node, int32_t ident = 0);
@@ -341,10 +357,10 @@ std::string pretty_print(const statement &node, int32_t ident = 0);
 std::string pretty_print(const return_node &node, int32_t ident = 0);
 std::string pretty_print(const std::unique_ptr<assignment_node> &node, int32_t ident = 0);
 std::string pretty_print(const std::unique_ptr<binary_node> &node, int32_t ident = 0);
+std::string pretty_print(const std::unique_ptr<compound_statement> &node, int32_t ident = 0);
 std::string pretty_print(const std::unique_ptr<conditional_node> &node, int32_t ident = 0);
 std::string pretty_print(const std::unique_ptr<if_node> &node, int32_t ident = 0);
 std::string pretty_print(const std::unique_ptr<unary_node> &node, int32_t ident = 0);
-std::string pretty_print(const std::vector<block_item> &node, int32_t ident = 0);
 std::string pretty_print(const unary_operator &node, int32_t ident = 0);
 std::string pretty_print(const var &node, int32_t ident = 0);
 

@@ -1,0 +1,5 @@
+Function(main
+         Return(
+                IntConstant(2)
+         )
+)

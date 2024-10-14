@@ -128,6 +128,22 @@ std::expected<std::unique_ptr<parser::assignment_node>, semantic_error> resolve_
     return std::make_unique<parser::assignment_node>(node->op, std::move(left.value()), std::move(right.value()));
 }
 
+std::expected<parser::block, semantic_error> resolve_block(const parser::block &node, variable_map &variable_map)
+{
+    parser::block block;
+    for (const auto &b : node.items)
+    {
+        auto new_block = resolve_block_item(b, variable_map);
+        if (new_block.has_value() == false)
+        {
+            return std::unexpected{ new_block.error() };
+        }
+        block.items.push_back(std::move(new_block.value()));
+    }
+
+    return block;
+}
+
 std::expected<parser::block_item, semantic_error> resolve_block_item(const parser::block_item &input,
                                                                      variable_map &variable_map)
 {
@@ -154,6 +170,21 @@ std::expected<parser::block_item, semantic_error> resolve_block_item(const parse
         },
       },
       input);
+}
+
+std::expected<std::unique_ptr<parser::compound_statement>, semantic_error> resolve_compound_statement(
+  const std::unique_ptr<parser::compound_statement> &node,
+  variable_map &variable_map)
+{
+    variable_map.create_scope();
+    auto block = resolve_block(node->block, variable_map);
+    if (block.has_value() == false)
+    {
+        return std::unexpected{ block.error() };
+    }
+
+    variable_map.destroy_scope();
+    return std::make_unique<parser::compound_statement>(std::move(block.value()));
 }
 
 std::expected<std::unique_ptr<parser::conditional_node>, semantic_error> resolve_conditional_node(
@@ -184,7 +215,7 @@ std::expected<std::unique_ptr<parser::conditional_node>, semantic_error> resolve
 std::expected<parser::declaration, semantic_error> resolve_declaration(const parser::declaration &input,
                                                                        variable_map &variable_map)
 {
-    if (variable_map.contains(input.name))
+    if (variable_map.contains(input.name, variable_map::scopes::current_scope))
     {
         auto msg = fmt::format("Duplicate definition for variable {}", input.name.name);
         return std::unexpected{ semantic_error{ msg } };
@@ -234,18 +265,13 @@ std::expected<parser::expression, semantic_error> resolve_expression(const parse
 std::expected<parser::function, semantic_error> resolve_function(const parser::function &input,
                                                                  variable_map &variable_map)
 {
-    std::vector<parser::block_item> items;
-    for (const auto &b : input.body)
+    auto block = resolve_block(input.body, variable_map);
+    if (block.has_value() == false)
     {
-        auto new_block = resolve_block_item(b, variable_map);
-        if (new_block.has_value() == false)
-        {
-            return std::unexpected{ new_block.error() };
-        }
-        items.push_back(std::move(new_block.value()));
+        return std::unexpected{ block.error() };
     }
 
-    return parser::function{ input.function_name, std::move(items) };
+    return parser::function{ input.function_name, std::move(block.value()) };
 }
 
 std::expected<std::unique_ptr<parser::if_node>, semantic_error> resolve_if_node(
@@ -353,6 +379,9 @@ std::expected<parser::statement, semantic_error> resolve_statement(const parser:
         },
         [&](const std::unique_ptr<parser::if_node> &n) -> std::expected<parser::statement, semantic_error> {
             return resolve_if_node(n, variable_map);
+        },
+        [&](const std::unique_ptr<parser::compound_statement> &n) -> std::expected<parser::statement, semantic_error> {
+            return resolve_compound_statement(n, variable_map);
         },
         [&](const std::monostate &n) -> std::expected<parser::statement, semantic_error> { return std::monostate{}; },
       },
