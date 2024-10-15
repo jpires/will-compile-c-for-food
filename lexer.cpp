@@ -212,10 +212,30 @@ std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, fil
         {
             if (ctre::get<get_pattern_position(identifier_pattern)>(m))
             {
-                if (m == "else")
+                if (m == "do")
+                {
+                    std::cout << "do keyword" << '\n';
+                    result.emplace_back(token_type::do_keyword, m, location);
+                }
+                else if (m == "break")
+                {
+                    std::cout << "break keyword" << '\n';
+                    result.emplace_back(token_type::break_keyword, m, location);
+                }
+                else if (m == "continue")
+                {
+                    std::cout << "continue keyword" << '\n';
+                    result.emplace_back(token_type::continue_keyword, m, location);
+                }
+                else if (m == "else")
                 {
                     std::cout << "else keyword" << '\n';
                     result.emplace_back(token_type::else_keyword, m, location);
+                }
+                else if (m == "for")
+                {
+                    std::cout << "for keyword" << '\n';
+                    result.emplace_back(token_type::for_keyword, m, location);
                 }
                 else if (m == "if")
                 {
@@ -236,6 +256,11 @@ std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, fil
                 {
                     std::cout << "return keyword" << '\n';
                     result.emplace_back(token_type::return_keyword, m, location);
+                }
+                else if (m == "while")
+                {
+                    std::cout << "while keyword" << '\n';
+                    result.emplace_back(token_type::while_keyword, m, location);
                 }
                 else
                 {

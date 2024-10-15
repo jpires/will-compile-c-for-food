@@ -44,11 +44,16 @@ enum class token_type
 {
     identifier,
     constant,
+    break_keyword,
+    continue_keyword,
+    do_keyword,
     else_keyword,
+    for_keyword,
     if_keyword,
     int_keyword,
     void_keyword,
     return_keyword,
+    while_keyword,
     open_parenthesis,
     close_parenthesis,
     open_brace,
@@ -140,8 +145,20 @@ struct fmt::formatter<wccff::lexer::token_type> : formatter<string_view>
             case token_type::constant:
                 str = "Constant";
                 break;
+            case token_type::break_keyword:
+                str = "Break Keyword";
+                break;
+            case token_type::continue_keyword:
+                str = "Continue Keyword";
+                break;
+            case token_type::do_keyword:
+                str = "Do Keyword";
+                break;
             case token_type::else_keyword:
                 str = "Else Keyword";
+                break;
+            case token_type::for_keyword:
+                str = "For Keyword";
                 break;
             case token_type::if_keyword:
                 str = "If Keyword";
@@ -154,6 +171,9 @@ struct fmt::formatter<wccff::lexer::token_type> : formatter<string_view>
                 break;
             case token_type::return_keyword:
                 str = "Return Keyword";
+                break;
+            case token_type::while_keyword:
+                str = "While Keyword";
                 break;
             case token_type::open_parenthesis:
                 str = "Open Parenthesis";

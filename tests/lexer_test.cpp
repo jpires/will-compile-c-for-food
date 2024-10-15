@@ -184,6 +184,34 @@ TEST_CASE("Identifiers", "[lexer]")
 
 TEST_CASE("Keywords", "[lexer]")
 {
+    SECTION("break")
+    {
+        std::string_view input{ "break" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::break_keyword);
+        REQUIRE(result.value().at(0).text == "break");
+    }
+    SECTION("continue")
+    {
+        std::string_view input{ "continue" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::continue_keyword);
+        REQUIRE(result.value().at(0).text == "continue");
+    }
+    SECTION("do")
+    {
+        std::string_view input{ "do" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::do_keyword);
+        REQUIRE(result.value().at(0).text == "do");
+    }
+
     SECTION("else")
     {
         std::string_view input{ "else" };
@@ -192,6 +220,15 @@ TEST_CASE("Keywords", "[lexer]")
         REQUIRE(result.value().size() == 1);
         REQUIRE(result.value().at(0).type == wccff::lexer::token_type::else_keyword);
         REQUIRE(result.value().at(0).text == "else");
+    }
+    SECTION("for")
+    {
+        std::string_view input{ "for" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::for_keyword);
+        REQUIRE(result.value().at(0).text == "for");
     }
     SECTION("if")
     {
@@ -230,6 +267,15 @@ TEST_CASE("Keywords", "[lexer]")
         REQUIRE(result.value().size() == 1);
         REQUIRE(result.value().at(0).type == wccff::lexer::token_type::return_keyword);
         REQUIRE(result.value().at(0).text == "return");
+    }
+    SECTION("while")
+    {
+        std::string_view input{ "while" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::while_keyword);
+        REQUIRE(result.value().at(0).text == "while");
     }
 }
 
