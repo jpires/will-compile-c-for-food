@@ -1,0 +1,10 @@
+Do While(
+         Assign(Compound Plus
+                Var(i)
+                IntConstant(1)
+         )
+         Binary(Less Than
+                Var(a)
+                IntConstant(10)
+         )
+)

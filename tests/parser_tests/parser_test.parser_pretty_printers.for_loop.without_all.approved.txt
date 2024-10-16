@@ -1,0 +1,8 @@
+For Loop(loop_name
+         EMPTY EXPRESSION
+         EMPTY EXPRESSION
+         EMPTY EXPRESSION
+         Return(
+                IntConstant(42)
+         )
+)

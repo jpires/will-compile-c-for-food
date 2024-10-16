@@ -1,0 +1,14 @@
+For Loop(
+         DeclVar(a
+                 IntConstant(0)
+         )
+         Binary(Less Than
+                Var(a)
+                IntConstant(10)
+         )
+         EMPTY EXPRESSION
+         Assign(Compound Plus
+                Var(i)
+                IntConstant(1)
+         )
+)

@@ -383,6 +383,22 @@ std::expected<parser::statement, semantic_error> resolve_statement(const parser:
         [&](const std::unique_ptr<parser::compound_statement> &n) -> std::expected<parser::statement, semantic_error> {
             return resolve_compound_statement(n, variable_map);
         },
+        [&](const parser::break_statement &n) -> std::expected<parser::statement, semantic_error> {
+            throw std::runtime_error{ "break statement not implemented" };
+        },
+        [&](const parser::continue_statement &n) -> std::expected<parser::statement, semantic_error> {
+            throw std::runtime_error{ "continue statement not implemented" };
+        },
+        [&](const std::unique_ptr<parser::while_statement> &n) -> std::expected<parser::statement, semantic_error> {
+            throw std::runtime_error{ "while statement not implemented" };
+        },
+
+        [&](const std::unique_ptr<parser::do_while_statement> &n) -> std::expected<parser::statement, semantic_error> {
+            throw std::runtime_error{ "do while statement not implemented" };
+        },
+        [&](const std::unique_ptr<parser::for_statement> &n) -> std::expected<parser::statement, semantic_error> {
+            throw std::runtime_error{ "for statement not implemented" };
+        },
         [&](const std::monostate &n) -> std::expected<parser::statement, semantic_error> { return std::monostate{}; },
       },
       input);

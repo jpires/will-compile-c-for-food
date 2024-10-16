@@ -1,0 +1,9 @@
+Do While(loop_name
+         Return(
+                IntConstant(42)
+         )
+         Binary(Equals
+                IntConstant(1)
+                IntConstant(1)
+         )
+)

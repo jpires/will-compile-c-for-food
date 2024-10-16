@@ -398,6 +398,17 @@ void process_statement(const wccff::parser::statement &s, std::vector<instructio
         [&instructions](const parser::expression &n) { process_expression(n, instructions); },
         [&](const std::unique_ptr<parser::if_node> &n) { process_if(n, instructions); },
         [&](const std::unique_ptr<parser::compound_statement> &n) { process_compound_statement(n, instructions); },
+        [&](const parser::break_statement &n) { throw std::runtime_error("break statement not implemented"); },
+        [&](const parser::continue_statement &n) { throw std::runtime_error("continue statement not implemented"); },
+        [&](const std::unique_ptr<parser::while_statement> &n) {
+            throw std::runtime_error("while statement not implemented");
+        },
+        [&](const std::unique_ptr<parser::do_while_statement> &n) {
+            throw std::runtime_error("do while statement not implemented");
+        },
+        [&](const std::unique_ptr<parser::for_statement> &n) {
+            throw std::runtime_error("for statement not implemented");
+        },
         [](const std::monostate) {},
       },
       s);

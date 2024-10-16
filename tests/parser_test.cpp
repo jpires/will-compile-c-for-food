@@ -520,6 +520,195 @@ TEST_CASE("Binary Operators", "[parser]")
     }
 }
 
+TEST_CASE("Loop Statements")
+{
+    using wccff::parser::pretty_print;
+
+    auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("parser_tests");
+    wccff::lexer::file_location location{ 0, 0 };
+
+    SECTION("do while loops")
+    {
+        SECTION("complete")
+        {
+            std::vector<wccff::lexer::token> tokens_vector;
+            tokens_vector.emplace_back(wccff::lexer::token_type::do_keyword, "do", location);
+
+            tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "i", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::compound_plus, "+=", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
+
+            tokens_vector.emplace_back(wccff::lexer::token_type::while_keyword, "while", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::open_parenthesis, "(", location);
+
+            tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "a", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::less_than_operator, "<", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::constant, "10", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
+
+            wccff::parser::tokens tokens{ tokens_vector };
+            auto result = wccff::parser::parse_do_while(tokens);
+            REQUIRE(result.has_value());
+
+            ApprovalTests::Approvals::verify(pretty_print(result.value()));
+        }
+    }
+    SECTION("for loops")
+    {
+        SECTION("good loops")
+        {
+            SECTION("complete")
+            {
+                std::vector<wccff::lexer::token> tokens_vector;
+                tokens_vector.emplace_back(wccff::lexer::token_type::for_keyword, "for", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::open_parenthesis, "(", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::int_keyword, "int", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "a", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::assignment_operator, "=", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::constant, "0", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
+
+                tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "a", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::less_than_operator, "<", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::constant, "10", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
+
+                tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "a", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::compound_plus, "+=", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
+
+                tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "i", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::compound_plus, "+=", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
+
+                wccff::parser::tokens tokens{ tokens_vector };
+                auto result = wccff::parser::parse_for_statement(tokens);
+                REQUIRE(result.has_value());
+
+                ApprovalTests::Approvals::verify(pretty_print(result.value()));
+            }
+            SECTION("without_init")
+            {
+                std::vector<wccff::lexer::token> tokens_vector;
+                tokens_vector.emplace_back(wccff::lexer::token_type::for_keyword, "for", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::open_parenthesis, "(", location);
+
+                tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
+
+                tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "a", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::less_than_operator, "<", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::constant, "10", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
+
+                tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "a", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::compound_plus, "+=", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
+
+                tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "i", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::compound_plus, "+=", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
+
+                wccff::parser::tokens tokens{ tokens_vector };
+                auto result = wccff::parser::parse_for_statement(tokens);
+                REQUIRE(result.has_value());
+
+                ApprovalTests::Approvals::verify(pretty_print(result.value()));
+            }
+            SECTION("without_condition")
+            {
+                std::vector<wccff::lexer::token> tokens_vector;
+                tokens_vector.emplace_back(wccff::lexer::token_type::for_keyword, "for", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::open_parenthesis, "(", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::int_keyword, "int", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "a", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::assignment_operator, "=", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::constant, "0", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
+
+                tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
+
+                tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "a", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::compound_plus, "+=", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
+
+                tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "i", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::compound_plus, "+=", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
+
+                wccff::parser::tokens tokens{ tokens_vector };
+                auto result = wccff::parser::parse_for_statement(tokens);
+                REQUIRE(result.has_value());
+
+                ApprovalTests::Approvals::verify(pretty_print(result.value()));
+            }
+            SECTION("without_post")
+            {
+                std::vector<wccff::lexer::token> tokens_vector;
+                tokens_vector.emplace_back(wccff::lexer::token_type::for_keyword, "for", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::open_parenthesis, "(", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::int_keyword, "int", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "a", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::assignment_operator, "=", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::constant, "0", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
+
+                tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "a", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::less_than_operator, "<", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::constant, "10", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
+
+                tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
+
+                tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "i", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::compound_plus, "+=", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
+
+                wccff::parser::tokens tokens{ tokens_vector };
+                auto result = wccff::parser::parse_for_statement(tokens);
+                REQUIRE(result.has_value());
+
+                ApprovalTests::Approvals::verify(pretty_print(result.value()));
+            }
+        }
+    }
+
+    SECTION("while loops")
+    {
+        SECTION("complete")
+        {
+            std::vector<wccff::lexer::token> tokens_vector;
+
+            tokens_vector.emplace_back(wccff::lexer::token_type::while_keyword, "while", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::open_parenthesis, "(", location);
+
+            tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "a", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::less_than_operator, "<", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::constant, "10", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
+
+            tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "i", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::compound_plus, "+=", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
+
+            wccff::parser::tokens tokens{ tokens_vector };
+            auto result = wccff::parser::parse_while_statement(tokens);
+            REQUIRE(result.has_value());
+
+            ApprovalTests::Approvals::verify(pretty_print(result.value()));
+        }
+    }
+}
+
 TEST_CASE("parser_pretty_printers", "[parser]")
 {
     using wccff::parser::pretty_print;
@@ -596,6 +785,17 @@ TEST_CASE("parser_pretty_printers", "[parser]")
         ApprovalTests::Approvals::verify(pretty_print(b));
     }
 
+    SECTION("break")
+    {
+        using wccff::parser::break_statement;
+        using wccff::parser::identifier;
+        identifier var_name{ "label_name" };
+
+        break_statement b{ var_name };
+
+        REQUIRE(pretty_print(b) == "Break(label_name)");
+    }
+
     SECTION("compound_statement")
     {
         using wccff::parser::block;
@@ -617,6 +817,17 @@ TEST_CASE("parser_pretty_printers", "[parser]")
         ApprovalTests::Approvals::verify(pretty_print(stmt));
     }
 
+    SECTION("continue")
+    {
+        using wccff::parser::continue_statement;
+        using wccff::parser::identifier;
+        identifier var_name{ "label_name" };
+
+        continue_statement b{ var_name };
+
+        REQUIRE(pretty_print(b) == "Continue(label_name)");
+    }
+
     SECTION("declaration")
     {
         using wccff::parser::declaration;
@@ -634,6 +845,23 @@ TEST_CASE("parser_pretty_printers", "[parser]")
             auto dec = declaration(name, std::nullopt);
             ApprovalTests::Approvals::verify(pretty_print(dec));
         }
+    }
+
+    SECTION("do_while")
+    {
+        using wccff::parser::binary_node;
+        using wccff::parser::do_while_statement;
+        using wccff::parser::equals_operator;
+        using wccff::parser::identifier;
+        using wccff::parser::int_constant;
+        using wccff::parser::return_node;
+
+        auto loop_name = identifier("loop_name");
+        auto body = return_node{ int_constant{ 42 } };
+        auto conditional = std::make_unique<binary_node>(equals_operator{}, int_constant{ 1 }, int_constant{ 1 });
+
+        auto stmt = std::make_unique<do_while_statement>(std::move(body), std::move(conditional), loop_name);
+        ApprovalTests::Approvals::verify(pretty_print(stmt));
     }
 
     SECTION("function")
@@ -657,6 +885,98 @@ TEST_CASE("parser_pretty_printers", "[parser]")
             items.emplace_back(std::move(ret));
             auto dec = function{ name, std::move(items) };
             ApprovalTests::Approvals::verify(pretty_print(dec));
+        }
+    }
+
+    SECTION("for_loop")
+    {
+        using wccff::parser::binary_node;
+        using wccff::parser::equals_operator;
+        using wccff::parser::expression;
+        using wccff::parser::for_init;
+        using wccff::parser::for_statement;
+        using wccff::parser::identifier;
+        using wccff::parser::init_expression;
+        using wccff::parser::int_constant;
+        using wccff::parser::plus_operator;
+        using wccff::parser::return_node;
+
+        identifier loop_name{ "loop_name" };
+        SECTION("without init")
+        {
+            for_init init = init_expression{ std::nullopt };
+            auto conditional = std::make_unique<binary_node>(equals_operator{}, int_constant{ 1 }, int_constant{ 2 });
+            auto post = std::make_unique<binary_node>(plus_operator{}, int_constant{ 3 }, int_constant{ 4 });
+            auto body = return_node{ int_constant{ 42 } };
+
+            auto stmt = std::make_unique<for_statement>(std::move(init),
+                                                        std::move(conditional),
+                                                        std::move(post),
+                                                        std::move(body),
+                                                        loop_name);
+            ApprovalTests::Approvals::verify(pretty_print(stmt));
+        }
+        SECTION("without condition")
+        {
+            for_init init = init_expression{
+                std::make_unique<binary_node>(equals_operator{}, int_constant{ 1 }, int_constant{ 2 })
+            };
+            auto conditional = std::nullopt;
+            auto post = std::make_unique<binary_node>(plus_operator{}, int_constant{ 3 }, int_constant{ 4 });
+            auto body = return_node{ int_constant{ 42 } };
+
+            auto stmt = std::make_unique<for_statement>(std::move(init),
+                                                        std::move(conditional),
+                                                        std::move(post),
+                                                        std::move(body),
+                                                        loop_name);
+            ApprovalTests::Approvals::verify(pretty_print(stmt));
+        }
+        SECTION("without post")
+        {
+            for_init init = init_expression{
+                std::make_unique<binary_node>(equals_operator{}, int_constant{ 1 }, int_constant{ 2 })
+            };
+            auto conditional = std::make_unique<binary_node>(equals_operator{}, int_constant{ 1 }, int_constant{ 2 });
+            auto post = std::nullopt;
+            auto body = return_node{ int_constant{ 42 } };
+
+            auto stmt = std::make_unique<for_statement>(std::move(init),
+                                                        std::move(conditional),
+                                                        std::move(post),
+                                                        std::move(body),
+                                                        loop_name);
+            ApprovalTests::Approvals::verify(pretty_print(stmt));
+        }
+        SECTION("without all")
+        {
+            for_init init = init_expression{ std::nullopt };
+            auto conditional = std::nullopt;
+            auto post = std::nullopt;
+            auto body = return_node{ int_constant{ 42 } };
+
+            auto stmt = std::make_unique<for_statement>(std::move(init),
+                                                        std::move(conditional),
+                                                        std::move(post),
+                                                        std::move(body),
+                                                        loop_name);
+            ApprovalTests::Approvals::verify(pretty_print(stmt));
+        }
+        SECTION("with all")
+        {
+            for_init init = init_expression{
+                std::make_unique<binary_node>(equals_operator{}, int_constant{ 1 }, int_constant{ 2 })
+            };
+            auto conditional = std::make_unique<binary_node>(equals_operator{}, int_constant{ 1 }, int_constant{ 2 });
+            auto post = std::make_unique<binary_node>(plus_operator{}, int_constant{ 3 }, int_constant{ 4 });
+            auto body = return_node{ int_constant{ 42 } };
+
+            auto stmt = std::make_unique<for_statement>(std::move(init),
+                                                        std::move(conditional),
+                                                        std::move(post),
+                                                        std::move(body),
+                                                        loop_name);
+            ApprovalTests::Approvals::verify(pretty_print(stmt));
         }
     }
 
@@ -709,5 +1029,22 @@ TEST_CASE("parser_pretty_printers", "[parser]")
         auto variable = var{ "var_name" };
 
         REQUIRE(pretty_print(variable) == "Var(var_name)");
+    }
+
+    SECTION("while")
+    {
+        using wccff::parser::binary_node;
+        using wccff::parser::equals_operator;
+        using wccff::parser::identifier;
+        using wccff::parser::int_constant;
+        using wccff::parser::return_node;
+        using wccff::parser::while_statement;
+
+        auto loop_name = identifier("loop_name");
+        auto body = return_node{ int_constant{ 42 } };
+        auto conditional = std::make_unique<binary_node>(equals_operator{}, int_constant{ 1 }, int_constant{ 1 });
+
+        auto stmt = std::make_unique<while_statement>(std::move(conditional), std::move(body), loop_name);
+        ApprovalTests::Approvals::verify(pretty_print(stmt));
     }
 }

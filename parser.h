@@ -216,11 +216,14 @@ using binary_operator = std::variant<plus_operator,
                                      compound_left_shift_operator,
                                      compound_right_shift_operator>;
 struct binary_node;
+struct do_while_statement;
 struct compound_statement;
 struct conditional_node;
+struct for_statement;
 struct if_node;
 struct unary_node;
 struct assignment_node;
+struct while_statement;
 
 struct int_constant
 {
@@ -284,13 +287,43 @@ struct binary_node
     expression right;
 };
 
+struct break_statement
+{
+    identifier label;
+};
+struct continue_statement
+{
+    identifier label;
+};
 struct return_node
 {
     expression e;
 };
 
-using statement =
-  std::variant<return_node, expression, std::unique_ptr<if_node>, std::unique_ptr<compound_statement>, std::monostate>;
+using statement = std::variant<return_node,
+                               expression,
+                               std::unique_ptr<if_node>,
+                               std::unique_ptr<compound_statement>,
+                               break_statement,
+                               continue_statement,
+                               std::unique_ptr<while_statement>,
+                               std::unique_ptr<do_while_statement>,
+                               std::unique_ptr<for_statement>,
+                               std::monostate>;
+
+struct do_while_statement
+{
+    statement body;
+    expression condition;
+    identifier label;
+};
+
+struct while_statement
+{
+    expression condition;
+    statement body;
+    identifier label;
+};
 
 struct if_node
 {
@@ -303,6 +336,26 @@ struct declaration
 {
     identifier name;
     std::optional<expression> init;
+};
+
+struct init_declaration
+{
+    declaration decl;
+};
+struct init_expression
+{
+    std::optional<expression> expression;
+};
+
+using for_init = std::variant<init_declaration, init_expression>;
+
+struct for_statement
+{
+    for_init init;
+    std::optional<expression> condition;
+    std::optional<expression> post;
+    statement body;
+    identifier label;
 };
 
 using block_item = std::variant<declaration, statement, std::monostate>;
@@ -327,12 +380,24 @@ struct program
     function f;
 };
 
+/**
+ * This function consumes the tokens on list from the input. It consumes them in the same order.
+ * It will return an error, if the input doesn't have the expected tokens.
+ * @param tokens The input tokens
+ * @param list The expected tokens to be consumed
+ * @return A parse_error if the input doesn't contain all the tokens on list
+ */
+std::optional<parser_error> consume_tokens(tokens &tokens, const std::vector<lexer::token_type> &list);
+
 std::expected<block_item, parser_error> parse_block_item(tokens &tokens);
 std::expected<block, parser_error> parse_block(tokens &tokens);
 std::expected<std::unique_ptr<compound_statement>, parser_error> parse_compound_statement(tokens &tokens);
 std::expected<expression, parser_error> parse_conditional(tokens &tokens);
 std::expected<int_constant, parser_error> parse_constant(tokens &tokens);
+std::expected<std::unique_ptr<do_while_statement>, parser_error> parse_do_while(tokens &tokens);
 std::expected<declaration, parser_error> parse_declaration(tokens &tokens);
+std::expected<for_init, parser_error> parse_for_init(tokens &tokens);
+std::expected<std::unique_ptr<for_statement>, parser_error> parse_for_statement(tokens &tokens);
 std::expected<function, parser_error> parse_function(tokens &tokens);
 std::expected<identifier, parser_error> parse_identifier(tokens &tokens);
 std::expected<std::unique_ptr<if_node>, parser_error> parse_if_node(tokens &tokens);
@@ -341,26 +406,34 @@ std::expected<expression, parser_error> parse_factor(tokens &tokens);
 std::optional<parser_error> parse_semicolon(tokens &tokens);
 std::expected<statement, parser_error> parse_statement(tokens &tokens);
 std::expected<std::unique_ptr<unary_node>, parser_error> parse_unary_node(tokens &tokens);
+std::expected<std::unique_ptr<while_statement>, parser_error> parse_while_statement(tokens &tokens);
 
 std::expected<program, parser_error> parse(tokens &tokens);
 
 std::string pretty_print(const binary_operator &node, int32_t ident = 0);
 std::string pretty_print(const block &node, int32_t ident = 0);
 std::string pretty_print(const block_item &node, int32_t ident = 0);
+std::string pretty_print(const break_statement &node, int32_t ident = 0);
+std::string pretty_print(const continue_statement &node, int32_t ident = 0);
 std::string pretty_print(const declaration &node, int32_t ident = 0);
 std::string pretty_print(const expression &node, int32_t ident = 0);
+std::string pretty_print(const for_init &node, int32_t ident = 0);
 std::string pretty_print(const function &node, int32_t ident = 0);
 std::string pretty_print(const identifier &node, int32_t ident = 0);
 std::string pretty_print(const int_constant &node, int32_t ident = 0);
 std::string pretty_print(const program &node, int32_t ident = 0);
 std::string pretty_print(const statement &node, int32_t ident = 0);
 std::string pretty_print(const return_node &node, int32_t ident = 0);
+std::string pretty_print(const std::optional<expression> &node, int32_t ident = 0);
 std::string pretty_print(const std::unique_ptr<assignment_node> &node, int32_t ident = 0);
 std::string pretty_print(const std::unique_ptr<binary_node> &node, int32_t ident = 0);
 std::string pretty_print(const std::unique_ptr<compound_statement> &node, int32_t ident = 0);
 std::string pretty_print(const std::unique_ptr<conditional_node> &node, int32_t ident = 0);
+std::string pretty_print(const std::unique_ptr<do_while_statement> &node, int32_t ident = 0);
+std::string pretty_print(const std::unique_ptr<for_statement> &node, int32_t ident = 0);
 std::string pretty_print(const std::unique_ptr<if_node> &node, int32_t ident = 0);
 std::string pretty_print(const std::unique_ptr<unary_node> &node, int32_t ident = 0);
+std::string pretty_print(const std::unique_ptr<while_statement> &node, int32_t ident = 0);
 std::string pretty_print(const unary_operator &node, int32_t ident = 0);
 std::string pretty_print(const var &node, int32_t ident = 0);
 

@@ -1,0 +1,14 @@
+For Loop(
+         DeclVar(a
+                 IntConstant(0)
+         )
+         EMPTY EXPRESSION
+         Assign(Compound Plus
+                Var(a)
+                IntConstant(1)
+         )
+         Assign(Compound Plus
+                Var(i)
+                IntConstant(1)
+         )
+)

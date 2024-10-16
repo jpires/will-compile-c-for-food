@@ -1,0 +1,14 @@
+For Loop(loop_name
+         EMPTY EXPRESSION
+         Binary(Equals
+                IntConstant(1)
+                IntConstant(2)
+         )
+         Binary(Plus
+                IntConstant(3)
+                IntConstant(4)
+         )
+         Return(
+                IntConstant(42)
+         )
+)

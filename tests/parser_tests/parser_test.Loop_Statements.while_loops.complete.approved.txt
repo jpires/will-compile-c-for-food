@@ -1,0 +1,10 @@
+While(
+      Binary(Less Than
+             Var(a)
+             IntConstant(10)
+      )
+      Assign(Compound Plus
+             Var(i)
+             IntConstant(1)
+      )
+)
