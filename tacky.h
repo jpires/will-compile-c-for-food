@@ -278,10 +278,14 @@ val process_assignment_node(const std::unique_ptr<parser::assignment_node> &node
                             std::vector<instruction> &instructions);
 void process_block(const parser::block &node, std::vector<instruction> &instructions);
 void process_block_item(const parser::block_item &node, std::vector<instruction> &instructions);
+void process_break_statement(const parser::break_statement &node, std::vector<instruction> &instructions);
 void process_compound_statement(const std::unique_ptr<parser::compound_statement> &node,
                                 std::vector<instruction> &instructions);
 val process_conditional_node(const std::unique_ptr<parser::conditional_node> &node,
                              std::vector<instruction> &instructions);
+void process_continue_statement(const parser::continue_statement &node, std::vector<instruction> &instructions);
+void process_do_while_statement(const std::unique_ptr<parser::do_while_statement> &node,
+                                std::vector<instruction> &instructions);
 identifier process_identifier(const parser::identifier &id);
 void process_if(const std::unique_ptr<parser::if_node> &id, std::vector<instruction> &instructions);
 constant process_int_constant(const parser::int_constant &int_con);
@@ -290,9 +294,13 @@ binary_operator process_binary_operator(const parser::binary_operator &op);
 val process_binary_node(const std::unique_ptr<parser::binary_node> &node, std::vector<instruction> &instructions);
 val process_unary_node(const std::unique_ptr<parser::unary_node> &node, std::vector<instruction> &instructions);
 val process_expression(const wccff::parser::expression &exp, std::vector<instruction> &instructions);
+void process_for_init(const parser::for_init &node, std::vector<instruction> &instructions);
+void process_for_statement(const std::unique_ptr<parser::for_statement> &node, std::vector<instruction> &instructions);
 function_definition process_function_definition(const parser::function &f);
 void process_return_node(const wccff::parser::return_node &stmt, std::vector<instruction> &instructions);
 void process_statement(const wccff::parser::statement &s, std::vector<instruction> &instructions);
+void process_while_statement(const std::unique_ptr<parser::while_statement> &node,
+                             std::vector<instruction> &instructions);
 
 program process(const parser::program &input);
 

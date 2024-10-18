@@ -78,6 +78,15 @@ identifier get_or_end_label()
     return { fmt::format("or_end_{}", ++counter) };
 }
 
+identifier get_loop_continue_label(identifier n)
+{
+    return { fmt::format("continue_{}", n.name) };
+}
+identifier get_loop_break_label(identifier n)
+{
+    return { fmt::format("break_{}", n.name) };
+}
+
 /*
 
 auto v1 = process_expression(node->left, instructions);
@@ -398,17 +407,11 @@ void process_statement(const wccff::parser::statement &s, std::vector<instructio
         [&instructions](const parser::expression &n) { process_expression(n, instructions); },
         [&](const std::unique_ptr<parser::if_node> &n) { process_if(n, instructions); },
         [&](const std::unique_ptr<parser::compound_statement> &n) { process_compound_statement(n, instructions); },
-        [&](const parser::break_statement &n) { throw std::runtime_error("break statement not implemented"); },
-        [&](const parser::continue_statement &n) { throw std::runtime_error("continue statement not implemented"); },
-        [&](const std::unique_ptr<parser::while_statement> &n) {
-            throw std::runtime_error("while statement not implemented");
-        },
-        [&](const std::unique_ptr<parser::do_while_statement> &n) {
-            throw std::runtime_error("do while statement not implemented");
-        },
-        [&](const std::unique_ptr<parser::for_statement> &n) {
-            throw std::runtime_error("for statement not implemented");
-        },
+        [&](const parser::break_statement &n) { process_break_statement(n, instructions); },
+        [&](const parser::continue_statement &n) { process_continue_statement(n, instructions); },
+        [&](const std::unique_ptr<parser::while_statement> &n) { process_while_statement(n, instructions); },
+        [&](const std::unique_ptr<parser::do_while_statement> &n) { process_do_while_statement(n, instructions); },
+        [&](const std::unique_ptr<parser::for_statement> &n) { process_for_statement(n, instructions); },
         [](const std::monostate) {},
       },
       s);
@@ -436,10 +439,75 @@ void process_block_item(const parser::block_item &s, std::vector<instruction> &i
                s);
 }
 
+void process_break_statement(const parser::break_statement &node, std::vector<instruction> &instructions)
+{
+    identifier label = get_loop_break_label(process_identifier(node.label));
+    instructions.emplace_back(jump_statement{ label });
+}
 void process_compound_statement(const std::unique_ptr<parser::compound_statement> &node,
                                 std::vector<instruction> &instructions)
 {
     process_block(node->block, instructions);
+}
+
+void process_continue_statement(const parser::continue_statement &node, std::vector<instruction> &instructions)
+{
+    identifier label = get_loop_continue_label(process_identifier(node.label));
+    instructions.emplace_back(jump_statement{ label });
+}
+
+void process_do_while_statement(const std::unique_ptr<parser::do_while_statement> &node,
+                                std::vector<instruction> &instructions)
+{
+    auto start_label = identifier{ fmt::format("start_{}", node->label.name) };
+    auto continue_label = get_loop_continue_label(process_identifier(node->label));
+    auto break_label = get_loop_break_label(process_identifier(node->label));
+
+    instructions.emplace_back(label_statement{ start_label });
+    process_statement(node->body, instructions);
+    instructions.emplace_back(label_statement{ continue_label });
+    auto result = process_expression(node->condition, instructions);
+    instructions.emplace_back(jump_if_not_zero_statement{ result, start_label });
+    instructions.emplace_back(label_statement{ break_label });
+}
+
+void process_for_init(const parser::for_init &node, std::vector<instruction> &instructions)
+{
+    std::visit(visitor{
+                 [&instructions](const parser::init_declaration &n) { process_declaration(n.decl, instructions); },
+                 [&instructions](const parser::init_expression &n) {
+                     if (n.expression.has_value())
+                     {
+                         process_expression(n.expression.value(), instructions);
+                     }
+                 },
+               },
+               node);
+}
+
+void process_for_statement(const std::unique_ptr<parser::for_statement> &node, std::vector<instruction> &instructions)
+{
+    auto start_label = identifier{ fmt::format("start_{}", node->label.name) };
+    auto continue_label = get_loop_continue_label(process_identifier(node->label));
+    auto break_label = get_loop_break_label(process_identifier(node->label));
+
+    process_for_init(node->init, instructions);
+    instructions.emplace_back(label_statement{ start_label });
+    if (node->condition.has_value())
+    {
+        auto result = process_expression(node->condition.value(), instructions);
+        instructions.emplace_back(jump_if_zero_statement{ result, break_label });
+    }
+
+    process_statement(node->body, instructions);
+
+    instructions.emplace_back(label_statement{ continue_label });
+    if (node->post.has_value())
+    {
+        process_expression(node->post.value(), instructions);
+    }
+    instructions.emplace_back(jump_statement{ start_label });
+    instructions.emplace_back(label_statement{ break_label });
 }
 
 function_definition process_function_definition(const parser::function &f)
@@ -455,6 +523,20 @@ function_definition process_function_definition(const parser::function &f)
 program process(const parser::program &input)
 {
     return { process_function_definition(input.f) };
+}
+
+void process_while_statement(const std::unique_ptr<parser::while_statement> &node,
+                             std::vector<instruction> &instructions)
+{
+    auto continue_label = get_loop_continue_label(process_identifier(node->label));
+    auto break_label = get_loop_break_label(process_identifier(node->label));
+
+    instructions.emplace_back(label_statement{ continue_label });
+    auto result = process_expression(node->condition, instructions);
+    instructions.emplace_back(jump_if_zero_statement{ result, break_label });
+    process_statement(node->body, instructions);
+    instructions.emplace_back(jump_statement{ continue_label });
+    instructions.emplace_back(label_statement{ break_label });
 }
 
 std::string pretty_print(const unary_operator &op, int32_t ident)
