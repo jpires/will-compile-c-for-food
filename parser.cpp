@@ -60,6 +60,47 @@ std::optional<parser_error> consume_tokens(tokens &tokens, const std::vector<lex
     return std::nullopt;
 }
 
+std::unique_ptr<assignment_node> copy_assignment_node(const std::unique_ptr<assignment_node> &node)
+{
+    return std::make_unique<assignment_node>(node->op, copy_expression(node->lhs), copy_expression(node->rhs));
+}
+std::unique_ptr<binary_node> copy_binary_node(const std::unique_ptr<binary_node> &node)
+{
+    return std::make_unique<binary_node>(node->op, copy_expression(node->left), copy_expression(node->right));
+}
+std::unique_ptr<conditional_node> copy_conditional_node(const std::unique_ptr<conditional_node> &node)
+{
+    return std::make_unique<conditional_node>(copy_expression(node->condition),
+                                              copy_expression(node->e1),
+                                              copy_expression(node->e2));
+}
+declaration copy_declaration(const declaration &node)
+{
+    std::optional<expression> init;
+    if (node.init.has_value())
+    {
+        init = copy_expression(node.init.value());
+    }
+    return declaration{ node.name, std::move(init) };
+}
+expression copy_expression(const expression &exp)
+{
+    return std::visit(
+      visitor{
+        [](const int_constant &n) -> expression { return n; },
+        [](const var &n) -> expression { return n; },
+        [](const std::unique_ptr<unary_node> &n) -> expression { return copy_unary_node(n); },
+        [](const std::unique_ptr<binary_node> &n) -> expression { return copy_binary_node(n); },
+        [](const std::unique_ptr<assignment_node> &n) -> expression { return copy_assignment_node(n); },
+        [](const std::unique_ptr<conditional_node> &n) -> expression { return copy_conditional_node(n); },
+      },
+      exp);
+}
+std::unique_ptr<unary_node> copy_unary_node(const std::unique_ptr<unary_node> &node)
+{
+    return std::make_unique<unary_node>(node->op, copy_expression(node->exp));
+}
+
 std::optional<parser_error> parse_semicolon(tokens &tokens)
 {
     auto next_token = tokens.get_next_token();

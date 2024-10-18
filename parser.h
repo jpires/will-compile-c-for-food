@@ -389,6 +389,13 @@ struct program
  */
 std::optional<parser_error> consume_tokens(tokens &tokens, const std::vector<lexer::token_type> &list);
 
+std::unique_ptr<assignment_node> copy_assignment_node(const std::unique_ptr<assignment_node> &node);
+std::unique_ptr<binary_node> copy_binary_node(const std::unique_ptr<binary_node> &node);
+std::unique_ptr<conditional_node> copy_conditional_node(const std::unique_ptr<conditional_node> &node);
+declaration copy_declaration(const declaration &node);
+expression copy_expression(const expression &expression);
+std::unique_ptr<unary_node> copy_unary_node(const std::unique_ptr<unary_node> &node);
+
 std::expected<block_item, parser_error> parse_block_item(tokens &tokens);
 std::expected<block, parser_error> parse_block(tokens &tokens);
 std::expected<std::unique_ptr<compound_statement>, parser_error> parse_compound_statement(tokens &tokens);
