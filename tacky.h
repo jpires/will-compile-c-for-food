@@ -276,6 +276,8 @@ struct program
 
 val process_assignment_node(const std::unique_ptr<parser::assignment_node> &node,
                             std::vector<instruction> &instructions);
+val process_binary_node(const std::unique_ptr<parser::binary_node> &node, std::vector<instruction> &instructions);
+binary_operator process_binary_operator(const parser::binary_operator &op);
 void process_block(const parser::block &node, std::vector<instruction> &instructions);
 void process_block_item(const parser::block_item &node, std::vector<instruction> &instructions);
 void process_break_statement(const parser::break_statement &node, std::vector<instruction> &instructions);
@@ -286,40 +288,38 @@ val process_conditional_node(const std::unique_ptr<parser::conditional_node> &no
 void process_continue_statement(const parser::continue_statement &node, std::vector<instruction> &instructions);
 void process_do_while_statement(const std::unique_ptr<parser::do_while_statement> &node,
                                 std::vector<instruction> &instructions);
-identifier process_identifier(const parser::identifier &id);
-void process_if(const std::unique_ptr<parser::if_node> &id, std::vector<instruction> &instructions);
-constant process_int_constant(const parser::int_constant &int_con);
-unary_operator process_unary_operator(const parser::unary_operator &op);
-binary_operator process_binary_operator(const parser::binary_operator &op);
-val process_binary_node(const std::unique_ptr<parser::binary_node> &node, std::vector<instruction> &instructions);
-val process_unary_node(const std::unique_ptr<parser::unary_node> &node, std::vector<instruction> &instructions);
 val process_expression(const wccff::parser::expression &exp, std::vector<instruction> &instructions);
 void process_for_init(const parser::for_init &node, std::vector<instruction> &instructions);
 void process_for_statement(const std::unique_ptr<parser::for_statement> &node, std::vector<instruction> &instructions);
 function_definition process_function_definition(const parser::function &f);
+identifier process_identifier(const parser::identifier &id);
+void process_if(const std::unique_ptr<parser::if_node> &id, std::vector<instruction> &instructions);
+constant process_int_constant(const parser::int_constant &int_con);
 void process_return_node(const wccff::parser::return_node &stmt, std::vector<instruction> &instructions);
 void process_statement(const wccff::parser::statement &s, std::vector<instruction> &instructions);
+val process_unary_node(const std::unique_ptr<parser::unary_node> &node, std::vector<instruction> &instructions);
+unary_operator process_unary_operator(const parser::unary_operator &op);
 void process_while_statement(const std::unique_ptr<parser::while_statement> &node,
                              std::vector<instruction> &instructions);
 
 program process(const parser::program &input);
 
-std::string pretty_print(const unary_operator &val, int32_t ident = 0);
-std::string pretty_print(const constant &val, int32_t ident = 0);
-std::string pretty_print(const var &val, int32_t ident = 0);
-std::string pretty_print(const val &val, int32_t ident = 0);
-std::string pretty_print(const return_statement &instruction, int32_t ident = 0);
-std::string pretty_print(const unary_statement &instruction, int32_t ident = 0);
 std::string pretty_print(const binary_statement &i, int32_t ident = 0);
+std::string pretty_print(const constant &val, int32_t ident = 0);
 std::string pretty_print(const copy_statement &i, int32_t ident = 0);
+std::string pretty_print(const instruction &instruction, int32_t ident = 0);
+std::string pretty_print(const function_definition &f, int32_t ident = 0);
 std::string pretty_print(const jump_statement &i, int32_t ident = 0);
 std::string pretty_print(const jump_if_zero_statement &i, int32_t ident = 0);
 std::string pretty_print(const jump_if_not_zero_statement &i, int32_t ident = 0);
 std::string pretty_print(const label_statement &i, int32_t ident = 0);
-std::string pretty_print(const instruction &instruction, int32_t ident = 0);
-std::string pretty_print(const std::vector<instruction> &instructions, int32_t ident = 0);
-std::string pretty_print(const function_definition &f, int32_t ident = 0);
 std::string pretty_print(const program &p, int32_t ident = 0);
+std::string pretty_print(const return_statement &instruction, int32_t ident = 0);
+std::string pretty_print(const std::vector<instruction> &instructions, int32_t ident = 0);
+std::string pretty_print(const unary_statement &instruction, int32_t ident = 0);
+std::string pretty_print(const unary_operator &val, int32_t ident = 0);
+std::string pretty_print(const var &val, int32_t ident = 0);
+std::string pretty_print(const val &val, int32_t ident = 0);
 
 } // namespace wccff::tacky
 #endif // TACKY_H
