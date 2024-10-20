@@ -14,6 +14,8 @@ add_executable(unit_tests
         ../parser.cpp
         ../semantic_analysis.cpp
         ../tacky.cpp
+        ../semantic_analysis/variable_resolution.cpp
+        ../semantic_analysis/loop_labelling.cpp
 )
 target_link_libraries(unit_tests PRIVATE
         Catch2::Catch2
@@ -21,6 +23,7 @@ target_link_libraries(unit_tests PRIVATE
         ctre::ctre
         fmt::fmt
 )
+target_include_directories(unit_tests PRIVATE ..)
 
 find_path(APPROVAL_TESTS_CPP_INCLUDE_DIRS "ApprovalTests.hpp")
 target_include_directories(unit_tests PRIVATE ${APPROVAL_TESTS_CPP_INCLUDE_DIRS})

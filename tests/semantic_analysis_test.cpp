@@ -18,6 +18,7 @@
  */
 
 #include "../semantic_analysis.h"
+#include "semantic_analysis/variable_resolution.h"
 #include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("Variable Resolution", "[semantic_analysis]")
@@ -32,7 +33,7 @@ TEST_CASE("Variable Resolution", "[semantic_analysis]")
         parser::int_constant value2{ 43 };
 
         auto original = std::make_unique<parser::assignment_node>(assignment_operator{}, value1, value2);
-        auto result = sema::resolve_assignment_node(original, map);
+        auto result = sema::variable_resolution::process_assignment_node(original, map);
         REQUIRE(result.has_value() == false);
     }
 }

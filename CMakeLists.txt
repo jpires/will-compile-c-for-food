@@ -21,6 +21,10 @@ add_executable(wccff
         parser.cpp
         parser.h
         tacky.cpp
+        semantic_analysis/loop_labelling.cpp
+        semantic_analysis/loop_labelling.h
+        semantic_analysis/variable_resolution.cpp
+        semantic_analysis/variable_resolution.h
         semantic_analysis.cpp
         semantic_analysis.h
         tacky.h
@@ -32,5 +36,6 @@ target_link_libraries(wccff PRIVATE
         cxxopts::cxxopts
         fmt::fmt
 )
+target_include_directories(wccff PRIVATE .)
 
 add_subdirectory(tests)
