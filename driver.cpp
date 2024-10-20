@@ -23,6 +23,12 @@
 #include <fmt/core.h>
 #include <iostream>
 
+enum class output_format
+{
+    executable,
+    object,
+};
+
 std::filesystem::path get_preprocessor_path(const std::filesystem::path &source_file)
 {
     return source_file.parent_path() / fmt::format("{}.i", source_file.filename().stem().c_str());
@@ -66,7 +72,9 @@ int run_compiler(const std::filesystem::path &source_file, wccff::stop_phase sto
     return 0;
 }
 
-int run_assembler_and_linker(const std::filesystem::path &source_file, wccff::stop_phase stop_phase)
+int run_assembler_and_linker(const std::filesystem::path &source_file,
+                             wccff::stop_phase stop_phase,
+                             output_format output)
 {
     auto src_file = get_assembly_path(source_file);
 
@@ -77,7 +85,16 @@ int run_assembler_and_linker(const std::filesystem::path &source_file, wccff::st
     }
 
     auto dst_file = get_binary_path(source_file);
-    auto cmd = fmt::format("gcc {} -o {}", src_file.c_str(), dst_file.c_str());
+    std::string cmd;
+    if (output == output_format::executable)
+    {
+        cmd = fmt::format("gcc {} -o {}", src_file.c_str(), dst_file.c_str());
+    }
+    else
+    {
+        cmd = fmt::format("gcc -c {} -o {}.o", src_file.c_str(), dst_file.c_str());
+    }
+
     std::cout << cmd << std::endl;
 
     auto result = system(cmd.c_str());
@@ -101,6 +118,7 @@ int main(int argc, char *argv[])
     ("validate","Run the semantic analysis",cxxopts::value<bool>()->implicit_value("true"))
     ("tacky","Run the tacky",cxxopts::value<bool>()->implicit_value("true"))
     ("codegen", "Run the codegen", cxxopts::value<bool>()->implicit_value("true"))
+    ("c","Generate an object file",cxxopts::value<bool>()->implicit_value("true"))
     ("S","Generate Assembly file",cxxopts::value<bool>()->implicit_value("true"))
     ("sourcefile", "The source file to process", cxxopts::value<std::string>())
     ("h,help", "Print usage");
@@ -144,6 +162,12 @@ int main(int argc, char *argv[])
         stop_phase = wccff::stop_phase::codegen;
     }
 
+    output_format output_format = output_format::executable;
+    if (result["c"].as<bool>())
+    {
+        output_format = output_format::object;
+    }
+
     auto source_filename = result["sourcefile"].as<std::string>();
     if (source_filename.ends_with(".c") == false)
     {
@@ -159,7 +183,7 @@ int main(int argc, char *argv[])
     {
         return r;
     }
-    if (auto r = run_assembler_and_linker(source_filename, stop_phase) != 0)
+    if (auto r = run_assembler_and_linker(source_filename, stop_phase, output_format) != 0)
     {
         return r;
     }
