@@ -69,6 +69,7 @@ constexpr auto compound_right_shift_pattern{ R"((>>=))" };
 constexpr auto increment_operator_pattern{ R"((\+\+))" };
 constexpr auto question_mark_pattern{ R"((\?))" };
 constexpr auto colon_pattern{ R"((:))" };
+constexpr auto comma_pattern{ R"((,))" };
 
 constexpr auto get_patters()
 {
@@ -119,6 +120,7 @@ constexpr auto get_patters()
         assignment_operator_pattern,
         question_mark_pattern,
         colon_pattern,
+        comma_pattern,
     };
 }
 
@@ -480,6 +482,11 @@ std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, fil
             {
                 std::cout << "Found question mark" << '\n';
                 result.emplace_back(token_type::colon, m, location);
+            }
+            if (ctre::get<get_pattern_position(comma_pattern)>(m))
+            {
+                std::cout << "Found comma" << '\n';
+                result.emplace_back(token_type::comma, m, location);
             }
 
             if (result.empty())

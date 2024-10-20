@@ -95,6 +95,7 @@ enum class token_type
     increment_operator,
     question_mark,
     colon,
+    comma,
 };
 
 struct lexer_error
@@ -298,6 +299,9 @@ struct fmt::formatter<wccff::lexer::token_type> : formatter<string_view>
                 break;
             case token_type::colon:
                 str = "Colon";
+                break;
+            case token_type::comma:
+                str = "Comma";
                 break;
         }
         return formatter<string_view>::format(str, ctx);

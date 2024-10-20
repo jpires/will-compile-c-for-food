@@ -690,4 +690,14 @@ TEST_CASE("Other tokens", "[lexer]")
         REQUIRE(result.value().at(0).type == wccff::lexer::token_type::colon);
         REQUIRE(result.value().at(0).text == ":");
     }
+
+    SECTION("Comma")
+    {
+        std::string_view input{ "," };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::comma);
+        REQUIRE(result.value().at(0).text == ",");
+    }
 }
