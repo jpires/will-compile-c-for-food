@@ -520,6 +520,45 @@ TEST_CASE("Binary Operators", "[parser]")
     }
 }
 
+TEST_CASE("Parse Statements")
+{
+    using wccff::parser::pretty_print;
+
+    auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("parser_tests");
+    wccff::lexer::file_location location{ 0, 0 };
+
+    SECTION("Labelled Statement")
+    {
+        std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "label1", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::colon, ":", location);
+
+        tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "var1", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::compound_plus, "+=", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "42", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
+
+        wccff::parser::tokens tokens{ tokens_vector };
+        auto result = wccff::parser::parse_statement(tokens);
+        REQUIRE(result.has_value());
+
+        ApprovalTests::Approvals::verify(pretty_print(result.value()));
+    }
+    SECTION("Goto Statement")
+    {
+        std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::goto_keyword, "goto", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "label1", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
+
+        wccff::parser::tokens tokens{ tokens_vector };
+        auto result = wccff::parser::parse_statement(tokens);
+        REQUIRE(result.has_value());
+
+        ApprovalTests::Approvals::verify(pretty_print(result.value()));
+    }
+}
+
 TEST_CASE("Loop Statements")
 {
     using wccff::parser::pretty_print;
@@ -980,6 +1019,13 @@ TEST_CASE("parser_pretty_printers", "[parser]")
         }
     }
 
+    SECTION("goto")
+    {
+        using wccff::parser::goto_statement;
+        REQUIRE(pretty_print(goto_statement{ "var_name" }) == "GoTo(var_name)");
+        REQUIRE(pretty_print(goto_statement{ "var_name" }, 4) == "    GoTo(var_name)");
+    }
+
     SECTION("identifier")
     {
         using wccff::parser::identifier;
@@ -993,6 +1039,21 @@ TEST_CASE("parser_pretty_printers", "[parser]")
         REQUIRE(pretty_print(int_constant{ 55 }) == "IntConstant(55)");
         REQUIRE(pretty_print(int_constant{ 55 }, 4) == "    IntConstant(55)");
     }
+
+    SECTION("labbeled_statement")
+    {
+        using wccff::parser::identifier;
+        using wccff::parser::int_constant;
+        using wccff::parser::labelled_statement;
+        using wccff::parser::return_node;
+        using wccff::parser::statement;
+
+        return_node stmt{ int_constant{ 55 } };
+
+        auto labelled = std::make_unique<labelled_statement>(identifier{ "label_name" }, std::move(stmt));
+        ApprovalTests::Approvals::verify(pretty_print(labelled));
+    }
+
     SECTION("return_node")
     {
         using wccff::parser::int_constant;

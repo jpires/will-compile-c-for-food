@@ -52,6 +52,7 @@ class tokens
     }
 
     [[nodiscard]] wccff::lexer::token peek() const { return m_tokens.at(m_index); }
+    [[nodiscard]] wccff::lexer::token peek_after_next() const { return m_tokens.at(m_index + 1); }
     [[nodiscard]] wccff::lexer::token previous_token() const { return m_tokens.at(m_index - 1); }
 
   private:
@@ -221,6 +222,7 @@ struct compound_statement;
 struct conditional_node;
 struct for_statement;
 struct if_node;
+struct labelled_statement;
 struct unary_node;
 struct assignment_node;
 struct while_statement;
@@ -295,6 +297,10 @@ struct continue_statement
 {
     identifier label;
 };
+struct goto_statement
+{
+    identifier label;
+};
 struct return_node
 {
     expression e;
@@ -306,9 +312,11 @@ using statement = std::variant<return_node,
                                std::unique_ptr<compound_statement>,
                                break_statement,
                                continue_statement,
+                               goto_statement,
                                std::unique_ptr<while_statement>,
                                std::unique_ptr<do_while_statement>,
                                std::unique_ptr<for_statement>,
+                               std::unique_ptr<labelled_statement>,
                                std::monostate>;
 
 struct do_while_statement
@@ -316,6 +324,12 @@ struct do_while_statement
     statement body;
     expression condition;
     identifier label;
+};
+
+struct labelled_statement
+{
+    identifier label;
+    statement body;
 };
 
 struct while_statement
@@ -426,6 +440,7 @@ std::string pretty_print(const declaration &node, int32_t ident = 0);
 std::string pretty_print(const expression &node, int32_t ident = 0);
 std::string pretty_print(const for_init &node, int32_t ident = 0);
 std::string pretty_print(const function &node, int32_t ident = 0);
+std::string pretty_print(const goto_statement &node, int32_t ident = 0);
 std::string pretty_print(const identifier &node, int32_t ident = 0);
 std::string pretty_print(const int_constant &node, int32_t ident = 0);
 std::string pretty_print(const program &node, int32_t ident = 0);
@@ -439,6 +454,7 @@ std::string pretty_print(const std::unique_ptr<conditional_node> &node, int32_t 
 std::string pretty_print(const std::unique_ptr<do_while_statement> &node, int32_t ident = 0);
 std::string pretty_print(const std::unique_ptr<for_statement> &node, int32_t ident = 0);
 std::string pretty_print(const std::unique_ptr<if_node> &node, int32_t ident = 0);
+std::string pretty_print(const std::unique_ptr<labelled_statement> &node, int32_t ident = 0);
 std::string pretty_print(const std::unique_ptr<unary_node> &node, int32_t ident = 0);
 std::string pretty_print(const std::unique_ptr<while_statement> &node, int32_t ident = 0);
 std::string pretty_print(const unary_operator &node, int32_t ident = 0);

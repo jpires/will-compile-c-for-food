@@ -230,6 +230,15 @@ TEST_CASE("Keywords", "[lexer]")
         REQUIRE(result.value().at(0).type == wccff::lexer::token_type::for_keyword);
         REQUIRE(result.value().at(0).text == "for");
     }
+    SECTION("goto")
+    {
+        std::string_view input{ "goto" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::goto_keyword);
+        REQUIRE(result.value().at(0).text == "goto");
+    }
     SECTION("if")
     {
         std::string_view input{ "if" };

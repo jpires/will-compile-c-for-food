@@ -409,9 +409,13 @@ void process_statement(const wccff::parser::statement &s, std::vector<instructio
         [&](const std::unique_ptr<parser::compound_statement> &n) { process_compound_statement(n, instructions); },
         [&](const parser::break_statement &n) { process_break_statement(n, instructions); },
         [&](const parser::continue_statement &n) { process_continue_statement(n, instructions); },
+        [&](const parser::goto_statement &n) { throw std::runtime_error("Goto statement not implemented"); },
         [&](const std::unique_ptr<parser::while_statement> &n) { process_while_statement(n, instructions); },
         [&](const std::unique_ptr<parser::do_while_statement> &n) { process_do_while_statement(n, instructions); },
         [&](const std::unique_ptr<parser::for_statement> &n) { process_for_statement(n, instructions); },
+        [&](const std::unique_ptr<parser::labelled_statement> &n) {
+            throw std::runtime_error("labelled statement not implemented");
+        },
         [](const std::monostate) {},
       },
       s);

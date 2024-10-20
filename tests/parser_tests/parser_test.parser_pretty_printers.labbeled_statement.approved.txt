@@ -1,0 +1,5 @@
+LabeledStatement(label_name
+                 Return(
+                        IntConstant(55)
+                 )
+)

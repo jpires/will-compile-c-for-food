@@ -1,0 +1,6 @@
+LabeledStatement(label1
+                 Assign(Compound Plus
+                        Var(var1)
+                        IntConstant(42)
+                 )
+)

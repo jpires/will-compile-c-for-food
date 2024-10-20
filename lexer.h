@@ -49,6 +49,7 @@ enum class token_type
     do_keyword,
     else_keyword,
     for_keyword,
+    goto_keyword,
     if_keyword,
     int_keyword,
     void_keyword,
@@ -159,6 +160,9 @@ struct fmt::formatter<wccff::lexer::token_type> : formatter<string_view>
                 break;
             case token_type::for_keyword:
                 str = "For Keyword";
+                break;
+            case token_type::goto_keyword:
+                str = "Goto Keyword";
                 break;
             case token_type::if_keyword:
                 str = "If Keyword";

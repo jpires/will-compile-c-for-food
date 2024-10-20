@@ -237,6 +237,11 @@ std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, fil
                     std::cout << "for keyword" << '\n';
                     result.emplace_back(token_type::for_keyword, m, location);
                 }
+                else if (m == "goto")
+                {
+                    std::cout << "goto keyword" << '\n';
+                    result.emplace_back(token_type::goto_keyword, m, location);
+                }
                 else if (m == "if")
                 {
                     std::cout << "if keyword" << '\n';

@@ -535,6 +535,33 @@ std::expected<statement, parser_error> parse_statement(tokens &tokens)
     {
         return parse_for_statement(tokens);
     }
+    if (next_token.type == identifier && tokens.peek_after_next().type == colon)
+    {
+        auto label = parse_identifier(tokens);
+        if (label.has_value() == false)
+        {
+            return std::unexpected{ label.error() };
+        }
+        consume_tokens(tokens, { colon });
+        auto next_stmt = parse_statement(tokens);
+        if (next_stmt.has_value() == false)
+        {
+            return std::unexpected{ next_stmt.error() };
+        }
+
+        return std::make_unique<labelled_statement>(label.value(), std::move(next_stmt.value()));
+    }
+    if (next_token.type == goto_keyword)
+    {
+        consume_tokens(tokens, { goto_keyword });
+        auto label = parse_identifier(tokens);
+        if (label.has_value() == false)
+        {
+            return std::unexpected{ label.error() };
+        }
+        consume_tokens(tokens, { semicolon });
+        return goto_statement{ label.value() };
+    }
 
     auto e = parse_expression(tokens);
     if (e.has_value() == false)
@@ -1092,6 +1119,10 @@ std::string pretty_print(const function &node, int32_t ident)
 
     return fmt::format("{}\n{}\n{}", prefix, left, sufix);
 }
+std::string pretty_print(const goto_statement &node, int32_t ident)
+{
+    return wccff::format_indented(ident, "GoTo({})", pretty_print(node.label));
+}
 std::string pretty_print(const identifier &node, int32_t ident)
 {
     return wccff::format_indented(ident, "{}", node.name);
@@ -1107,19 +1138,22 @@ std::string pretty_print(const program &node, int32_t ident)
 
 std::string pretty_print(const statement &node, int32_t ident)
 {
-    return std::visit(visitor{
-                        [ident](const return_node &n) { return pretty_print(n, ident); },
-                        [ident](const expression &n) { return pretty_print(n, ident); },
-                        [ident](const std::unique_ptr<if_node> &n) { return pretty_print(n, ident); },
-                        [ident](const std::unique_ptr<compound_statement> &n) { return pretty_print(n, ident); },
-                        [ident](const break_statement &n) { return pretty_print(n, ident); },
-                        [ident](const continue_statement &n) { return pretty_print(n, ident); },
-                        [ident](const std::unique_ptr<while_statement> &n) { return pretty_print(n, ident); },
-                        [ident](const std::unique_ptr<do_while_statement> &n) { return pretty_print(n, ident); },
-                        [ident](const std::unique_ptr<for_statement> &n) { return pretty_print(n, ident); },
-                        [ident](const std::monostate &) { return wccff::format_indented(ident, "EMPTY STATEMENT\n"); },
-                      },
-                      node);
+    return std::visit(
+      visitor{
+        [ident](const return_node &n) { return pretty_print(n, ident); },
+        [ident](const expression &n) { return pretty_print(n, ident); },
+        [ident](const std::unique_ptr<if_node> &n) { return pretty_print(n, ident); },
+        [ident](const std::unique_ptr<compound_statement> &n) { return pretty_print(n, ident); },
+        [ident](const break_statement &n) { return pretty_print(n, ident); },
+        [ident](const continue_statement &n) { return pretty_print(n, ident); },
+        [ident](const goto_statement &n) { return pretty_print(n, ident); },
+        [ident](const std::unique_ptr<while_statement> &n) { return pretty_print(n, ident); },
+        [ident](const std::unique_ptr<do_while_statement> &n) { return pretty_print(n, ident); },
+        [ident](const std::unique_ptr<for_statement> &n) { return pretty_print(n, ident); },
+        [ident](const std::monostate &) { return wccff::format_indented(ident, "EMPTY STATEMENT\n"); },
+        [ident](const std::unique_ptr<parser::labelled_statement> &n) { return pretty_print(n, ident); },
+      },
+      node);
 }
 
 std::string pretty_print(const return_node &node, int32_t ident)
@@ -1211,6 +1245,14 @@ std::string pretty_print(const std::unique_ptr<if_node> &node, int32_t ident)
     auto sufix = wccff::format_indented(ident, ")");
 
     return fmt::format("{}\n{}\n{}\n{}", prefix, then_stmt, else_stmt, sufix);
+}
+std::string pretty_print(const std::unique_ptr<labelled_statement> &node, int32_t ident)
+{
+    auto prefix = wccff::format_indented(ident, "LabeledStatement({}", pretty_print(node->label, 0));
+    auto stmt = pretty_print(node->body, ident + 17);
+    auto sufix = wccff::format_indented(ident, ")");
+
+    return fmt::format("{}\n{}\n{}", prefix, stmt, sufix);
 }
 
 std::string pretty_print(const std::unique_ptr<unary_node> &node, int32_t ident)

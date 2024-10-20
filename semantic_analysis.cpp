@@ -307,6 +307,10 @@ std::expected<parser::statement, semantic_error> loop_labelling_statement(
         [label](const parser::continue_statement &) -> std::expected<parser::statement, semantic_error> {
             return loop_labelling_continue_statement(label);
         },
+        [label](const parser::goto_statement &) -> std::expected<parser::statement, semantic_error> {
+            throw std::runtime_error("Goto statement not implemented");
+        },
+
         [label](const std::unique_ptr<parser::while_statement> &n) -> std::expected<parser::statement, semantic_error> {
             return loop_labelling_while_statement(n, label);
         },
@@ -316,6 +320,10 @@ std::expected<parser::statement, semantic_error> loop_labelling_statement(
             return loop_labelling_for_statement(n, label);
         },
         [](const std::monostate &) -> std::expected<parser::statement, semantic_error> { return std::monostate{}; },
+        [](const std::unique_ptr<parser::labelled_statement> &n) -> std::expected<parser::statement, semantic_error> {
+            throw std::runtime_error("labelled statement not implemented");
+        },
+
       },
       node);
 }
@@ -719,6 +727,9 @@ std::expected<parser::statement, semantic_error> resolve_statement(const parser:
         },
         [&](const parser::break_statement &n) -> std::expected<parser::statement, semantic_error> { return n; },
         [&](const parser::continue_statement &n) -> std::expected<parser::statement, semantic_error> { return n; },
+        [&](const parser::goto_statement &n) -> std::expected<parser::statement, semantic_error> {
+            throw std::runtime_error("Goto statement not implemented");
+        },
         [&](const std::unique_ptr<parser::while_statement> &n) -> std::expected<parser::statement, semantic_error> {
             return resolve_while_statement(n, variable_map);
         },
@@ -729,6 +740,9 @@ std::expected<parser::statement, semantic_error> resolve_statement(const parser:
             return resolve_for_statement(n, variable_map);
         },
         [&](const std::monostate &n) -> std::expected<parser::statement, semantic_error> { return std::monostate{}; },
+        [](const std::unique_ptr<parser::labelled_statement> &n) -> std::expected<parser::statement, semantic_error> {
+            throw std::runtime_error("labelled statement not implemented");
+        },
       },
       input);
 }
