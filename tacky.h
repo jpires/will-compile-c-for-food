@@ -292,9 +292,12 @@ val process_expression(const wccff::parser::expression &exp, std::vector<instruc
 void process_for_init(const parser::for_init &node, std::vector<instruction> &instructions);
 void process_for_statement(const std::unique_ptr<parser::for_statement> &node, std::vector<instruction> &instructions);
 function_definition process_function_definition(const parser::function &f);
+void process_goto_statement(const parser::goto_statement &node, std::vector<instruction> &instructions);
 identifier process_identifier(const parser::identifier &id);
 void process_if(const std::unique_ptr<parser::if_node> &id, std::vector<instruction> &instructions);
 constant process_int_constant(const parser::int_constant &int_con);
+void process_labeled_statement(const std::unique_ptr<parser::labelled_statement> &id,
+                               std::vector<instruction> &instructions);
 void process_return_node(const wccff::parser::return_node &stmt, std::vector<instruction> &instructions);
 void process_statement(const wccff::parser::statement &s, std::vector<instruction> &instructions);
 val process_unary_node(const std::unique_ptr<parser::unary_node> &node, std::vector<instruction> &instructions);

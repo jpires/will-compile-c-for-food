@@ -409,12 +409,12 @@ void process_statement(const wccff::parser::statement &s, std::vector<instructio
         [&](const std::unique_ptr<parser::compound_statement> &n) { process_compound_statement(n, instructions); },
         [&](const parser::break_statement &n) { process_break_statement(n, instructions); },
         [&](const parser::continue_statement &n) { process_continue_statement(n, instructions); },
-        [&](const parser::goto_statement &n) { throw std::runtime_error("Goto statement not implemented"); },
+        [&](const parser::goto_statement &n) { process_goto_statement(n, instructions); },
         [&](const std::unique_ptr<parser::while_statement> &n) { process_while_statement(n, instructions); },
         [&](const std::unique_ptr<parser::do_while_statement> &n) { process_do_while_statement(n, instructions); },
         [&](const std::unique_ptr<parser::for_statement> &n) { process_for_statement(n, instructions); },
         [&](const std::unique_ptr<parser::labelled_statement> &n) {
-            throw std::runtime_error("labelled statement not implemented");
+            return process_labeled_statement(n, instructions);
         },
         [](const std::monostate) {},
       },
@@ -522,6 +522,19 @@ function_definition process_function_definition(const parser::function &f)
     instructions.emplace_back(return_statement{ constant{ 0 } });
 
     return { process_identifier(f.function_name), instructions };
+}
+
+void process_goto_statement(const parser::goto_statement &node, std::vector<instruction> &instructions)
+{
+    instructions.emplace_back(jump_statement{ process_identifier(node.label) });
+}
+
+void process_labeled_statement(const std::unique_ptr<parser::labelled_statement> &id,
+                               std::vector<instruction> &instructions)
+{
+    auto start_label = identifier{ fmt::format("{}", id->label.name) };
+    instructions.emplace_back(label_statement{ start_label });
+    process_statement(id->body, instructions);
 }
 
 program process(const parser::program &input)
