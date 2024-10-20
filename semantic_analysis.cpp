@@ -18,6 +18,7 @@
  */
 
 #include "semantic_analysis.h"
+#include "semantic_analysis/labelled_statements.h"
 #include "semantic_analysis/loop_labelling.h"
 #include "semantic_analysis/variable_resolution.h"
 #include "visitor.h"
@@ -91,7 +92,13 @@ std::expected<parser::program, semantic_error> analyse(const parser::program &in
         return std::unexpected{ var_result.error() };
     }
 
-    return loop_labelling::process_program(var_result.value());
+    auto labelled_result = labelled_statements::process_program(var_result.value());
+    if (labelled_result.has_value() == false)
+    {
+        return std::unexpected{ labelled_result.error() };
+    }
+
+    return loop_labelling::process_program(labelled_result.value());
 }
 
 bool is_lvalue(const std::unique_ptr<parser::binary_node> &e)

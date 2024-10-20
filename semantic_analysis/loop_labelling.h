@@ -53,6 +53,10 @@ auto process_function(const parser::function &node) -> std::expected<parser::fun
 auto process_if_node(const std::unique_ptr<parser::if_node> &node, const std::optional<parser::identifier> &label)
   -> std::expected<std::unique_ptr<parser::if_node>, semantic_error>;
 
+auto process_labelled_statement(const std::unique_ptr<parser::labelled_statement> &node,
+                                const std::optional<parser::identifier> &label)
+  -> std::expected<std::unique_ptr<parser::labelled_statement>, semantic_error>;
+
 auto process_program(const parser::program &node) -> std::expected<parser::program, semantic_error>;
 
 auto process_statement(const parser::statement &node, const std::optional<parser::identifier> &label)

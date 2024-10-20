@@ -70,6 +70,9 @@ auto process_init_declaration(const parser::init_declaration &node, variable_map
 auto process_init_expression(const parser::init_expression &node, variable_map &variable_map)
   -> std::expected<parser::init_expression, semantic_error>;
 
+auto process_labelled_statement(const std::unique_ptr<parser::labelled_statement> &node, variable_map &variable_map)
+  -> std::expected<std::unique_ptr<parser::labelled_statement>, semantic_error>;
+
 auto process_program(const parser::program &node, variable_map &variable_map)
   -> std::expected<parser::program, semantic_error>;
 

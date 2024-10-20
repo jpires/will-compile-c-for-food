@@ -336,6 +336,18 @@ auto process_init_expression(const parser::init_expression &node, variable_map &
     return parser::init_expression{ std::nullopt };
 }
 
+auto process_labelled_statement(const std::unique_ptr<parser::labelled_statement> &node, variable_map &variable_map)
+  -> std::expected<std::unique_ptr<parser::labelled_statement>, semantic_error>
+{
+    auto body = process_statement(node->body, variable_map);
+    if (body.has_value() == false)
+    {
+        return std::unexpected{ body.error() };
+    }
+
+    return std::make_unique<parser::labelled_statement>(node->label, std::move(body.value()));
+}
+
 auto process_program(const parser::program &node, variable_map &variable_map)
   -> std::expected<parser::program, semantic_error>
 {
@@ -377,9 +389,7 @@ auto process_statement(const parser::statement &node, variable_map &variable_map
         },
         [&](const parser::break_statement &n) -> std::expected<parser::statement, semantic_error> { return n; },
         [&](const parser::continue_statement &n) -> std::expected<parser::statement, semantic_error> { return n; },
-        [&](const parser::goto_statement &n) -> std::expected<parser::statement, semantic_error> {
-            throw std::runtime_error("Goto statement not implemented");
-        },
+        [&](const parser::goto_statement &n) -> std::expected<parser::statement, semantic_error> { return n; },
         [&](const std::unique_ptr<parser::while_statement> &n) -> std::expected<parser::statement, semantic_error> {
             return process_while_statement(n, variable_map);
         },
@@ -390,8 +400,8 @@ auto process_statement(const parser::statement &node, variable_map &variable_map
             return process_for_statement(n, variable_map);
         },
         [&](const std::monostate &n) -> std::expected<parser::statement, semantic_error> { return std::monostate{}; },
-        [](const std::unique_ptr<parser::labelled_statement> &n) -> std::expected<parser::statement, semantic_error> {
-            throw std::runtime_error("labelled statement not implemented");
+        [&](const std::unique_ptr<parser::labelled_statement> &n) -> std::expected<parser::statement, semantic_error> {
+            return process_labelled_statement(n, variable_map);
         },
       },
       node);

@@ -21,6 +21,8 @@ add_executable(wccff
         parser.cpp
         parser.h
         tacky.cpp
+        semantic_analysis/labelled_statements.cpp
+        semantic_analysis/labelled_statements.h
         semantic_analysis/loop_labelling.cpp
         semantic_analysis/loop_labelling.h
         semantic_analysis/variable_resolution.cpp

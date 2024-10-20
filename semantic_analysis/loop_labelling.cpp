@@ -182,6 +182,19 @@ auto process_if_node(const std::unique_ptr<parser::if_node> &node, const std::op
                                              std::move(then_stmt.value()),
                                              std::move(else_stmt));
 }
+auto process_labelled_statement(const std::unique_ptr<parser::labelled_statement> &node,
+                                const std::optional<parser::identifier> &label)
+  -> std::expected<std::unique_ptr<parser::labelled_statement>, semantic_error>
+{
+    auto body = process_statement(node->body, label);
+    if (body.has_value() == false)
+    {
+        return std::unexpected{ body.error() };
+    }
+
+    return std::make_unique<parser::labelled_statement>(node->label, std::move(body.value()));
+}
+
 auto process_program(const parser::program &node) -> std::expected<parser::program, semantic_error>
 {
     auto f = process_function(node.f);
@@ -214,9 +227,7 @@ auto process_statement(const parser::statement &node, const std::optional<parser
         [label](const parser::continue_statement &) -> std::expected<parser::statement, semantic_error> {
             return process_continue_statement(label);
         },
-        [label](const parser::goto_statement &) -> std::expected<parser::statement, semantic_error> {
-            throw std::runtime_error("Goto statement not implemented");
-        },
+        [](const parser::goto_statement &n) -> std::expected<parser::statement, semantic_error> { return n; },
 
         [label](const std::unique_ptr<parser::while_statement> &n) -> std::expected<parser::statement, semantic_error> {
             return process_while_statement(n, label);
@@ -227,9 +238,8 @@ auto process_statement(const parser::statement &node, const std::optional<parser
             return process_for_statement(n, label);
         },
         [](const std::monostate &) -> std::expected<parser::statement, semantic_error> { return std::monostate{}; },
-        [](const std::unique_ptr<parser::labelled_statement> &n) -> std::expected<parser::statement, semantic_error> {
-            throw std::runtime_error("labelled statement not implemented");
-        },
+        [label](const std::unique_ptr<parser::labelled_statement> &n)
+          -> std::expected<parser::statement, semantic_error> { return process_labelled_statement(n, label); },
 
       },
       node);

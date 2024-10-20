@@ -14,8 +14,9 @@ add_executable(unit_tests
         ../parser.cpp
         ../semantic_analysis.cpp
         ../tacky.cpp
-        ../semantic_analysis/variable_resolution.cpp
+        ../semantic_analysis/labelled_statements.cpp
         ../semantic_analysis/loop_labelling.cpp
+        ../semantic_analysis/variable_resolution.cpp
 )
 target_link_libraries(unit_tests PRIVATE
         Catch2::Catch2
