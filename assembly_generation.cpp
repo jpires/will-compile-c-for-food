@@ -292,7 +292,7 @@ function process_function(const wccff::tacky::function_definition &f)
 
 program process(const wccff::tacky::program &program)
 {
-    return { process_function(program.function) };
+    return { process_function(program.function.at(0)) };
 }
 
 void replace_pseudo_registers_q(mov_instruction &i)

@@ -1,0 +1,6 @@
+FunctionDecl(function_name
+             ()
+             Return(
+                    IntConstant(42)
+             )
+)

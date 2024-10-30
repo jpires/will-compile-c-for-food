@@ -40,6 +40,8 @@ auto process_compound_statement(const std::unique_ptr<parser::compound_statement
 auto process_continue_statement(const std::optional<parser::identifier> &label)
   -> std::expected<parser::continue_statement, semantic_error>;
 
+auto process_declaration(const parser::declaration &node) -> std::expected<parser::declaration, semantic_error>;
+
 auto process_do_while_statement(const std::unique_ptr<parser::do_while_statement> &node,
                                 const std::optional<parser::identifier> &label)
   -> std::expected<std::unique_ptr<parser::do_while_statement>, semantic_error>;
@@ -48,7 +50,8 @@ auto process_for_statement(const std::unique_ptr<parser::for_statement> &node,
                            const std::optional<parser::identifier> &label)
   -> std::expected<std::unique_ptr<parser::for_statement>, semantic_error>;
 
-auto process_function(const parser::function &node) -> std::expected<parser::function, semantic_error>;
+auto process_function_declaration(const parser::function_declaration &node)
+  -> std::expected<parser::function_declaration, semantic_error>;
 
 auto process_if_node(const std::unique_ptr<parser::if_node> &node, const std::optional<parser::identifier> &label)
   -> std::expected<std::unique_ptr<parser::if_node>, semantic_error>;

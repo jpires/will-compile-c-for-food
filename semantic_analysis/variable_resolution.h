@@ -58,8 +58,8 @@ auto process_for_init(const parser::for_init &node, variable_map &variable_map)
 auto process_for_statement(const std::unique_ptr<parser::for_statement> &node, variable_map &variable_map)
   -> std::expected<std::unique_ptr<parser::for_statement>, semantic_error>;
 
-auto process_function(const parser::function &node, variable_map &variable_map)
-  -> std::expected<parser::function, semantic_error>;
+auto process_function_declaration(const parser::function_declaration &node, variable_map &variable_map)
+  -> std::expected<parser::function_declaration, semantic_error>;
 
 auto process_if_node(const std::unique_ptr<parser::if_node> &node, variable_map &variable_map)
   -> std::expected<std::unique_ptr<parser::if_node>, semantic_error>;
@@ -86,6 +86,9 @@ auto process_unary_node(const std::unique_ptr<parser::unary_node> &node, variabl
   -> std::expected<std::unique_ptr<parser::unary_node>, semantic_error>;
 
 auto process_var(const parser::var &node, variable_map &variable_map) -> std::expected<parser::var, semantic_error>;
+
+auto process_variable_declaration(const parser::variable_declaration &node, variable_map &variable_map)
+  -> std::expected<parser::variable_declaration, semantic_error>;
 
 auto process_while_statement(const std::unique_ptr<parser::while_statement> &node, variable_map &variable_map)
   -> std::expected<std::unique_ptr<parser::while_statement>, semantic_error>;

@@ -88,6 +88,8 @@ auto process_block_item(const parser::block_item &node, labelled_statement_map &
 auto process_compound_statement(const std::unique_ptr<parser::compound_statement> &node, labelled_statement_map &map)
   -> std::expected<std::unique_ptr<parser::compound_statement>, semantic_error>;
 
+auto process_declaration(const parser::declaration &node) -> std::expected<parser::declaration, semantic_error>;
+
 auto process_do_while_statement(const std::unique_ptr<parser::do_while_statement> &node, labelled_statement_map &map)
   -> std::expected<std::unique_ptr<parser::do_while_statement>, semantic_error>;
 
@@ -98,6 +100,9 @@ auto process_goto_statement(const parser::goto_statement &node, labelled_stateme
   -> std::expected<parser::goto_statement, semantic_error>;
 
 auto process_function(const parser::function &node) -> std::expected<parser::function, semantic_error>;
+
+auto process_function_declaration(const parser::function_declaration &node)
+  -> std::expected<parser::function_declaration, semantic_error>;
 
 auto process_if_node(const std::unique_ptr<parser::if_node> &node, labelled_statement_map &map)
   -> std::expected<std::unique_ptr<parser::if_node>, semantic_error>;

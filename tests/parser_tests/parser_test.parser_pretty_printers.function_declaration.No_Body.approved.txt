@@ -1,0 +1,4 @@
+FunctionDecl(function_name
+             (param_1, param_2)
+             EMPTY BODY
+)

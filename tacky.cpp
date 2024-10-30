@@ -389,6 +389,9 @@ val process_expression(const wccff::parser::expression &exp, std::vector<instruc
                         [&instructions](const std::unique_ptr<parser::conditional_node> &n) -> val {
                             return process_conditional_node(n, instructions);
                         },
+                        [](const std::unique_ptr<parser::function_call> &n) -> val {
+                            throw std::runtime_error("Function call not implemented");
+                        },
                       },
                       exp);
 }
@@ -421,18 +424,6 @@ void process_statement(const wccff::parser::statement &s, std::vector<instructio
       s);
 }
 
-void process_declaration(const wccff::parser::declaration &s, std::vector<instruction> &instructions)
-{
-    if (s.init.has_value() == false)
-    {
-        return;
-    }
-
-    auto src = process_expression(s.init.value(), instructions);
-    auto dst = var{ process_identifier(s.name) };
-    instructions.emplace_back(copy_statement{ src, dst });
-}
-
 void process_block_item(const parser::block_item &s, std::vector<instruction> &instructions)
 {
     std::visit(visitor{
@@ -460,6 +451,18 @@ void process_continue_statement(const parser::continue_statement &node, std::vec
     instructions.emplace_back(jump_statement{ label });
 }
 
+void process_declaration(const parser::declaration &node, std::vector<instruction> &instructions)
+{
+    std::visit(
+      visitor{
+        [](const parser::function_declaration &node) {
+            throw std::runtime_error("Function declaration not implemented");
+        },
+        [&instructions](const parser::variable_declaration &node) { process_variable_declaration(node, instructions); },
+      },
+      node);
+}
+
 void process_do_while_statement(const std::unique_ptr<parser::do_while_statement> &node,
                                 std::vector<instruction> &instructions)
 {
@@ -477,16 +480,17 @@ void process_do_while_statement(const std::unique_ptr<parser::do_while_statement
 
 void process_for_init(const parser::for_init &node, std::vector<instruction> &instructions)
 {
-    std::visit(visitor{
-                 [&instructions](const parser::init_declaration &n) { process_declaration(n.decl, instructions); },
-                 [&instructions](const parser::init_expression &n) {
-                     if (n.expression.has_value())
-                     {
-                         process_expression(n.expression.value(), instructions);
-                     }
-                 },
-               },
-               node);
+    std::visit(
+      visitor{
+        [&instructions](const parser::init_declaration &n) { process_variable_declaration(n.decl, instructions); },
+        [&instructions](const parser::init_expression &n) {
+            if (n.expression.has_value())
+            {
+                process_expression(n.expression.value(), instructions);
+            }
+        },
+      },
+      node);
 }
 
 void process_for_statement(const std::unique_ptr<parser::for_statement> &node, std::vector<instruction> &instructions)
@@ -514,14 +518,15 @@ void process_for_statement(const std::unique_ptr<parser::for_statement> &node, s
     instructions.emplace_back(label_statement{ break_label });
 }
 
-function_definition process_function_definition(const parser::function &f)
+function_definition process_function_definition(const parser::function_declaration &f)
 {
     std::vector<instruction> instructions;
-    process_block(f.body, instructions);
-
-    instructions.emplace_back(return_statement{ constant{ 0 } });
-
-    return { process_identifier(f.function_name), instructions };
+    if (f.body.has_value())
+    {
+        process_block(f.body.value(), instructions);
+        instructions.emplace_back(return_statement{ constant{ 0 } });
+    }
+    return { process_identifier(f.name), instructions };
 }
 
 void process_goto_statement(const parser::goto_statement &node, std::vector<instruction> &instructions)
@@ -539,7 +544,24 @@ void process_labeled_statement(const std::unique_ptr<parser::labelled_statement>
 
 program process(const parser::program &input)
 {
-    return { process_function_definition(input.f) };
+    std::vector<function_definition> functions;
+    for (const auto &f : input.f)
+    {
+        functions.push_back(process_function_definition(f));
+    }
+    return { functions };
+}
+
+void process_variable_declaration(const wccff::parser::variable_declaration &s, std::vector<instruction> &instructions)
+{
+    if (s.init.has_value() == false)
+    {
+        return;
+    }
+
+    auto src = process_expression(s.init.value(), instructions);
+    auto dst = var{ process_identifier(s.name) };
+    instructions.emplace_back(copy_statement{ src, dst });
 }
 
 void process_while_statement(const std::unique_ptr<parser::while_statement> &node,
@@ -681,6 +703,11 @@ std::string pretty_print(const function_definition &f, int ident)
 
 std::string pretty_print(const program &p, int ident)
 {
-    return pretty_print(p.function, ident);
+    std::string output;
+    for (const auto &f : p.function)
+    {
+        output += pretty_print(f, ident);
+    }
+    return output;
 }
 } // namespace wccff::tacky

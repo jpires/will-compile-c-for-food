@@ -50,8 +50,8 @@ auto process_block_item(const parser::block_item &node, const std::optional<pars
   -> std::expected<parser::block_item, semantic_error>
 {
     return std::visit(visitor{
-                        [](const parser::declaration &n) -> std::expected<parser::block_item, semantic_error> {
-                            return parser::copy_declaration(n);
+                        [label](const parser::declaration &n) -> std::expected<parser::block_item, semantic_error> {
+                            return process_declaration(n);
                         },
                         [label](const parser::statement &n) -> std::expected<parser::block_item, semantic_error> {
                             return process_statement(n, label);
@@ -93,6 +93,20 @@ auto process_continue_statement(const std::optional<parser::identifier> &label)
         return std::unexpected{ semantic_error{ fmt::format("Continue statement outside a loop") } };
     }
     return parser::continue_statement{ label.value() };
+}
+
+auto process_declaration(const parser::declaration &node) -> std::expected<parser::declaration, semantic_error>
+{
+    return std::visit(
+      visitor{
+        [](const parser::function_declaration &n) -> std::expected<parser::declaration, semantic_error> {
+            return process_function_declaration(n);
+        },
+        [](const parser::variable_declaration &n) -> std::expected<parser::declaration, semantic_error> {
+            return parser::copy_declaration(n);
+        },
+      },
+      node);
 }
 
 auto process_do_while_statement(const std::unique_ptr<parser::do_while_statement> &node,
@@ -147,15 +161,22 @@ auto process_for_statement(const std::unique_ptr<parser::for_statement> &node,
                                                    std::move(body.value()),
                                                    new_label);
 }
-auto process_function(const parser::function &node) -> std::expected<parser::function, semantic_error>
+
+auto process_function_declaration(const parser::function_declaration &node)
+  -> std::expected<parser::function_declaration, semantic_error>
 {
-    auto b = process_block(node.body, std::nullopt);
-    if (b.has_value() == false)
+    std::optional<parser::block> block;
+    if (node.body.has_value())
     {
-        return std::unexpected{ b.error() };
+        auto tmp = process_block(node.body.value(), std::nullopt);
+        if (tmp.has_value() == false)
+        {
+            return std::unexpected{ tmp.error() };
+        }
+        block = std::move(tmp.value());
     }
 
-    return parser::function{ node.function_name, std::move(b.value()) };
+    return parser::function_declaration{ node.name, node.arguments, std::move(block.value()) };
 }
 
 auto process_if_node(const std::unique_ptr<parser::if_node> &node, const std::optional<parser::identifier> &label)
@@ -197,12 +218,18 @@ auto process_labelled_statement(const std::unique_ptr<parser::labelled_statement
 
 auto process_program(const parser::program &node) -> std::expected<parser::program, semantic_error>
 {
-    auto f = process_function(node.f);
-    if (f.has_value() == false)
+    std::vector<parser::function_declaration> functions;
+    for (const auto &f : node.f)
     {
-        return std::unexpected{ f.error() };
+        auto tmp = process_function_declaration(f);
+        if (tmp.has_value() == false)
+        {
+            return std::unexpected{ tmp.error() };
+        }
+        functions.push_back(std::move(tmp.value()));
     }
-    return parser::program{ std::move(f.value()) };
+
+    return parser::program{ std::move(functions) };
 }
 
 auto process_statement(const parser::statement &node, const std::optional<parser::identifier> &label)

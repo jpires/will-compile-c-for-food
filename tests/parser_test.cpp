@@ -748,6 +748,222 @@ TEST_CASE("Loop Statements")
     }
 }
 
+TEST_CASE("parse_argument_list", "[parser]")
+{
+    using namespace wccff;
+    auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("parser_tests");
+
+    wccff::lexer::file_location location{ 0, 0 };
+    SECTION("No Arguments")
+    {
+        std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
+
+        wccff::parser::tokens tokens{ tokens_vector };
+        auto result = wccff::parser::parse_argument_list(tokens);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().empty());
+    }
+
+    SECTION("One Argument")
+    {
+        std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "42", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
+
+        wccff::parser::tokens tokens{ tokens_vector };
+        auto result = wccff::parser::parse_argument_list(tokens);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(std::holds_alternative<parser::int_constant>(result.value()[0]));
+        REQUIRE(std::get<parser::int_constant>(result.value()[0]).value == 42);
+    }
+
+    SECTION("Three Argument")
+    {
+        std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "42", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::comma, ",", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "43", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::comma, ",", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "44", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
+
+        wccff::parser::tokens tokens{ tokens_vector };
+        auto result = wccff::parser::parse_argument_list(tokens);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 3);
+        REQUIRE(std::holds_alternative<parser::int_constant>(result.value()[0]));
+        REQUIRE(std::get<parser::int_constant>(result.value()[0]).value == 42);
+        REQUIRE(std::holds_alternative<parser::int_constant>(result.value()[1]));
+        REQUIRE(std::get<parser::int_constant>(result.value()[1]).value == 43);
+        REQUIRE(std::holds_alternative<parser::int_constant>(result.value()[2]));
+        REQUIRE(std::get<parser::int_constant>(result.value()[2]).value == 44);
+    }
+
+    SECTION("One Argument with complex expression")
+    {
+        std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "42", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::plus_operator, "+", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "43", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
+
+        wccff::parser::tokens tokens{ tokens_vector };
+        auto result = wccff::parser::parse_argument_list(tokens);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(std::holds_alternative<std::unique_ptr<parser::binary_node>>(result.value()[0]));
+        auto &node = std::get<std::unique_ptr<parser::binary_node>>(result.value()[0]);
+        REQUIRE(std::holds_alternative<parser::plus_operator>(node->op));
+        REQUIRE(std::holds_alternative<parser::int_constant>(node->left));
+        REQUIRE(std::get<parser::int_constant>(node->left).value == 42);
+        REQUIRE(std::holds_alternative<parser::int_constant>(node->right));
+        REQUIRE(std::get<parser::int_constant>(node->right).value == 43);
+    }
+
+    SECTION("Invalid Argument")
+    {
+        std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_keyword, "int", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "a", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::assignment_operator, "=", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "44", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
+
+        wccff::parser::tokens tokens{ tokens_vector };
+        auto result = wccff::parser::parse_argument_list(tokens);
+        REQUIRE(result.has_value() == false);
+    }
+
+    SECTION("Invalid Comma")
+    {
+        std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "44", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::comma, ",", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
+
+        wccff::parser::tokens tokens{ tokens_vector };
+        auto result = wccff::parser::parse_argument_list(tokens);
+        REQUIRE(result.has_value() == false);
+    }
+}
+
+TEST_CASE("parse_function_call", "[parser]")
+{
+    using namespace wccff;
+    auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("parser_tests");
+    wccff::lexer::file_location location{ 0, 0 };
+
+    SECTION("No Arguments")
+    {
+        std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "func1", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::open_parenthesis, "(", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
+
+        wccff::parser::tokens tokens{ tokens_vector };
+        auto result = wccff::parser::parse_function_call(tokens);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value()->name.name == "func1");
+        REQUIRE(result.value()->arguments.empty());
+    }
+    SECTION("One Argument")
+    {
+        std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "func1", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::open_parenthesis, "(", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "42", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
+
+        wccff::parser::tokens tokens{ tokens_vector };
+        auto result = wccff::parser::parse_function_call(tokens);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value()->name.name == "func1");
+        REQUIRE(result.value()->arguments.size() == 1);
+        REQUIRE(std::holds_alternative<parser::int_constant>(result.value()->arguments.at(0)));
+        REQUIRE(std::get<parser::int_constant>(result.value()->arguments.at(0)).value == 42);
+    }
+}
+TEST_CASE("parse_params_list", "[parser]")
+{
+    using namespace wccff;
+    auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("parser_tests");
+
+    wccff::lexer::file_location location{ 0, 0 };
+    SECTION("No Arguments")
+    {
+        std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
+
+        wccff::parser::tokens tokens{ tokens_vector };
+        auto result = wccff::parser::parse_params_list(tokens);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().empty());
+    }
+
+    SECTION("One Argument")
+    {
+        std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_keyword, "int", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "hello", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
+
+        wccff::parser::tokens tokens{ tokens_vector };
+        auto result = wccff::parser::parse_params_list(tokens);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value()[0].name == "hello");
+    }
+
+    SECTION("Three Argument")
+    {
+        std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_keyword, "int", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "hello1", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::comma, ",", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_keyword, "int", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "hello2", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::comma, ",", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_keyword, "int", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "hello3", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
+
+        wccff::parser::tokens tokens{ tokens_vector };
+        auto result = wccff::parser::parse_params_list(tokens);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 3);
+        REQUIRE(result.value()[0].name == "hello1");
+        REQUIRE(result.value()[1].name == "hello2");
+        REQUIRE(result.value()[2].name == "hello3");
+    }
+
+    SECTION("Invalid Parameter")
+    {
+        std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::void_keyword, "void", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "hello1", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
+
+        wccff::parser::tokens tokens{ tokens_vector };
+        auto result = wccff::parser::parse_params_list(tokens);
+        REQUIRE(result.has_value() == false);
+    }
+
+    SECTION("Invalid omma")
+    {
+        std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_keyword, "int", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "hello1", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::comma, ",", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
+
+        wccff::parser::tokens tokens{ tokens_vector };
+        auto result = wccff::parser::parse_params_list(tokens);
+        REQUIRE(result.has_value() == false);
+    }
+}
+
 TEST_CASE("parser_pretty_printers", "[parser]")
 {
     using wccff::parser::pretty_print;
@@ -808,15 +1024,15 @@ TEST_CASE("parser_pretty_printers", "[parser]")
     SECTION("block")
     {
         using wccff::parser::block;
-        using wccff::parser::declaration;
         using wccff::parser::identifier;
         using wccff::parser::int_constant;
         using wccff::parser::return_node;
+        using wccff::parser::variable_declaration;
         std::vector<wccff::parser::block_item> items;
 
         identifier var_name{ "var_name" };
         int_constant value{ 55 };
-        items.emplace_back(declaration{ var_name, std::nullopt });
+        items.emplace_back(variable_declaration{ var_name, std::nullopt });
         items.emplace_back(return_node{ value });
 
         block b{ std::move(items) };
@@ -839,15 +1055,15 @@ TEST_CASE("parser_pretty_printers", "[parser]")
     {
         using wccff::parser::block;
         using wccff::parser::compound_statement;
-        using wccff::parser::declaration;
         using wccff::parser::identifier;
         using wccff::parser::int_constant;
         using wccff::parser::return_node;
+        using wccff::parser::variable_declaration;
         std::vector<wccff::parser::block_item> items;
 
         identifier var_name{ "var_name" };
         int_constant value{ 55 };
-        items.emplace_back(declaration{ var_name, std::nullopt });
+        items.emplace_back(variable_declaration{ var_name, std::nullopt });
         items.emplace_back(return_node{ value });
 
         block b{ std::move(items) };
@@ -869,19 +1085,19 @@ TEST_CASE("parser_pretty_printers", "[parser]")
 
     SECTION("declaration")
     {
-        using wccff::parser::declaration;
         using wccff::parser::identifier;
+        using wccff::parser::variable_declaration;
 
         auto name = identifier("var_name");
         SECTION("with_init")
         {
             wccff::parser::int_constant init{ 42 };
-            auto dec = declaration(name, init);
+            auto dec = variable_declaration(name, init);
             ApprovalTests::Approvals::verify(pretty_print(dec));
         }
         SECTION("without_init")
         {
-            auto dec = declaration(name, std::nullopt);
+            auto dec = variable_declaration(name, std::nullopt);
             ApprovalTests::Approvals::verify(pretty_print(dec));
         }
     }
@@ -1016,6 +1232,43 @@ TEST_CASE("parser_pretty_printers", "[parser]")
                                                         std::move(body),
                                                         loop_name);
             ApprovalTests::Approvals::verify(pretty_print(stmt));
+        }
+    }
+
+    SECTION("function_declaration")
+    {
+        using wccff::parser::block;
+        using wccff::parser::block_item;
+        using wccff::parser::function_declaration;
+        using wccff::parser::identifier;
+        using wccff::parser::int_constant;
+        using wccff::parser::return_node;
+
+        auto function_name = identifier{ "function_name" };
+        std::vector<identifier> arguments;
+        arguments.emplace_back(identifier{ "param_1" });
+        arguments.emplace_back(identifier{ "param_2" });
+
+        std::vector<block_item> items;
+        items.emplace_back(return_node{ int_constant{ 42 } });
+        auto body = block{ std::move(items) };
+
+        SECTION("Full declaration")
+        {
+            auto f = function_declaration{ function_name, arguments, std::move(body) };
+            ApprovalTests::Approvals::verify(pretty_print(f));
+        }
+
+        SECTION("No Params")
+        {
+            auto f = function_declaration{ function_name, {}, std::move(body) };
+            ApprovalTests::Approvals::verify(pretty_print(f));
+        }
+
+        SECTION("No Body")
+        {
+            auto f = function_declaration{ function_name, arguments, std::nullopt };
+            ApprovalTests::Approvals::verify(pretty_print(f));
         }
     }
 

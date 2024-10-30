@@ -1,5 +1,6 @@
-Function(main
-         Return(
-                IntConstant(2)
-         )
+FunctionDecl(main
+             ()
+             Return(
+                    IntConstant(2)
+             )
 )
