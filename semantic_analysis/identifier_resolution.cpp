@@ -17,7 +17,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "variable_resolution.h"
+#include "identifier_resolution.h"
 #include <visitor.h>
 
 namespace wccff::sema::variable_resolution {

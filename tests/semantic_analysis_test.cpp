@@ -18,7 +18,7 @@
  */
 
 #include "../semantic_analysis.h"
-#include "semantic_analysis/variable_resolution.h"
+#include "semantic_analysis/identifier_resolution.h"
 #include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("Variable Resolution", "[semantic_analysis]")
