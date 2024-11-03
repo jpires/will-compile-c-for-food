@@ -93,11 +93,18 @@ expression copy_expression(const expression &exp)
         [](const std::unique_ptr<binary_node> &n) -> expression { return copy_binary_node(n); },
         [](const std::unique_ptr<assignment_node> &n) -> expression { return copy_assignment_node(n); },
         [](const std::unique_ptr<conditional_node> &n) -> expression { return copy_conditional_node(n); },
-        [](const std::unique_ptr<parser::function_call> &n) -> expression {
-            throw std::runtime_error("Function call not implemented");
-        },
+        [](const std::unique_ptr<function_call> &n) -> expression { return copy_function_call(n); },
       },
       exp);
+}
+std::unique_ptr<function_call> copy_function_call(const std::unique_ptr<function_call> &n)
+{
+    std::vector<expression> args;
+    for (const auto &a : n->arguments)
+    {
+        args.push_back(copy_expression(a));
+    }
+    return std::make_unique<function_call>(n->name, std::move(args));
 }
 std::unique_ptr<unary_node> copy_unary_node(const std::unique_ptr<unary_node> &node)
 {
@@ -511,8 +518,7 @@ std::expected<std::vector<identifier>, parser_error> parse_params_list(tokens &t
 
     if (tokens.peek().type == lexer::token_type::void_keyword)
     {
-        if (auto p = consume_tokens(tokens, { lexer::token_type::void_keyword, lexer::token_type::close_parenthesis });
-            p.has_value())
+        if (auto p = consume_tokens(tokens, { lexer::token_type::void_keyword }); p.has_value())
         {
             return std::unexpected{ p.value() };
         }

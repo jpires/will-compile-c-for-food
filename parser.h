@@ -426,6 +426,7 @@ std::unique_ptr<binary_node> copy_binary_node(const std::unique_ptr<binary_node>
 std::unique_ptr<conditional_node> copy_conditional_node(const std::unique_ptr<conditional_node> &node);
 variable_declaration copy_declaration(const variable_declaration &node);
 expression copy_expression(const expression &expression);
+std::unique_ptr<function_call> copy_function_call(const std::unique_ptr<function_call> &n);
 std::unique_ptr<unary_node> copy_unary_node(const std::unique_ptr<unary_node> &node);
 
 std::expected<std::vector<expression>, parser_error> parse_argument_list(tokens &tokens);

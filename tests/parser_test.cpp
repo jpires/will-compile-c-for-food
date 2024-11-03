@@ -885,6 +885,52 @@ TEST_CASE("parse_function_call", "[parser]")
         REQUIRE(std::get<parser::int_constant>(result.value()->arguments.at(0)).value == 42);
     }
 }
+
+TEST_CASE("parse_function_declaration", "[parser]")
+{
+    using namespace wccff;
+    auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("parser_tests");
+
+    wccff::lexer::file_location location{ 0, 0 };
+    SECTION("No Arguments, no Body")
+    {
+        std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_keyword, "int", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "func", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::open_parenthesis, "(", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
+
+        wccff::parser::tokens tokens{ tokens_vector };
+        auto result = wccff::parser::parse_function_declaration(tokens);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().name.name == "func");
+        REQUIRE(result.value().arguments.empty());
+        REQUIRE(result.value().body.has_value() == false);
+    }
+
+    SECTION("No Arguments, no Body")
+    {
+        std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_keyword, "int", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "func", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::open_parenthesis, "(", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::open_brace, "{", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::return_keyword, "return", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "42", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::close_brace, "}", location);
+
+        wccff::parser::tokens tokens{ tokens_vector };
+        auto result = wccff::parser::parse_function_declaration(tokens);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().name.name == "func");
+        REQUIRE(result.value().arguments.empty());
+        REQUIRE(result.value().body.has_value());
+    }
+}
+
 TEST_CASE("parse_params_list", "[parser]")
 {
     using namespace wccff;
