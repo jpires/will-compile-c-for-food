@@ -21,7 +21,7 @@
 #include <visitor.h>
 
 namespace wccff::sema::variable_resolution {
-auto process_assignment_node(const std::unique_ptr<parser::assignment_node> &node, variable_map &variable_map)
+auto process_assignment_node(const std::unique_ptr<parser::assignment_node> &node, identifier_map &variable_map)
   -> std::expected<std::unique_ptr<parser::assignment_node>, semantic_error>
 {
     if (std::holds_alternative<parser::var>(node->lhs) == false)
@@ -43,7 +43,7 @@ auto process_assignment_node(const std::unique_ptr<parser::assignment_node> &nod
     return std::make_unique<parser::assignment_node>(node->op, std::move(left.value()), std::move(right.value()));
 }
 
-auto process_binary_node(const std::unique_ptr<parser::binary_node> &node, variable_map &variable_map)
+auto process_binary_node(const std::unique_ptr<parser::binary_node> &node, identifier_map &variable_map)
   -> std::expected<std::unique_ptr<parser::binary_node>, semantic_error>
 {
     auto left = process_expression(node->left, variable_map);
@@ -60,7 +60,7 @@ auto process_binary_node(const std::unique_ptr<parser::binary_node> &node, varia
     return std::make_unique<parser::binary_node>(node->op, std::move(left.value()), std::move(right.value()));
 }
 
-auto process_block(const parser::block &node, variable_map &variable_map)
+auto process_block(const parser::block &node, identifier_map &variable_map)
   -> std::expected<parser::block, semantic_error>
 {
     parser::block block;
@@ -77,7 +77,7 @@ auto process_block(const parser::block &node, variable_map &variable_map)
     return block;
 }
 
-auto process_block_item(const parser::block_item &node, variable_map &variable_map)
+auto process_block_item(const parser::block_item &node, identifier_map &variable_map)
   -> std::expected<parser::block_item, semantic_error>
 {
     return std::visit(
@@ -105,7 +105,7 @@ auto process_block_item(const parser::block_item &node, variable_map &variable_m
       node);
 }
 
-auto process_compound_statement(const std::unique_ptr<parser::compound_statement> &node, variable_map &variable_map)
+auto process_compound_statement(const std::unique_ptr<parser::compound_statement> &node, identifier_map &variable_map)
   -> std::expected<std::unique_ptr<parser::compound_statement>, semantic_error>
 {
     variable_map.create_scope();
@@ -119,7 +119,7 @@ auto process_compound_statement(const std::unique_ptr<parser::compound_statement
     return std::make_unique<parser::compound_statement>(std::move(block.value()));
 }
 
-auto process_conditional_node(const std::unique_ptr<parser::conditional_node> &node, variable_map &variable_map)
+auto process_conditional_node(const std::unique_ptr<parser::conditional_node> &node, identifier_map &variable_map)
   -> std::expected<std::unique_ptr<parser::conditional_node>, semantic_error>
 {
     auto cond = process_expression(node->condition, variable_map);
@@ -144,7 +144,7 @@ auto process_conditional_node(const std::unique_ptr<parser::conditional_node> &n
                                                       std::move(e2.value()));
 }
 
-auto process_declaration(const parser::declaration &node, variable_map &variable_map)
+auto process_declaration(const parser::declaration &node, identifier_map &variable_map)
   -> std::expected<parser::declaration, semantic_error>
 {
     return std::visit(
@@ -161,7 +161,7 @@ auto process_declaration(const parser::declaration &node, variable_map &variable
       node);
 }
 
-auto process_do_while_statement(const std::unique_ptr<parser::do_while_statement> &node, variable_map &variable_map)
+auto process_do_while_statement(const std::unique_ptr<parser::do_while_statement> &node, identifier_map &variable_map)
   -> std::expected<std::unique_ptr<parser::do_while_statement>, semantic_error>
 {
     auto body = process_statement(node->body, variable_map);
@@ -179,7 +179,7 @@ auto process_do_while_statement(const std::unique_ptr<parser::do_while_statement
     return std::make_unique<parser::do_while_statement>(std::move(body.value()), std::move(cond.value()), node->label);
 }
 
-auto process_expression(const parser::expression &node, variable_map &variable_map)
+auto process_expression(const parser::expression &node, identifier_map &variable_map)
   -> std::expected<parser::expression, semantic_error>
 {
     return std::visit(
@@ -193,8 +193,8 @@ auto process_expression(const parser::expression &node, variable_map &variable_m
         [&](const std::unique_ptr<parser::binary_node> &n) -> std::expected<parser::expression, semantic_error> {
             return process_binary_node(n, variable_map);
         },
-        [](const std::unique_ptr<parser::function_call> &n) -> std::expected<parser::expression, semantic_error> {
-            throw std::runtime_error("Function call not implemented");
+        [&](const std::unique_ptr<parser::function_call> &n) -> std::expected<parser::expression, semantic_error> {
+            return process_function_call(n, variable_map);
         },
         [&](const std::unique_ptr<parser::unary_node> &n) -> std::expected<parser::expression, semantic_error> {
             return process_unary_node(n, variable_map);
@@ -207,7 +207,7 @@ auto process_expression(const parser::expression &node, variable_map &variable_m
       node);
 }
 
-auto process_for_init(const parser::for_init &node, variable_map &variable_map)
+auto process_for_init(const parser::for_init &node, identifier_map &variable_map)
   -> std::expected<parser::for_init, semantic_error>
 {
     return std::visit(visitor{
@@ -221,7 +221,7 @@ auto process_for_init(const parser::for_init &node, variable_map &variable_map)
                       node);
 }
 
-auto process_for_statement(const std::unique_ptr<parser::for_statement> &node, variable_map &variable_map)
+auto process_for_statement(const std::unique_ptr<parser::for_statement> &node, identifier_map &variable_map)
   -> std::expected<std::unique_ptr<parser::for_statement>, semantic_error>
 {
     variable_map.create_scope();
@@ -266,9 +266,55 @@ auto process_for_statement(const std::unique_ptr<parser::for_statement> &node, v
                                                    node->label);
 }
 
-auto process_function_declaration(const parser::function_declaration &node, variable_map &variable_map)
+auto process_function_call(const std::unique_ptr<parser::function_call> &node, identifier_map &map)
+  -> std::expected<std::unique_ptr<parser::function_call>, semantic_error>
+{
+    auto s = map.find(node->name);
+    if (s.has_value() == false)
+    {
+        auto msg = fmt::format("Function call '{}' not defined", node->name.name);
+        return std::unexpected{ semantic_error{ msg } };
+    }
+
+    std::vector<parser::expression> args;
+    for (const auto &e : node->arguments)
+    {
+        auto result = process_expression(e, map);
+        if (result.has_value() == false)
+        {
+            return std::unexpected{ result.error() };
+        }
+        args.push_back(std::move(result.value()));
+    }
+
+    return std::make_unique<parser::function_call>(s->unique_name, std::move(args));
+}
+
+auto process_function_declaration(const parser::function_declaration &node, identifier_map &variable_map)
   -> std::expected<parser::function_declaration, semantic_error>
 {
+    if (auto s = variable_map.find(node.name, identifier_map::scopes::current_scope);
+        s.has_value() && s->linkage == identifier_map::linkage::internal)
+    {
+        auto msg = fmt::format("Duplicate Function declaration '{}'", node.name.name);
+        return std::unexpected{ semantic_error{ msg } };
+    }
+
+    variable_map.add(node.name, identifier_map::linkage::external);
+
+    variable_map.create_scope();
+
+    std::vector<parser::identifier> args;
+    for (const auto &a : node.arguments)
+    {
+        if (variable_map.find(a, identifier_map::scopes::current_scope).has_value())
+        {
+            auto msg = fmt::format("Duplicate identifier '{}'", a.name);
+            return std::unexpected{ semantic_error{ msg } };
+        }
+        args.push_back(variable_map.add(a));
+    }
+
     std::optional<parser::block> block;
     if (node.body.has_value())
     {
@@ -280,9 +326,11 @@ auto process_function_declaration(const parser::function_declaration &node, vari
         block = std::move(tmp.value());
     }
 
-    return parser::function_declaration{ node.name, node.arguments, std::move(block.value()) };
+    variable_map.destroy_scope();
+    return parser::function_declaration{ node.name, std::move(args), std::move(block) };
 }
-auto process_if_node(const std::unique_ptr<parser::if_node> &node, variable_map &variable_map)
+
+auto process_if_node(const std::unique_ptr<parser::if_node> &node, identifier_map &variable_map)
   -> std::expected<std::unique_ptr<parser::if_node>, semantic_error>
 {
     auto op = process_expression(node->op, variable_map);
@@ -309,7 +357,7 @@ auto process_if_node(const std::unique_ptr<parser::if_node> &node, variable_map 
     return std::make_unique<parser::if_node>(std::move(op.value()), std::move(then_stmt.value()), std::nullopt);
 }
 
-auto process_init_declaration(const parser::init_declaration &node, variable_map &variable_map)
+auto process_init_declaration(const parser::init_declaration &node, identifier_map &variable_map)
   -> std::expected<parser::init_declaration, semantic_error>
 {
     auto tmp = process_variable_declaration(node.decl, variable_map);
@@ -320,7 +368,7 @@ auto process_init_declaration(const parser::init_declaration &node, variable_map
     return parser::init_declaration{ std::move(tmp.value()) };
 }
 
-auto process_init_expression(const parser::init_expression &node, variable_map &variable_map)
+auto process_init_expression(const parser::init_expression &node, identifier_map &variable_map)
   -> std::expected<parser::init_expression, semantic_error>
 {
     if (node.expression.has_value())
@@ -335,7 +383,7 @@ auto process_init_expression(const parser::init_expression &node, variable_map &
     return parser::init_expression{ std::nullopt };
 }
 
-auto process_labelled_statement(const std::unique_ptr<parser::labelled_statement> &node, variable_map &variable_map)
+auto process_labelled_statement(const std::unique_ptr<parser::labelled_statement> &node, identifier_map &variable_map)
   -> std::expected<std::unique_ptr<parser::labelled_statement>, semantic_error>
 {
     auto body = process_statement(node->body, variable_map);
@@ -347,7 +395,7 @@ auto process_labelled_statement(const std::unique_ptr<parser::labelled_statement
     return std::make_unique<parser::labelled_statement>(node->label, std::move(body.value()));
 }
 
-auto process_program(const parser::program &node, variable_map &variable_map)
+auto process_program(const parser::program &node, identifier_map &variable_map)
   -> std::expected<parser::program, semantic_error>
 {
     std::vector<parser::function_declaration> functions;
@@ -364,7 +412,7 @@ auto process_program(const parser::program &node, variable_map &variable_map)
     return parser::program{ std::move(functions) };
 }
 
-auto process_return_node(const parser::return_node &node, variable_map &variable_map)
+auto process_return_node(const parser::return_node &node, identifier_map &variable_map)
   -> std::expected<parser::return_node, semantic_error>
 {
     auto e = process_expression(node.e, variable_map);
@@ -375,7 +423,7 @@ auto process_return_node(const parser::return_node &node, variable_map &variable
     return parser::return_node{ std::move(e.value()) };
 }
 
-auto process_statement(const parser::statement &node, variable_map &variable_map)
+auto process_statement(const parser::statement &node, identifier_map &variable_map)
   -> std::expected<parser::statement, semantic_error>
 {
     return std::visit(
@@ -412,7 +460,7 @@ auto process_statement(const parser::statement &node, variable_map &variable_map
       node);
 }
 
-auto process_unary_node(const std::unique_ptr<parser::unary_node> &node, variable_map &variable_map)
+auto process_unary_node(const std::unique_ptr<parser::unary_node> &node, identifier_map &variable_map)
   -> std::expected<std::unique_ptr<parser::unary_node>, semantic_error>
 {
     if (std::holds_alternative<parser::prefix_decrement_operator>(node->op) ||
@@ -436,20 +484,21 @@ auto process_unary_node(const std::unique_ptr<parser::unary_node> &node, variabl
     return std::make_unique<parser::unary_node>(node->op, std::move(exp.value()));
 }
 
-auto process_var(const parser::var &node, variable_map &variable_map) -> std::expected<parser::var, semantic_error>
+auto process_var(const parser::var &node, identifier_map &variable_map) -> std::expected<parser::var, semantic_error>
 {
-    if (variable_map.contains(node.name) == false)
+    auto s = variable_map.find(node.name);
+    if (s.has_value() == false)
     {
         return std::unexpected<semantic_error>{ fmt::format("Variable {} not defined", node.name.name) };
     }
 
-    return parser::var{ variable_map.get_unique_name(node.name) };
+    return parser::var{ s->unique_name };
 }
 
-auto process_variable_declaration(const parser::variable_declaration &node, variable_map &variable_map)
+auto process_variable_declaration(const parser::variable_declaration &node, identifier_map &variable_map)
   -> std::expected<parser::variable_declaration, semantic_error>
 {
-    if (variable_map.contains(node.name, variable_map::scopes::current_scope))
+    if (variable_map.find(node.name, identifier_map::scopes::current_scope).has_value())
     {
         auto msg = fmt::format("Duplicate definition for variable {}", node.name.name);
         return std::unexpected{ semantic_error{ msg } };
@@ -471,7 +520,7 @@ auto process_variable_declaration(const parser::variable_declaration &node, vari
     return parser::variable_declaration{ unique_name, std::move(init) };
 }
 
-auto process_while_statement(const std::unique_ptr<parser::while_statement> &node, variable_map &variable_map)
+auto process_while_statement(const std::unique_ptr<parser::while_statement> &node, identifier_map &variable_map)
   -> std::expected<std::unique_ptr<parser::while_statement>, semantic_error>
 {
     auto cond = process_expression(node->condition, variable_map);

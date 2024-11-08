@@ -27,8 +27,12 @@ add_executable(wccff
         semantic_analysis/loop_labelling.h
         semantic_analysis/identifier_resolution.cpp
         semantic_analysis/identifier_resolution.h
+        semantic_analysis/type_checker.cpp
+        semantic_analysis/type_checker.h
         semantic_analysis.cpp
         semantic_analysis.h
+        symbol_table.cpp
+        symbol_table.h
         tacky.h
         utils.cpp
         utils.h

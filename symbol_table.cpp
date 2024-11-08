@@ -1,5 +1,5 @@
 /*
- * Will Compile C for Food, a toy C compiler
+* Will Compile C for Food, a toy C compiler
  * Copyright (C) 2024  João Pires
  * https://github.com/jpires/will-compile-c-for-food
  *
@@ -17,23 +17,4 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "../semantic_analysis.h"
-#include "semantic_analysis/identifier_resolution.h"
-#include <catch2/catch_test_macros.hpp>
-
-TEST_CASE("Variable Resolution", "[semantic_analysis]")
-{
-    using namespace wccff;
-
-    wccff::sema::identifier_map map;
-    using wccff::parser::assignment_operator;
-    SECTION("resolve_assignment_node")
-    {
-        parser::int_constant value1{ 42 };
-        parser::int_constant value2{ 43 };
-
-        auto original = std::make_unique<parser::assignment_node>(assignment_operator{}, value1, value2);
-        auto result = sema::variable_resolution::process_assignment_node(original, map);
-        REQUIRE(result.has_value() == false);
-    }
-}
+#include "symbol_table.h"

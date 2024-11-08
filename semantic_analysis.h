@@ -30,7 +30,7 @@ struct semantic_error
 {
     std::string message;
 };
-class variable_map
+class identifier_map
 {
   public:
     enum class scopes
@@ -38,26 +38,34 @@ class variable_map
         all_scopes,
         current_scope,
     };
-    variable_map() { m_map.emplace_back(); }
-    parser::identifier add(const parser::identifier &name);
-    bool contains(const parser::identifier &name, scopes on_current_scope = scopes::all_scopes) const;
-    void create_scope();
-    void destroy_scope();
-    parser::identifier get_unique_name(const parser::identifier &name) const;
 
-  private:
+    enum class linkage
+    {
+        external,
+        internal,
+    };
+
     struct symbol
     {
-        symbol(std::string name, std::string unique_name)
-          : name(std::move(name))
+        symbol(parser::identifier name, parser::identifier unique_name, linkage link)
+          : linkage(link)
+          , name(std::move(name))
           , unique_name(std::move(unique_name))
         {
         }
 
-        std::string name;
-        std::string unique_name;
+        linkage linkage;
+        parser::identifier name;
+        parser::identifier unique_name;
     };
 
+    identifier_map() { m_map.emplace_back(); }
+    parser::identifier add(const parser::identifier &name, linkage link = linkage::internal);
+    void create_scope();
+    void destroy_scope();
+    std::optional<symbol> find(const parser::identifier &name, scopes on_current_scope = scopes::all_scopes) const;
+
+  private:
     parser::identifier generate_unique_name(const parser::identifier &name);
 
     std::vector<std::unordered_map<std::string, symbol>> m_map;

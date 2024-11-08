@@ -1,0 +1,520 @@
+/*
+ * Will Compile C for Food, a toy C compiler
+ * Copyright (C) 2024  João Pires
+ * https://github.com/jpires/will-compile-c-for-food
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+#include "type_checker.h"
+
+#include "assembly_generation.h"
+#include "identifier_resolution.h"
+#include "labelled_statements.h"
+#include "tacky.h"
+
+#include <visitor.h>
+
+namespace wccff::sema::type_checker {
+
+auto process_assignment_node(const std::unique_ptr<parser::assignment_node> &node, symbol_table::symbol_table &table)
+  -> std::expected<std::unique_ptr<parser::assignment_node>, semantic_error>
+{
+    auto left = process_expression(node->lhs, table);
+    if (left.has_value() == false)
+    {
+        return std::unexpected{ left.error() };
+    }
+    auto right = process_expression(node->rhs, table);
+    if (right.has_value() == false)
+    {
+        return std::unexpected{ right.error() };
+    }
+    return std::make_unique<parser::assignment_node>(node->op, std::move(left.value()), std::move(right.value()));
+}
+
+auto process_binary_node(const std::unique_ptr<parser::binary_node> &node, symbol_table::symbol_table &table)
+  -> std::expected<std::unique_ptr<parser::binary_node>, semantic_error>
+{
+    auto left = process_expression(node->left, table);
+    if (left.has_value() == false)
+    {
+        return std::unexpected{ left.error() };
+    }
+
+    auto right = process_expression(node->right, table);
+    if (right.has_value() == false)
+    {
+        return std::unexpected{ right.error() };
+    }
+    return std::make_unique<parser::binary_node>(node->op, std::move(left.value()), std::move(right.value()));
+}
+
+auto process_block(const parser::block &node, symbol_table::symbol_table &table)
+  -> std::expected<parser::block, semantic_error>
+{
+    std::vector<parser::block_item> block;
+    for (const auto &item : node.items)
+    {
+        auto tmp = process_block_item(item, table);
+        if (tmp.has_value() == false)
+        {
+            return std::unexpected{ tmp.error() };
+        }
+        block.push_back(std::move(tmp.value()));
+    }
+
+    return parser::block{ std::move(block) };
+};
+
+auto process_block_item(const parser::block_item &node, symbol_table::symbol_table &table)
+  -> std::expected<parser::block_item, semantic_error>
+{
+    return std::visit(
+      visitor{
+        [&table](const parser::declaration &n) -> std::expected<parser::block_item, semantic_error> {
+            return process_declaration(n, table);
+        },
+        [&table](const parser::statement &n) -> std::expected<parser::block_item, semantic_error> {
+            return process_statement(n, table);
+        },
+        [](const std::monostate &) -> std::expected<parser::block_item, semantic_error> { return std::monostate{}; },
+      },
+      node);
+}
+
+auto process_compound_statement(const std::unique_ptr<parser::compound_statement> &node,
+                                symbol_table::symbol_table &table)
+  -> std::expected<std::unique_ptr<parser::compound_statement>, semantic_error>
+{
+    auto b = process_block(node->block, table);
+    if (b.has_value() == false)
+    {
+        return std::unexpected{ b.error() };
+    }
+
+    return std::make_unique<parser::compound_statement>(std::move(b).value());
+}
+
+auto process_conditional_node(const std::unique_ptr<parser::conditional_node> &node, symbol_table::symbol_table &table)
+  -> std::expected<std::unique_ptr<parser::conditional_node>, semantic_error>
+{
+    auto cond = process_expression(node->condition, table);
+    if (cond.has_value() == false)
+    {
+        return std::unexpected{ cond.error() };
+    }
+    auto e1 = process_expression(node->e1, table);
+    if (e1.has_value() == false)
+    {
+        return std::unexpected{ e1.error() };
+    }
+
+    auto e2 = process_expression(node->e2, table);
+    if (e2.has_value() == false)
+    {
+        return std::unexpected{ e2.error() };
+    }
+
+    return std::make_unique<parser::conditional_node>(std::move(cond.value()),
+                                                      std::move(e1.value()),
+                                                      std::move(e2.value()));
+}
+
+auto process_declaration(const parser::declaration &node, symbol_table::symbol_table &table)
+  -> std::expected<parser::declaration, semantic_error>
+{
+    return std::visit(
+      visitor{
+        [&table](const parser::function_declaration &n) -> std::expected<parser::declaration, semantic_error> {
+            return process_function_declaration(n, table, true);
+        },
+        [&table](const parser::variable_declaration &n) -> std::expected<parser::declaration, semantic_error> {
+            return process_variable_declaration(n, table);
+        },
+      },
+      node);
+}
+
+auto process_do_while_statement(const std::unique_ptr<parser::do_while_statement> &node,
+                                symbol_table::symbol_table &table)
+  -> std::expected<std::unique_ptr<parser::do_while_statement>, semantic_error>
+{
+    auto body = process_statement(node->body, table);
+    if (body.has_value() == false)
+    {
+        return std::unexpected{ body.error() };
+    }
+
+    auto cond = process_expression(node->condition, table);
+    if (cond.has_value() == false)
+    {
+        return std::unexpected{ cond.error() };
+    }
+
+    return std::make_unique<parser::do_while_statement>(std::move(body.value()), std::move(cond.value()), node->label);
+}
+
+auto process_expression(const parser::expression &node, symbol_table::symbol_table &table)
+  -> std::expected<parser::expression, semantic_error>
+{
+    return std::visit(
+      visitor{
+        [&](const std::unique_ptr<parser::assignment_node> &n) -> std::expected<parser::expression, semantic_error> {
+            return process_assignment_node(n, table);
+        },
+        [&](const std::unique_ptr<parser::conditional_node> &n) -> std::expected<parser::expression, semantic_error> {
+            return process_conditional_node(n, table);
+        },
+        [&](const std::unique_ptr<parser::binary_node> &n) -> std::expected<parser::expression, semantic_error> {
+            return process_binary_node(n, table);
+        },
+        [&](const std::unique_ptr<parser::function_call> &n) -> std::expected<parser::expression, semantic_error> {
+            return process_function_call(n, table);
+        },
+        [&](const std::unique_ptr<parser::unary_node> &n) -> std::expected<parser::expression, semantic_error> {
+            return process_unary_node(n, table);
+        },
+        [&](const parser::var &n) -> std::expected<parser::expression, semantic_error> {
+            return process_var(n, table);
+        },
+        [&](const parser::int_constant &n) -> std::expected<parser::expression, semantic_error> { return n; },
+      },
+      node);
+}
+
+auto process_for_init(const parser::for_init &node, symbol_table::symbol_table &table)
+  -> std::expected<parser::for_init, semantic_error>
+{
+    return std::visit(visitor{
+                        [&](const parser::init_declaration &n) -> std::expected<parser::for_init, semantic_error> {
+                            return process_init_declaration(n, table);
+                        },
+                        [&](const parser::init_expression &n) -> std::expected<parser::for_init, semantic_error> {
+                            return process_init_expression(n, table);
+                        },
+                      },
+                      node);
+}
+
+auto process_for_statement(const std::unique_ptr<parser::for_statement> &node, symbol_table::symbol_table &table)
+  -> std::expected<std::unique_ptr<parser::for_statement>, semantic_error>
+{
+    auto init = process_for_init(node->init, table);
+    if (init.has_value() == false)
+    {
+        return std::unexpected{ init.error() };
+    }
+    std::optional<parser::expression> cond;
+    if (node->condition.has_value())
+    {
+        auto tmp = process_expression(node->condition.value(), table);
+        if (tmp.has_value() == false)
+        {
+            return std::unexpected{ tmp.error() };
+        }
+        cond = std::move(tmp.value());
+    }
+
+    std::optional<parser::expression> post;
+    if (node->post.has_value())
+    {
+        auto tmp = process_expression(node->post.value(), table);
+        if (tmp.has_value() == false)
+        {
+            return std::unexpected{ tmp.error() };
+        }
+        post = std::move(tmp.value());
+    }
+
+    auto body = process_statement(node->body, table);
+    if (body.has_value() == false)
+    {
+        return std::unexpected{ body.error() };
+    }
+
+    return std::make_unique<parser::for_statement>(std::move(init.value()),
+                                                   std::move(cond),
+                                                   std::move(post),
+                                                   std::move(body.value()),
+                                                   node->label);
+}
+
+auto process_function_call(const std::unique_ptr<parser::function_call> &node, symbol_table::symbol_table &table)
+  -> std::expected<std::unique_ptr<parser::function_call>, semantic_error>
+{
+    auto symbol = table.get(node->name)->type;
+    if (std::holds_alternative<symbol_table::func_type>(symbol) == false)
+    {
+        auto msg = fmt::format("Variable '{}' used as a function call", node->name.name);
+        return std::unexpected{ semantic_error{ msg } };
+    }
+    if (std::get<symbol_table::func_type>(symbol).param_num != node->arguments.size())
+    {
+        auto msg = fmt::format("Number of parameters mismatch", node->name.name);
+        return std::unexpected{ semantic_error{ msg } };
+    }
+
+    std::vector<parser::expression> args;
+    for (const auto &e : node->arguments)
+    {
+        auto result = process_expression(e, table);
+        if (result.has_value() == false)
+        {
+            return std::unexpected{ result.error() };
+        }
+        args.push_back(std::move(result.value()));
+    }
+
+    return std::make_unique<parser::function_call>(node->name, std::move(args));
+}
+
+auto process_function_declaration(const parser::function_declaration &node,
+                                  symbol_table::symbol_table &table,
+                                  bool inner_block) -> std::expected<parser::function_declaration, semantic_error>
+{
+    symbol_table::type t = symbol_table::func_type{ node.arguments.size() };
+
+    if (auto s = table.get(node.name); s.has_value())
+    {
+        if (s->type != t)
+        {
+            auto msg = fmt::format("Incompatible function declaration for '{}'", node.name.name);
+            return std::unexpected{ semantic_error{ msg } };
+        }
+        if (s->has_body && node.body.has_value())
+        {
+            auto msg = fmt::format("Duplicate function declaration for '{}'", node.name.name);
+            return std::unexpected{ semantic_error{ msg } };
+        }
+    }
+    table.add(node.name, t, node.body.has_value());
+
+    std::optional<parser::block> block;
+    if (node.body.has_value())
+    {
+        if (inner_block)
+        {
+            auto msg = fmt::format("Inner function definition for '{}'", node.name.name);
+            return std::unexpected{ semantic_error{ msg } };
+        }
+        for (const auto &arg : node.arguments)
+        {
+            table.add(arg, symbol_table::int_type{});
+        }
+
+        auto tmp = process_block(node.body.value(), table);
+        if (tmp.has_value() == false)
+        {
+            return std::unexpected{ tmp.error() };
+        }
+
+        block = std::move(tmp.value());
+    }
+
+    return parser::function_declaration{ node.name, node.arguments, std::move(block) };
+}
+
+auto process_if_node(const std::unique_ptr<parser::if_node> &node, symbol_table::symbol_table &table)
+  -> std::expected<std::unique_ptr<parser::if_node>, semantic_error>
+{
+    auto op = process_expression(node->op, table);
+    if (op.has_value() == false)
+    {
+        return std::unexpected{ op.error() };
+    }
+
+    auto then_stmt = process_statement(node->then_stmt, table);
+    if (then_stmt.has_value() == false)
+    {
+        return std::unexpected{ then_stmt.error() };
+    }
+
+    std::optional<parser::statement> else_stmt;
+    if (node->else_stmt.has_value())
+    {
+        auto tmp = process_statement(node->else_stmt.value(), table);
+        if (tmp.has_value() == false)
+        {
+            return std::unexpected{ tmp.error() };
+        }
+        else_stmt = std::move(tmp.value());
+    }
+
+    return std::make_unique<parser::if_node>(std::move(op.value()), std::move(then_stmt.value()), std::move(else_stmt));
+}
+
+auto process_init_declaration(const parser::init_declaration &node, symbol_table::symbol_table &table)
+  -> std::expected<parser::init_declaration, semantic_error>
+{
+    auto tmp = process_variable_declaration(node.decl, table);
+    if (tmp.has_value() == false)
+    {
+        return std::unexpected{ tmp.error() };
+    }
+    return parser::init_declaration{ std::move(tmp.value()) };
+}
+
+auto process_init_expression(const parser::init_expression &node, symbol_table::symbol_table &table)
+  -> std::expected<parser::init_expression, semantic_error>
+{
+    if (node.expression.has_value())
+    {
+        auto tmp = process_expression(node.expression.value(), table);
+        if (tmp.has_value() == false)
+        {
+            return std::unexpected{ tmp.error() };
+        }
+        return parser::init_expression{ std::move(tmp.value()) };
+    }
+    return parser::init_expression{ std::nullopt };
+}
+
+auto process_labelled_statement(const std::unique_ptr<parser::labelled_statement> &node,
+                                symbol_table::symbol_table &table)
+  -> std::expected<std::unique_ptr<parser::labelled_statement>, semantic_error>
+{
+    auto body = process_statement(node->body, table);
+    if (body.has_value() == false)
+    {
+        return std::unexpected{ body.error() };
+    }
+
+    return std::make_unique<parser::labelled_statement>(node->label, std::move(body.value()));
+}
+
+auto process_program(const parser::program &node, symbol_table::symbol_table &table)
+  -> std::expected<parser::program, semantic_error>
+{
+    std::vector<parser::function_declaration> function_declarations;
+    for (const auto &f : node.f)
+    {
+        auto tmp = process_function_declaration(f, table);
+        if (tmp.has_value() == false)
+        {
+            return std::unexpected{ tmp.error() };
+        }
+        function_declarations.push_back(std::move(tmp.value()));
+    }
+    return parser::program{ std::move(function_declarations) };
+}
+
+auto process_return_node(const parser::return_node &node, symbol_table::symbol_table &table)
+  -> std::expected<parser::return_node, semantic_error>
+{
+    auto exp = process_expression(node.e, table);
+    if (exp.has_value() == false)
+    {
+        return std::unexpected{ exp.error() };
+    }
+
+    return parser::return_node{ std::move(exp.value()) };
+}
+
+auto process_statement(const parser::statement &node, symbol_table::symbol_table &table)
+  -> std::expected<parser::statement, semantic_error>
+{
+    return std::visit(
+      visitor{
+        [&](const parser::return_node &n) -> std::expected<parser::statement, semantic_error> {
+            return process_return_node(n, table);
+        },
+        [&](const parser::expression &n) -> std::expected<parser::statement, semantic_error> {
+            return process_expression(n, table);
+        },
+        [&](const std::unique_ptr<parser::if_node> &n) -> std::expected<parser::statement, semantic_error> {
+            return process_if_node(n, table);
+        },
+        [&](const std::unique_ptr<parser::compound_statement> &n) -> std::expected<parser::statement, semantic_error> {
+            return process_compound_statement(n, table);
+        },
+        [&](const parser::break_statement &n) -> std::expected<parser::statement, semantic_error> { return n; },
+        [&](const parser::continue_statement &n) -> std::expected<parser::statement, semantic_error> { return n; },
+        [&](const parser::goto_statement &n) -> std::expected<parser::statement, semantic_error> { return n; },
+        [&](const std::unique_ptr<parser::while_statement> &n) -> std::expected<parser::statement, semantic_error> {
+            return process_while_statement(n, table);
+        },
+        [&](const std::unique_ptr<parser::do_while_statement> &n) -> std::expected<parser::statement, semantic_error> {
+            return process_do_while_statement(n, table);
+        },
+        [&](const std::unique_ptr<parser::for_statement> &n) -> std::expected<parser::statement, semantic_error> {
+            return process_for_statement(n, table);
+        },
+        [&](const std::monostate &n) -> std::expected<parser::statement, semantic_error> { return std::monostate{}; },
+        [&](const std::unique_ptr<parser::labelled_statement> &n) -> std::expected<parser::statement, semantic_error> {
+            return process_labelled_statement(n, table);
+        },
+      },
+      node);
+}
+
+auto process_unary_node(const std::unique_ptr<parser::unary_node> &node, symbol_table::symbol_table &table)
+  -> std::expected<std::unique_ptr<parser::unary_node>, semantic_error>
+{
+    auto exp = process_expression(node->exp, table);
+    if (exp.has_value() == false)
+    {
+        return std::unexpected{ exp.error() };
+    }
+
+    return std::make_unique<parser::unary_node>(node->op, std::move(exp.value()));
+}
+
+auto process_var(const parser::var &node, symbol_table::symbol_table &table)
+  -> std::expected<parser::var, semantic_error>
+{
+    if (std::holds_alternative<symbol_table::int_type>(table.get(node.name)->type) == false)
+    {
+        return std::unexpected<semantic_error>{ fmt::format("Function used as variable") };
+    }
+
+    return parser::var{ node.name };
+}
+
+auto process_variable_declaration(const parser::variable_declaration &node, symbol_table::symbol_table &table)
+  -> std::expected<parser::variable_declaration, semantic_error>
+{
+    table.add(node.name, symbol_table::int_type{});
+    std::optional<parser::expression> init;
+    if (node.init.has_value())
+    {
+        auto tmp = process_expression(node.init.value(), table);
+        if (tmp.has_value() == false)
+        {
+            return std::unexpected{ tmp.error() };
+        }
+
+        init = std::move(tmp.value());
+    }
+
+    return parser::variable_declaration{ node.name, std::move(init) };
+}
+
+auto process_while_statement(const std::unique_ptr<parser::while_statement> &node, symbol_table::symbol_table &table)
+  -> std::expected<std::unique_ptr<parser::while_statement>, semantic_error>
+{
+    auto cond = process_expression(node->condition, table);
+    if (cond.has_value() == false)
+    {
+        return std::unexpected{ cond.error() };
+    }
+    auto body = process_statement(node->body, table);
+    if (body.has_value() == false)
+    {
+        return std::unexpected{ body.error() };
+    }
+
+    return std::make_unique<parser::while_statement>(std::move(cond.value()), std::move(body.value()), node->label);
+}
+
+} // namespace wccff::sema::type_checker

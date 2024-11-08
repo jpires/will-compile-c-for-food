@@ -176,7 +176,7 @@ auto process_function_declaration(const parser::function_declaration &node)
         block = std::move(tmp.value());
     }
 
-    return parser::function_declaration{ node.name, node.arguments, std::move(block.value()) };
+    return parser::function_declaration{ node.name, node.arguments, std::move(block) };
 }
 
 auto process_if_node(const std::unique_ptr<parser::if_node> &node, const std::optional<parser::identifier> &label)

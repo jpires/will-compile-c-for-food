@@ -21,6 +21,7 @@
 #define PARSER_H
 
 #include "lexer.h"
+#include <compare>
 #include <span>
 #include <variant>
 #include <vector>
@@ -68,6 +69,7 @@ struct parser_error
 struct identifier
 {
     std::string name;
+    bool operator==(const identifier &other) const = default;
 };
 
 struct bitwise_complement_operator

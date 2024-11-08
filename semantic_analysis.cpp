@@ -21,6 +21,7 @@
 #include "semantic_analysis/identifier_resolution.h"
 #include "semantic_analysis/labelled_statements.h"
 #include "semantic_analysis/loop_labelling.h"
+#include "semantic_analysis/type_checker.h"
 #include "visitor.h"
 
 #include <algorithm>
@@ -34,62 +35,79 @@ static std::unexpected<semantic_error> generate_unknown_variable(parser::identif
     return std::unexpected<semantic_error>(msg);
 }
 
-parser::identifier variable_map::add(const parser::identifier &name)
+parser::identifier identifier_map::add(const parser::identifier &name, linkage link)
 {
-    auto unique_name = generate_unique_name(name);
-    symbol s{ name.name, unique_name.name };
+    auto unique_name = link == linkage::internal ? generate_unique_name(name) : name;
+    symbol s{ name, unique_name, link };
 
     m_map.back().insert({ name.name, s });
 
     return unique_name;
 }
-bool variable_map::contains(const parser::identifier &name, scopes on_current_scope) const
-{
-    // In this situation, we want to know if this variable exists in the current scope.
-    // So, we only need to check the latest entry.
-    if (on_current_scope == scopes::current_scope)
-    {
-        return m_map.back().contains(name.name);
-    }
 
-    // We want to look at all scopes, going in reverse order as they were declared.
-    // i.e. a variable that is declared in two scope, then we want the innermost definition
-    // of that variable.
-    return std::ranges::any_of(m_map, [&](const auto &pair) { return pair.contains(name.name); });
-}
-void variable_map::create_scope()
+void identifier_map::create_scope()
 {
     m_map.emplace_back();
     m_scope_counter++;
 }
-void variable_map::destroy_scope()
+
+void identifier_map::destroy_scope()
 {
     m_map.pop_back();
     m_scope_counter--;
 }
-parser::identifier variable_map::get_unique_name(const parser::identifier &name) const
+
+std::optional<identifier_map::symbol> identifier_map::find(const parser::identifier &name,
+                                                           scopes on_current_scope) const
 {
-    for (auto const &pair : std::ranges::reverse_view(m_map))
-    {
-        if (pair.contains(name.name))
+    // Lambda to check if an identifier with the expected linkage exists in a scope.
+    auto f = [&name](const std::unordered_map<std::string, symbol> &map) -> std::optional<symbol> {
+        if (auto it = map.find(name.name); it != map.end())
         {
-            return { pair.at(name.name).unique_name };
+            return it->second;
         }
+
+        return std::nullopt;
+    };
+
+    // In this situation, we want to get the symbol in the current scope.
+    // So, we only need to check the latest entry, which is the inner most scope
+    if (on_current_scope == scopes::current_scope)
+    {
+        return f(m_map.back());
     }
-    throw std::runtime_error("variable map does not exist");
+
+    auto reverse_map = std::ranges::reverse_view{ m_map };
+    auto a = std::ranges::find_if(reverse_map, [&name](const auto &map) { return map.contains(name.name); });
+    if (a == reverse_map.end())
+    {
+        return std::nullopt;
+    }
+    return f(*a);
+
+    // We want to look at all scopes, and stop when we find the first entry.
+    // return std::ranges::any_of(m_map, [&](const auto &map) { return f(map); });
 }
-parser::identifier variable_map::generate_unique_name(const parser::identifier &name)
+
+parser::identifier identifier_map::generate_unique_name(const parser::identifier &name)
 {
     return { fmt::format("var-{}-{}", name.name, m_counter++) };
 }
 
 std::expected<parser::program, semantic_error> analyse(const parser::program &input)
 {
-    variable_map variable_map;
+    identifier_map variable_map;
     auto var_result = variable_resolution::process_program(input, variable_map);
     if (var_result.has_value() == false)
     {
         return std::unexpected{ var_result.error() };
+    }
+
+    symbol_table::symbol_table symbol_table;
+    auto type_check_result = type_checker::process_program(var_result.value(), symbol_table);
+    if (type_check_result.has_value() == false)
+    {
+        return std::unexpected{ type_check_result.error() };
     }
 
     auto labelled_result = labelled_statements::process_program(var_result.value());
