@@ -259,17 +259,19 @@ std::vector<instruction> process_statement(const wccff::tacky::binary_statement 
 
 std::vector<instruction> process_statement(const tacky::instruction &i)
 {
-    return std::visit(visitor{
-                        [](const tacky::return_statement &n) { return process_statement(n); },
-                        [](const tacky::unary_statement &n) { return process_statement(n); },
-                        [](const tacky::binary_statement &n) { return process_statement(n); },
-                        [](const tacky::copy_statement &n) { return process_statement(n); },
-                        [](const tacky::jump_statement &n) { return process_statement(n); },
-                        [](const tacky::jump_if_zero_statement &n) { return process_statement(n); },
-                        [](const tacky::jump_if_not_zero_statement &n) { return process_statement(n); },
-                        [](const tacky::label_statement &n) { return process_statement(n); },
-                      },
-                      i);
+    return std::visit(
+      visitor{
+        [](const tacky::return_statement &n) { return process_statement(n); },
+        [](const tacky::unary_statement &n) { return process_statement(n); },
+        [](const tacky::binary_statement &n) { return process_statement(n); },
+        [](const tacky::copy_statement &n) { return process_statement(n); },
+        [](const tacky::jump_statement &n) { return process_statement(n); },
+        [](const tacky::jump_if_zero_statement &n) { return process_statement(n); },
+        [](const tacky::jump_if_not_zero_statement &n) { return process_statement(n); },
+        [](const tacky::label_statement &n) { return process_statement(n); },
+        [](const tacky::fun_call &n) -> std::vector<instruction> { throw std::logic_error("Not implemented"); },
+      },
+      i);
 }
 
 std::vector<instruction> process_statement(const std::vector<tacky::instruction> &s)

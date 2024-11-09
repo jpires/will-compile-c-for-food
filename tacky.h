@@ -214,6 +214,13 @@ struct copy_statement
     val dst;
 };
 
+struct fun_call
+{
+    identifier fun_name;
+    std::vector<val> args;
+    val dst;
+};
+
 struct jump_statement
 {
     explicit jump_statement(identifier target_)
@@ -261,11 +268,13 @@ using instruction = std::variant<return_statement,
                                  jump_statement,
                                  jump_if_zero_statement,
                                  jump_if_not_zero_statement,
-                                 label_statement>;
+                                 label_statement,
+                                 fun_call>;
 
 struct function_definition
 {
     identifier name;
+    std::vector<identifier> params;
     std::vector<instruction> instructions;
 };
 
@@ -292,7 +301,8 @@ void process_do_while_statement(const std::unique_ptr<parser::do_while_statement
 val process_expression(const wccff::parser::expression &exp, std::vector<instruction> &instructions);
 void process_for_init(const parser::for_init &node, std::vector<instruction> &instructions);
 void process_for_statement(const std::unique_ptr<parser::for_statement> &node, std::vector<instruction> &instructions);
-function_definition process_function_definition(const parser::function_declaration &f);
+val process_function_call(const std::unique_ptr<parser::function_call> &f, std::vector<instruction> &instructions);
+std::optional<function_definition> process_function_definition(const parser::function_declaration &f);
 void process_goto_statement(const parser::goto_statement &node, std::vector<instruction> &instructions);
 identifier process_identifier(const parser::identifier &id);
 void process_if(const std::unique_ptr<parser::if_node> &id, std::vector<instruction> &instructions);
@@ -313,6 +323,7 @@ std::string pretty_print(const binary_statement &i, int32_t ident = 0);
 std::string pretty_print(const constant &val, int32_t ident = 0);
 std::string pretty_print(const copy_statement &i, int32_t ident = 0);
 std::string pretty_print(const instruction &instruction, int32_t ident = 0);
+std::string pretty_print(const fun_call &f, int32_t ident = 0);
 std::string pretty_print(const function_definition &f, int32_t ident = 0);
 std::string pretty_print(const jump_statement &i, int32_t ident = 0);
 std::string pretty_print(const jump_if_zero_statement &i, int32_t ident = 0);

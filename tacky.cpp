@@ -389,8 +389,8 @@ val process_expression(const wccff::parser::expression &exp, std::vector<instruc
                         [&instructions](const std::unique_ptr<parser::conditional_node> &n) -> val {
                             return process_conditional_node(n, instructions);
                         },
-                        [](const std::unique_ptr<parser::function_call> &n) -> val {
-                            throw std::runtime_error("Function call not implemented");
+                        [&instructions](const std::unique_ptr<parser::function_call> &n) -> val {
+                            return process_function_call(n, instructions);
                         },
                       },
                       exp);
@@ -456,7 +456,10 @@ void process_declaration(const parser::declaration &node, std::vector<instructio
     std::visit(
       visitor{
         [](const parser::function_declaration &node) {
-            throw std::runtime_error("Function declaration not implemented");
+            if (process_function_definition(node).has_value())
+            {
+                throw std::runtime_error("Found unexpected function definition");
+            }
         },
         [&instructions](const parser::variable_declaration &node) { process_variable_declaration(node, instructions); },
       },
@@ -518,15 +521,42 @@ void process_for_statement(const std::unique_ptr<parser::for_statement> &node, s
     instructions.emplace_back(label_statement{ break_label });
 }
 
-function_definition process_function_definition(const parser::function_declaration &f)
+val process_function_call(const std::unique_ptr<parser::function_call> &f, std::vector<instruction> &instructions)
 {
-    std::vector<instruction> instructions;
+    std::vector<val> arguments;
+    arguments.reserve(f->arguments.size());
+
+    for (const auto &arg : f->arguments)
+    {
+        auto r = process_expression(arg, instructions);
+        arguments.emplace_back(r);
+    }
+
+    auto dst = var{ get_temporary_name() };
+    instructions.emplace_back(fun_call{ process_identifier(f->name), std::move(arguments), dst });
+
+    return dst;
+}
+std::optional<function_definition> process_function_definition(const parser::function_declaration &f)
+{
     if (f.body.has_value())
     {
+        std::vector<instruction> instructions;
+        std::vector<identifier> params;
+        params.reserve(f.arguments.size());
+
+        for (const auto &p : f.arguments)
+        {
+            params.emplace_back(process_identifier(p));
+        }
+
         process_block(f.body.value(), instructions);
         instructions.emplace_back(return_statement{ constant{ 0 } });
+
+        return function_definition{ process_identifier(f.name), std::move(params), std::move(instructions) };
     }
-    return { process_identifier(f.name), instructions };
+
+    return std::nullopt;
 }
 
 void process_goto_statement(const parser::goto_statement &node, std::vector<instruction> &instructions)
@@ -547,7 +577,10 @@ program process(const parser::program &input)
     std::vector<function_definition> functions;
     for (const auto &f : input.f)
     {
-        functions.push_back(process_function_definition(f));
+        if (auto tmp = process_function_definition(f); tmp.has_value())
+        {
+            functions.push_back(tmp.value());
+        }
     }
     return { functions };
 }
@@ -662,6 +695,17 @@ std::string pretty_print(const binary_statement &i, int32_t ident)
 std::string pretty_print(const copy_statement &i, int32_t ident)
 {
     return wccff::format_indented(ident, "Copy({}, {})\n", pretty_print(i.src, 0), pretty_print(i.dst, 0));
+}
+
+std::string pretty_print(const fun_call &f, int32_t ident)
+{
+    std::string params;
+    for (const auto &arg : f.args)
+    {
+        params += pretty_print(arg, 0);
+    }
+
+    return wccff::format_indented(ident, "FUNCALL({}, ({}), {})\n", f.fun_name.name, params, pretty_print(f.dst));
 }
 std::string pretty_print(const jump_statement &i, int32_t ident)
 {
