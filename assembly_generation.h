@@ -49,6 +49,18 @@ struct cx
 struct dx
 {
 };
+struct di
+{
+};
+struct si
+{
+};
+struct R8
+{
+};
+struct R9
+{
+};
 struct R10
 {
 };
@@ -56,7 +68,7 @@ struct R11
 {
 };
 
-using reg = std::variant<ax, cx, dx, R10, R11>;
+using reg = std::variant<ax, cx, dx, di, si, R8, R9, R10, R11>;
 
 struct pseudo
 {
@@ -183,18 +195,44 @@ struct allocate_stack
     immediate size;
 };
 
-using instruction = std::
-  variant<mov_instruction, unary, binary, cmp, idiv, cdq, jmp, jmpcc, setcc, label, allocate_stack, ret_instruction>;
+struct deallocate_stack
+{
+    immediate size;
+};
+struct push
+{
+    operand src;
+};
+struct call
+{
+    identifier fun_name;
+};
+using instruction = std::variant<mov_instruction,
+                                 unary,
+                                 binary,
+                                 cmp,
+                                 idiv,
+                                 cdq,
+                                 jmp,
+                                 jmpcc,
+                                 setcc,
+                                 label,
+                                 allocate_stack,
+                                 deallocate_stack,
+                                 push,
+                                 call,
+                                 ret_instruction>;
 
 struct function
 {
     identifier name;
     std::vector<instruction> instructions;
+    int32_t stack_size;
 };
 
 struct program
 {
-    function function;
+    std::vector<function> functions;
 };
 
 std::vector<instruction> process_statement(const wccff::tacky::copy_statement &stmt);
@@ -203,6 +241,8 @@ std::vector<instruction> process_statement(const wccff::tacky::binary_statement 
 std::vector<instruction> process_statement(const wccff::tacky::unary_statement &stmt);
 std::vector<instruction> process_statement(const tacky::instruction &i);
 std::vector<instruction> process_statement(const std::vector<tacky::instruction> &s);
+std::vector<instruction> fun_call(const tacky::fun_call &i);
+
 function process_function(const wccff::tacky::function_definition &f);
 program process(const wccff::tacky::program &program);
 
@@ -219,6 +259,7 @@ std::string pretty_print(const jmpcc &node);
 std::string pretty_print(const label &node);
 std::string pretty_print(const setcc &node);
 
+std::string pretty_print(const call &node);
 std::string pretty_print(const identifier &node);
 std::string pretty_print(const unary_operator &node);
 std::string pretty_print(const immediate &node);
@@ -229,11 +270,13 @@ std::string pretty_print(const operand &node);
 std::string pretty_print(const mov_instruction &node);
 std::string pretty_print(const unary &node);
 std::string pretty_print(const allocate_stack &node);
+std::string pretty_print(const deallocate_stack &node);
 std::string pretty_print(const ret_instruction &node);
 std::string pretty_print(const instruction &node);
 std::string pretty_print(const std::vector<instruction> &node);
 std::string pretty_print(const function &node);
 std::string pretty_print(const program &program);
+std::string pretty_print(const push &program);
 } // namespace wccff::assembly_generation
 
 #endif // CODEGEN_H

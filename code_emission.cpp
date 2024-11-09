@@ -40,6 +40,10 @@ std::string process_register(const assembly_generation::reg &node, operand_size 
         return std::visit(visitor{ [](const assembly_generation::ax &) { return "%eax"; },
                                    [](const assembly_generation::cx &) { return "%ecx"; },
                                    [](const assembly_generation::dx &) { return "%edx"; },
+                                   [](const assembly_generation::di &) { return "%edi"; },
+                                   [](const assembly_generation::si &) { return "%sdi"; },
+                                   [](const assembly_generation::R8 &) { return "%r8d"; },
+                                   [](const assembly_generation::R9 &) { return "%r9d"; },
                                    [](const assembly_generation::R10 &) { return "%r10d"; },
                                    [](const assembly_generation::R11 &) { return "%r11d"; } },
                           node);
@@ -47,6 +51,10 @@ std::string process_register(const assembly_generation::reg &node, operand_size 
     return std::visit(visitor{ [](const assembly_generation::ax &) { return "%al"; },
                                [](const assembly_generation::cx &) { return "%cl"; },
                                [](const assembly_generation::dx &) { return "%dl"; },
+                               [](const assembly_generation::di &) { return "%di"; },
+                               [](const assembly_generation::si &) { return "%si"; },
+                               [](const assembly_generation::R8 &) { return "%r8b"; },
+                               [](const assembly_generation::R9 &) { return "%r9b"; },
                                [](const assembly_generation::R10 &) { return "%r10b"; },
                                [](const assembly_generation::R11 &) { return "%r11b"; } },
                       node);
@@ -175,21 +183,25 @@ std::string process_allocate_stack(const assembly_generation::allocate_stack &no
 
 std::string process_instruction(const assembly_generation::instruction &instruction)
 {
-    return std::visit(visitor{
-                        [](const assembly_generation::mov_instruction &mov) { return process_mov_instruction(mov); },
-                        [](const assembly_generation::unary &node) { return process_unary(node); },
-                        [](const assembly_generation::binary &node) { return process_binary(node); },
-                        [](const assembly_generation::cmp &node) { return process_cmp(node); },
-                        [](const assembly_generation::idiv &node) { return process_idiv(node); },
-                        [](const assembly_generation::cdq &node) { return process_cdq(node); },
-                        [](const assembly_generation::jmp &node) { return process_jmp(node); },
-                        [](const assembly_generation::jmpcc &node) { return process_jmpcc(node); },
-                        [](const assembly_generation::setcc &node) { return process_setcc(node); },
-                        [](const assembly_generation::label &node) { return process_label(node); },
-                        [](const assembly_generation::allocate_stack &node) { return process_allocate_stack(node); },
-                        [](const assembly_generation::ret_instruction &ret) { return process_ret_instruction(ret); },
-                      },
-                      instruction);
+    return std::visit(
+      visitor{
+        [](const assembly_generation::mov_instruction &mov) { return process_mov_instruction(mov); },
+        [](const assembly_generation::unary &node) { return process_unary(node); },
+        [](const assembly_generation::binary &node) { return process_binary(node); },
+        [](const assembly_generation::cmp &node) { return process_cmp(node); },
+        [](const assembly_generation::idiv &node) { return process_idiv(node); },
+        [](const assembly_generation::cdq &node) { return process_cdq(node); },
+        [](const assembly_generation::jmp &node) { return process_jmp(node); },
+        [](const assembly_generation::jmpcc &node) { return process_jmpcc(node); },
+        [](const assembly_generation::setcc &node) { return process_setcc(node); },
+        [](const assembly_generation::label &node) { return process_label(node); },
+        [](const assembly_generation::allocate_stack &node) { return process_allocate_stack(node); },
+        [](const assembly_generation::deallocate_stack &node) -> std::string { return "process_allocate_stack(node)"; },
+        [](const assembly_generation::push &node) -> std::string { return "process_allocate_stack(node)"; },
+        [](const assembly_generation::call &node) -> std::string { return "process_allocate_stack(node)"; },
+        [](const assembly_generation::ret_instruction &ret) { return process_ret_instruction(ret); },
+      },
+      instruction);
 }
 
 std::string process_function(const assembly_generation::function &f)
@@ -205,7 +217,7 @@ std::string process_function(const assembly_generation::function &f)
 }
 std::string process_program(const assembly_generation::program &p)
 {
-    return process_function(p.function);
+    return process_function(p.functions.at(0));
 }
 
 void process(const std::filesystem::path &output_file, const assembly_generation::program &p)

@@ -19,6 +19,7 @@
 
 #include "assembly_generation.h"
 #include "visitor.h"
+#include <ranges>
 
 namespace wccff::assembly_generation {
 
@@ -259,19 +260,18 @@ std::vector<instruction> process_statement(const wccff::tacky::binary_statement 
 
 std::vector<instruction> process_statement(const tacky::instruction &i)
 {
-    return std::visit(
-      visitor{
-        [](const tacky::return_statement &n) { return process_statement(n); },
-        [](const tacky::unary_statement &n) { return process_statement(n); },
-        [](const tacky::binary_statement &n) { return process_statement(n); },
-        [](const tacky::copy_statement &n) { return process_statement(n); },
-        [](const tacky::jump_statement &n) { return process_statement(n); },
-        [](const tacky::jump_if_zero_statement &n) { return process_statement(n); },
-        [](const tacky::jump_if_not_zero_statement &n) { return process_statement(n); },
-        [](const tacky::label_statement &n) { return process_statement(n); },
-        [](const tacky::fun_call &n) -> std::vector<instruction> { throw std::logic_error("Not implemented"); },
-      },
-      i);
+    return std::visit(visitor{
+                        [](const tacky::return_statement &n) { return process_statement(n); },
+                        [](const tacky::unary_statement &n) { return process_statement(n); },
+                        [](const tacky::binary_statement &n) { return process_statement(n); },
+                        [](const tacky::copy_statement &n) { return process_statement(n); },
+                        [](const tacky::jump_statement &n) { return process_statement(n); },
+                        [](const tacky::jump_if_zero_statement &n) { return process_statement(n); },
+                        [](const tacky::jump_if_not_zero_statement &n) { return process_statement(n); },
+                        [](const tacky::label_statement &n) { return process_statement(n); },
+                        [](const tacky::fun_call &n) -> std::vector<instruction> { return fun_call(n); },
+                      },
+                      i);
 }
 
 std::vector<instruction> process_statement(const std::vector<tacky::instruction> &s)
@@ -284,17 +284,100 @@ std::vector<instruction> process_statement(const std::vector<tacky::instruction>
     return ret_insts;
 }
 
+std::vector<instruction> fun_call(const tacky::fun_call &i)
+{
+    std::array<reg, 6> regs = { di{}, si{}, dx{}, cx{}, R8{}, R9{} };
+    std::vector<instruction> instructions;
+    int stack_padding = i.args.size() % 2 ? 8 : 0;
+
+    int stack_args = i.args.size() >= 6 ? i.args.size() - 6 : 0;
+    if (stack_padding != 0)
+    {
+        instructions.emplace_back(allocate_stack{ stack_padding });
+    }
+
+    std::span args_in_reg(i.args.begin(), std::min(i.args.size(), 6ul));
+    int pos = 0;
+    for (const auto &arg : args_in_reg)
+    {
+        auto src = process_val(arg);
+        instructions.emplace_back(mov_instruction{ src, regs[pos] });
+        pos++;
+    }
+
+    if (i.args.size() > 6)
+    {
+        std::span arg_on_stack(i.args.begin() + 6, i.args.size() - 6);
+        for (const auto &arg : arg_on_stack | std::views::reverse)
+        {
+            auto src = process_val(arg);
+            if (std::holds_alternative<immediate>(src) || std::holds_alternative<reg>(src))
+            {
+                instructions.emplace_back(push{ src });
+            }
+            else
+            {
+                instructions.emplace_back(mov_instruction{ src, ax{} });
+                instructions.emplace_back(push{ ax{} });
+            }
+        }
+    }
+
+    instructions.emplace_back(call{ process_identifier(i.fun_name) });
+
+    if (int to_remove = (stack_args * 8) + stack_padding; to_remove != 0)
+    {
+        instructions.emplace_back(deallocate_stack{ to_remove });
+    }
+
+    instructions.emplace_back(mov_instruction{ ax{}, process_val(i.dst) });
+
+    return instructions;
+}
+
 function process_function(const wccff::tacky::function_definition &f)
 {
-    function asm_f;
-    asm_f.name = process_identifier(f.name);
-    asm_f.instructions = process_statement(f.instructions);
-    return asm_f;
+    auto p_source = [](int pos) -> operand {
+        switch (pos)
+        {
+            case 0:
+                return reg{ di{} };
+            case 1:
+                return reg{ si{} };
+            case 2:
+                return reg{ dx{} };
+            case 3:
+                return reg{ cx{} };
+            case 4:
+                return reg{ R8{} };
+            case 5:
+                return reg{ R9{} };
+            default:
+                return stack{ 16 + (pos - 6) * 8 };
+        }
+    };
+    std::vector<instruction> instructions;
+
+    int pos = 0;
+    for (const auto &p : f.params)
+    {
+        instructions.emplace_back(mov_instruction{ p_source(pos), pseudo{ process_identifier(p) } });
+        pos++;
+    }
+
+    instructions.append_range(process_statement(f.instructions));
+    return function{ process_identifier(f.name), std::move(instructions) };
 }
 
 program process(const wccff::tacky::program &program)
 {
-    return { process_function(program.function.at(0)) };
+    std::vector<function> functions;
+    functions.reserve(program.function.size());
+    for (const auto &f : program.function)
+    {
+        functions.push_back(process_function(f));
+    }
+    return { std::move(functions) };
 }
 
 void replace_pseudo_registers_q(mov_instruction &i)
@@ -368,13 +451,33 @@ void replace_pseudo_registers_q(setcc &i)
 }
 void replace_pseudo_registers_q(label &i) {}
 void replace_pseudo_registers_q(allocate_stack &i) {}
+void replace_pseudo_registers_q(deallocate_stack &i) {}
+void replace_pseudo_registers_q(push &i)
+{
+    if (std::holds_alternative<pseudo>(i.src))
+    {
+        auto r = std::get<pseudo>(i.src);
+        i.src = stack{ table.get_address(r.name) };
+    }
+}
+void replace_pseudo_registers_q(call &i) {}
 void replace_pseudo_registers_q(ret_instruction &i) {}
+
+void replace_pseudo_registers(function &f)
+{
+    table.symbols.clear();
+    for (auto &i : f.instructions)
+    {
+        std::visit(visitor{ [](auto &inst) { replace_pseudo_registers_q(inst); } }, i);
+    }
+    f.stack_size = std::abs(table.get_last_address());
+}
 
 void replace_pseudo_registers(program &program)
 {
-    for (auto &i : program.function.instructions)
+    for (auto &i : program.functions)
     {
-        std::visit(visitor{ [](auto &inst) { replace_pseudo_registers_q(inst); } }, i);
+        replace_pseudo_registers(i);
     }
 }
 
@@ -492,15 +595,15 @@ std::optional<std::vector<instruction>> fixing_up_instructions1(const instructio
         [](const setcc &) -> std::optional<std::vector<instruction>> { return std::nullopt; },
         [](const label &) -> std::optional<std::vector<instruction>> { return std::nullopt; },
         [](const allocate_stack &) -> std::optional<std::vector<instruction>> { return std::nullopt; },
+        [](const deallocate_stack &) -> std::optional<std::vector<instruction>> { return std::nullopt; },
+        [](const push &) -> std::optional<std::vector<instruction>> { return std::nullopt; },
+        [](const call &) -> std::optional<std::vector<instruction>> { return std::nullopt; },
         [](const ret_instruction &) -> std::optional<std::vector<instruction>> { return std::nullopt; } },
       node);
 }
 void fixing_up_instructions(std::vector<instruction> &node)
 {
     std::vector<instruction> tmp;
-
-    auto stact_size = table.get_last_address();
-    tmp.emplace_back(allocate_stack{ stact_size });
 
     for (const auto &i : node)
     {
@@ -519,12 +622,25 @@ void fixing_up_instructions(std::vector<instruction> &node)
 
 void fixing_up_instructions(function &node)
 {
+    auto round_up = [](int num) {
+        int remainder = num % 16;
+        if (remainder == 0)
+            return num;
+
+        return num + 16 - remainder;
+    };
+    auto stack_size = round_up(node.stack_size);
+    node.instructions.insert(node.instructions.begin(), allocate_stack{ stack_size });
+
     fixing_up_instructions(node.instructions);
 }
 
 void fixing_up_instructions(program &node)
 {
-    fixing_up_instructions(node.function);
+    for (auto &f : node.functions)
+    {
+        fixing_up_instructions(f);
+    }
 }
 
 std::string pretty_print(const cmp &node)
@@ -559,6 +675,11 @@ std::string pretty_print(const label &node)
 std::string pretty_print(const setcc &node)
 {
     return fmt::format("SetCC({}, {})", pretty_print(node.cond), pretty_print(node.dst));
+}
+
+std::string pretty_print(const call &node)
+{
+    return fmt::format("Call {}", node.fun_name.name);
 }
 
 std::string pretty_print(const identifier &node)
@@ -597,6 +718,10 @@ std::string pretty_print(const reg &node)
                         [](const ax &) { return "ax"; },
                         [](const cx &) { return "cx"; },
                         [](const dx &) { return "dx"; },
+                        [](const di &) { return "di"; },
+                        [](const si &) { return "si"; },
+                        [](const R8 &) { return "R8d"; },
+                        [](const R9 &) { return "R9d"; },
                         [](const R10 &) { return "R10d"; },
                         [](const R11 &) { return "R11d"; },
                       },
@@ -653,6 +778,11 @@ std::string pretty_print(const allocate_stack &node)
     return fmt::format("Stack({})", pretty_print(node.size));
 }
 
+std::string pretty_print(const deallocate_stack &node)
+{
+    return fmt::format("Stack({})", pretty_print(node.size));
+}
+
 std::string pretty_print(const ret_instruction &node)
 {
     return fmt::format("Ret");
@@ -660,18 +790,23 @@ std::string pretty_print(const ret_instruction &node)
 
 std::string pretty_print(const instruction &node)
 {
-    return std::visit(visitor{ [](const mov_instruction &n) { return pretty_print(n); },
-                               [](const unary &n) { return pretty_print(n); },
-                               [](const binary &n) { return pretty_print(n); },
-                               [](const cmp &n) { return pretty_print(n); },
-                               [](const idiv &n) { return pretty_print(n); },
-                               [](const cdq &n) { return pretty_print(n); },
-                               [](const jmp &n) { return pretty_print(n); },
-                               [](const jmpcc &n) { return pretty_print(n); },
-                               [](const setcc &n) { return pretty_print(n); },
-                               [](const label &n) { return pretty_print(n); },
-                               [](const allocate_stack &n) { return pretty_print(n); },
-                               [](const ret_instruction &n) { return pretty_print(n); } },
+    return std::visit(visitor{
+                        [](const mov_instruction &n) { return pretty_print(n); },
+                        [](const unary &n) { return pretty_print(n); },
+                        [](const binary &n) { return pretty_print(n); },
+                        [](const cmp &n) { return pretty_print(n); },
+                        [](const idiv &n) { return pretty_print(n); },
+                        [](const cdq &n) { return pretty_print(n); },
+                        [](const jmp &n) { return pretty_print(n); },
+                        [](const jmpcc &n) { return pretty_print(n); },
+                        [](const setcc &n) { return pretty_print(n); },
+                        [](const label &n) { return pretty_print(n); },
+                        [](const allocate_stack &n) { return pretty_print(n); },
+                        [](const deallocate_stack &n) { return pretty_print(n); },
+                        [](const push &n) { return pretty_print(n); },
+                        [](const call &n) { return pretty_print(n); },
+                        [](const ret_instruction &n) { return pretty_print(n); },
+                      },
                       node);
 }
 
@@ -692,7 +827,17 @@ std::string pretty_print(const function &node)
 
 std::string pretty_print(const program &node)
 {
-    return pretty_print(node.function);
+    std::string output;
+    for (const auto &f : node.functions)
+    {
+        output += pretty_print(f) + "\n";
+    }
+    return output;
+}
+
+std::string pretty_print(const push &node)
+{
+    return fmt::format("Push({})", pretty_print(node.src));
 }
 
 } // namespace wccff::assembly_generation
