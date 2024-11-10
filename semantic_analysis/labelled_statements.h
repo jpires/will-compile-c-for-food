@@ -72,7 +72,7 @@ class labelled_statement_map
   private:
     parser::identifier generate_unique_name(const parser::identifier &l)
     {
-        return parser::identifier(fmt::format("label_{}_{}", m_function_name.name, l.name));
+        return parser::identifier(fmt::format("label_{}._{}", m_function_name.name, l.name));
     }
     parser::identifier m_function_name;
     std::vector<std::string> m_labels;
