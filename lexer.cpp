@@ -208,7 +208,6 @@ std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, fil
             return result;
         }
 
-        std::cout << "Input: " << input << '\n';
         auto m = ctre::starts_with<create_regex_pattern()>(input);
         if (m)
         {
@@ -216,276 +215,222 @@ std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, fil
             {
                 if (m == "do")
                 {
-                    std::cout << "do keyword" << '\n';
                     result.emplace_back(token_type::do_keyword, m, location);
                 }
                 else if (m == "break")
                 {
-                    std::cout << "break keyword" << '\n';
                     result.emplace_back(token_type::break_keyword, m, location);
                 }
                 else if (m == "continue")
                 {
-                    std::cout << "continue keyword" << '\n';
                     result.emplace_back(token_type::continue_keyword, m, location);
                 }
                 else if (m == "else")
                 {
-                    std::cout << "else keyword" << '\n';
                     result.emplace_back(token_type::else_keyword, m, location);
                 }
                 else if (m == "for")
                 {
-                    std::cout << "for keyword" << '\n';
                     result.emplace_back(token_type::for_keyword, m, location);
                 }
                 else if (m == "goto")
                 {
-                    std::cout << "goto keyword" << '\n';
                     result.emplace_back(token_type::goto_keyword, m, location);
                 }
                 else if (m == "if")
                 {
-                    std::cout << "if keyword" << '\n';
                     result.emplace_back(token_type::if_keyword, m, location);
                 }
                 else if (m == "int")
                 {
-                    std::cout << "int keyword" << '\n';
                     result.emplace_back(token_type::int_keyword, m, location);
                 }
                 else if (m == "void")
                 {
-                    std::cout << "void keyword" << '\n';
                     result.emplace_back(token_type::void_keyword, m, location);
                 }
                 else if (m == "return")
                 {
-                    std::cout << "return keyword" << '\n';
                     result.emplace_back(token_type::return_keyword, m, location);
                 }
                 else if (m == "while")
                 {
-                    std::cout << "while keyword" << '\n';
                     result.emplace_back(token_type::while_keyword, m, location);
                 }
                 else
                 {
-                    std::cout << "Found identifier" << '\n';
                     result.emplace_back(token_type::identifier, m, location);
                 }
             }
 
             if (ctre::get<get_pattern_position(constant_pattern)>(m))
             {
-                std::cout << "Found Constan" << '\n';
                 result.emplace_back(token_type::constant, m, location);
             }
 
             if (ctre::get<get_pattern_position(open_parenthesis_pattern)>(m))
             {
-                std::cout << "Found Open Parenthesis" << '\n';
                 result.emplace_back(token_type::open_parenthesis, m, location);
             }
 
             if (ctre::get<get_pattern_position(close_parenthesis_pattern)>(m))
             {
-                std::cout << "Found Close Parenthesis" << '\n';
                 result.emplace_back(token_type::close_parenthesis, m, location);
             }
             if (ctre::get<get_pattern_position(open_brace_pattern)>(m))
             {
-                std::cout << "Found Open Brace" << '\n';
                 result.emplace_back(token_type::open_brace, m, location);
             }
             if (ctre::get<get_pattern_position(close_brace_pattern)>(m))
             {
-                std::cout << "Found Close Brace" << '\n';
                 result.emplace_back(token_type::close_brace, m, location);
             }
             if (ctre::get<get_pattern_position(semicolon_pattern)>(m))
             {
-                std::cout << "Found Semicolon" << '\n';
                 result.emplace_back(token_type::semicolon, m, location);
             }
             if (ctre::get<get_pattern_position(and_operator_pattern)>(m))
             {
-                std::cout << "Found And Operator" << '\n';
                 result.emplace_back(token_type::and_operator, m, location);
             }
             if (ctre::get<get_pattern_position(or_operator_pattern)>(m))
             {
-                std::cout << "Found Or Operator" << '\n';
                 result.emplace_back(token_type::or_operator, m, location);
             }
             if (ctre::get<get_pattern_position(equals_operator_pattern)>(m))
             {
-                std::cout << "Found Equals Operator" << '\n';
                 result.emplace_back(token_type::equals_operator, m, location);
             }
             if (ctre::get<get_pattern_position(not_equals_operator_pattern)>(m))
             {
-                std::cout << "Found Not Equals Operator" << '\n';
                 result.emplace_back(token_type::not_equals_operator, m, location);
             }
             if (ctre::get<get_pattern_position(decrement_operator_pattern)>(m))
             {
-                std::cout << "Found decrement Operator" << '\n';
                 result.emplace_back(token_type::decrement_operator, m, location);
             }
             if (ctre::get<get_pattern_position(negate_operator_pattern)>(m))
             {
-                std::cout << "Found Negation Operator" << '\n';
                 result.emplace_back(token_type::negation_operator, m, location);
             }
             if (ctre::get<get_pattern_position(not_operator_pattern)>(m))
             {
-                std::cout << "Found Not Operator" << '\n';
                 result.emplace_back(token_type::not_operator, m, location);
             }
             if (ctre::get<get_pattern_position(bitwise_complement_operator_pattern)>(m))
             {
-                std::cout << "Found Bitwise Complement Operator" << '\n';
                 result.emplace_back(token_type::bitwise_complement_operator, m, location);
             }
             if (ctre::get<get_pattern_position(plus_operator_pattern)>(m))
             {
-                std::cout << "Found Plus Operator" << '\n';
                 result.emplace_back(token_type::plus_operator, m, location);
             }
             if (ctre::get<get_pattern_position(multiplication_operator_pattern)>(m))
             {
-                std::cout << "Found Multiplication Operator" << '\n';
                 result.emplace_back(token_type::multiplication_operator, m, location);
             }
             if (ctre::get<get_pattern_position(division_operator_pattern)>(m))
             {
-                std::cout << "Found Division Operator" << '\n';
                 result.emplace_back(token_type::division_operator, m, location);
             }
             if (ctre::get<get_pattern_position(remainder_operator_pattern)>(m))
             {
-                std::cout << "Found Remainder Operator" << '\n';
                 result.emplace_back(token_type::remainder_operator, m, location);
             }
             if (ctre::get<get_pattern_position(bitwise_and_operator_pattern)>(m))
             {
-                std::cout << "Found Bitwise And Operator" << '\n';
                 result.emplace_back(token_type::bitwise_and_operator, m, location);
             }
             if (ctre::get<get_pattern_position(bitwise_or_operator_pattern)>(m))
             {
-                std::cout << "Found Bitwise Or Operator" << '\n';
                 result.emplace_back(token_type::bitwise_or_operator, m, location);
             }
             if (ctre::get<get_pattern_position(bitwise_xor_operator_pattern)>(m))
             {
-                std::cout << "Found Bitwise Xor Operator" << '\n';
                 result.emplace_back(token_type::bitwise_xor_operator, m, location);
             }
             if (ctre::get<get_pattern_position(left_shift_operator_pattern)>(m))
             {
-                std::cout << "Found Left Shift Operator" << '\n';
                 result.emplace_back(token_type::left_shift_operator, m, location);
             }
             if (ctre::get<get_pattern_position(right_shift_operator_pattern)>(m))
             {
-                std::cout << "Found Right Shift Operator" << '\n';
                 result.emplace_back(token_type::right_shift_operator, m, location);
             }
             if (ctre::get<get_pattern_position(less_than_operator_pattern)>(m))
             {
-                std::cout << "Found Less Than Operator" << '\n';
                 result.emplace_back(token_type::less_than_operator, m, location);
             }
             if (ctre::get<get_pattern_position(less_than_or_equal_operator_pattern)>(m))
             {
-                std::cout << "Found Less Than or Equal Operator" << '\n';
                 result.emplace_back(token_type::less_than_or_equal_operator, m, location);
             }
             if (ctre::get<get_pattern_position(greater_than_operator_pattern)>(m))
             {
-                std::cout << "Found Greater Than Operator" << '\n';
                 result.emplace_back(token_type::greater_than_operator, m, location);
             }
             if (ctre::get<get_pattern_position(greater_than_or_equal_operator_pattern)>(m))
             {
-                std::cout << "Found Greater Than or Equal Operator" << '\n';
                 result.emplace_back(token_type::greater_than_or_equal_operator, m, location);
             }
             if (ctre::get<get_pattern_position(assignment_operator_pattern)>(m))
             {
-                std::cout << "Found Assignment Operator" << '\n';
                 result.emplace_back(token_type::assignment_operator, m, location);
             }
             if (ctre::get<get_pattern_position(compound_plus_pattern)>(m))
             {
-                std::cout << "Found Compound Plus Operator" << '\n';
                 result.emplace_back(token_type::compound_plus, m, location);
             }
             if (ctre::get<get_pattern_position(compound_minus_pattern)>(m))
             {
-                std::cout << "Found Compound Minus Operator" << '\n';
                 result.emplace_back(token_type::compound_minus, m, location);
             }
             if (ctre::get<get_pattern_position(compound_multiplication_pattern)>(m))
             {
-                std::cout << "Found Compound Multiplication Operator" << '\n';
                 result.emplace_back(token_type::compound_multiplication, m, location);
             }
             if (ctre::get<get_pattern_position(compound_division_pattern)>(m))
             {
-                std::cout << "Found Compound Division Operator" << '\n';
                 result.emplace_back(token_type::compound_division, m, location);
             }
             if (ctre::get<get_pattern_position(compound_remainder_pattern)>(m))
             {
-                std::cout << "Found Compound Remainder Operator" << '\n';
                 result.emplace_back(token_type::compound_remainder, m, location);
             }
             if (ctre::get<get_pattern_position(compound_bitwise_and_pattern)>(m))
             {
-                std::cout << "Found Compound Bitwise And Operator" << '\n';
                 result.emplace_back(token_type::compound_bitwise_and, m, location);
             }
             if (ctre::get<get_pattern_position(compound_bitwise_or_pattern)>(m))
             {
-                std::cout << "Found Compound Bitwise Or Operator" << '\n';
                 result.emplace_back(token_type::compound_bitwise_or, m, location);
             }
             if (ctre::get<get_pattern_position(compound_bitwise_xor_pattern)>(m))
             {
-                std::cout << "Found Compound Bitwise Xor Operator" << '\n';
                 result.emplace_back(token_type::compound_bitwise_xor, m, location);
             }
             if (ctre::get<get_pattern_position(compound_left_shift_pattern)>(m))
             {
-                std::cout << "Found Compound Left Shift Operator" << '\n';
                 result.emplace_back(token_type::compound_left_shift, m, location);
             }
             if (ctre::get<get_pattern_position(compound_right_shift_pattern)>(m))
             {
-                std::cout << "Found Compound Right Shift Operator" << '\n';
                 result.emplace_back(token_type::compound_right_shift, m, location);
             }
             if (ctre::get<get_pattern_position(increment_operator_pattern)>(m))
             {
-                std::cout << "Found Increment Operator" << '\n';
                 result.emplace_back(token_type::increment_operator, m, location);
             }
             if (ctre::get<get_pattern_position(question_mark_pattern)>(m))
             {
-                std::cout << "Found question mark" << '\n';
                 result.emplace_back(token_type::question_mark, m, location);
             }
             if (ctre::get<get_pattern_position(colon_pattern)>(m))
             {
-                std::cout << "Found question mark" << '\n';
                 result.emplace_back(token_type::colon, m, location);
             }
             if (ctre::get<get_pattern_position(comma_pattern)>(m))
             {
-                std::cout << "Found comma" << '\n';
                 result.emplace_back(token_type::comma, m, location);
             }
 
@@ -506,8 +451,6 @@ std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, fil
 
 std::expected<std::string, std::error_code> read_file(const std::filesystem::path &file_name)
 {
-    std::cout << file_name << '\n';
-
     std::ifstream file{ file_name, std::ios::ate };
     if (file.is_open() == false)
     {

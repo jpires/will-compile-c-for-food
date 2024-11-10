@@ -50,10 +50,6 @@ bool compile(const std::filesystem::path &source_filename,
         fmt::print("With the input: {}\n", error.input);
         return false;
     }
-    for (const auto i : le.value())
-    {
-        std::cout << "Type: " << i.type << "Value: " << i.text << std::endl;
-    }
 
     if (stop == stop_phase::lexer)
     {
