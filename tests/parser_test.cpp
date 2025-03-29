@@ -895,14 +895,13 @@ TEST_CASE("parse_function_declaration", "[parser]")
     SECTION("No Arguments, no Body")
     {
         std::vector<wccff::lexer::token> tokens_vector;
-        tokens_vector.emplace_back(wccff::lexer::token_type::int_keyword, "int", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "func", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::open_parenthesis, "(", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
 
         wccff::parser::tokens tokens{ tokens_vector };
-        auto result = wccff::parser::parse_function_declaration(tokens);
+        auto result = wccff::parser::parse_function_declaration(tokens, {});
         REQUIRE(result.has_value());
         REQUIRE(result.value().name.name == "func");
         REQUIRE(result.value().arguments.empty());
@@ -912,7 +911,6 @@ TEST_CASE("parse_function_declaration", "[parser]")
     SECTION("No Arguments, no Body")
     {
         std::vector<wccff::lexer::token> tokens_vector;
-        tokens_vector.emplace_back(wccff::lexer::token_type::int_keyword, "int", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "func", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::open_parenthesis, "(", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
@@ -923,7 +921,7 @@ TEST_CASE("parse_function_declaration", "[parser]")
         tokens_vector.emplace_back(wccff::lexer::token_type::close_brace, "}", location);
 
         wccff::parser::tokens tokens{ tokens_vector };
-        auto result = wccff::parser::parse_function_declaration(tokens);
+        auto result = wccff::parser::parse_function_declaration(tokens, {});
         REQUIRE(result.has_value());
         REQUIRE(result.value().name.name == "func");
         REQUIRE(result.value().arguments.empty());
@@ -996,7 +994,7 @@ TEST_CASE("parse_params_list", "[parser]")
         REQUIRE(result.has_value() == false);
     }
 
-    SECTION("Invalid omma")
+    SECTION("Invalid comma")
     {
         std::vector<wccff::lexer::token> tokens_vector;
         tokens_vector.emplace_back(wccff::lexer::token_type::int_keyword, "int", location);

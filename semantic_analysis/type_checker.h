@@ -44,7 +44,7 @@ auto process_compound_statement(const std::unique_ptr<parser::compound_statement
 auto process_conditional_node(const std::unique_ptr<parser::conditional_node> &node, symbol_table::symbol_table &table)
   -> std::expected<std::unique_ptr<parser::conditional_node>, semantic_error>;
 
-auto process_declaration(const parser::declaration &node, symbol_table::symbol_table &table)
+auto process_declaration(const parser::declaration &node, symbol_table::symbol_table &table, bool inner_block)
   -> std::expected<parser::declaration, semantic_error>;
 
 auto process_do_while_statement(const std::unique_ptr<parser::do_while_statement> &node,

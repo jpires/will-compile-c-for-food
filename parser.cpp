@@ -175,8 +175,9 @@ std::expected<std::vector<expression>, parser_error> parse_argument_list(tokens 
 
 std::expected<block_item, parser_error> parse_block_item(tokens &tokens)
 {
+    using enum lexer::token_type;
     auto next_token = tokens.peek();
-    if (next_token.type == lexer::token_type::int_keyword)
+    if (next_token.type == int_keyword || next_token.type == extern_keyword || next_token.type == static_keyword)
     {
         return parse_declaration(tokens);
     }
@@ -278,13 +279,19 @@ std::expected<std::unique_ptr<do_while_statement>, parser_error> parse_do_while(
 
 std::expected<declaration, parser_error> parse_declaration(tokens &tokens)
 {
-    if (tokens.peek(0).type == lexer::token_type::int_keyword && tokens.peek(1).type == lexer::token_type::identifier &&
-        tokens.peek(2).type == lexer::token_type::open_parenthesis)
+    auto specifier = parse_specifier(tokens);
+    if (specifier.has_value() == false)
     {
-        return parse_function_declaration(tokens);
+        return std::unexpected{ specifier.error() };
     }
 
-    return parse_variable_declaration(tokens);
+    if (tokens.peek(0).type == lexer::token_type::identifier &&
+        tokens.peek(1).type == lexer::token_type::open_parenthesis)
+    {
+        return parse_function_declaration(tokens, specifier.value());
+    }
+
+    return parse_variable_declaration(tokens, specifier.value());
 }
 
 std::expected<std::optional<expression>, parser_error> parse_optional_expression(tokens &tokens,
@@ -314,7 +321,8 @@ std::expected<for_init, parser_error> parse_for_init(tokens &tokens)
     using enum lexer::token_type;
     if (tokens.peek().type == int_keyword)
     {
-        auto decl = parse_variable_declaration(tokens);
+        consume_tokens(tokens, { int_keyword });
+        auto decl = parse_variable_declaration(tokens, {});
         if (decl.has_value() == false)
         {
             return std::unexpected{ decl.error() };
@@ -437,13 +445,8 @@ std::expected<std::unique_ptr<function_call>, parser_error> parse_function_call(
     return std::make_unique<function_call>(std::move(name.value()), std::move(arguments.value()));
 }
 
-std::expected<function_declaration, parser_error> parse_function_declaration(tokens &tokens)
+std::expected<function_declaration, parser_error> parse_function_declaration(tokens &tokens, specifier specifieres)
 {
-    if (auto p = consume_tokens(tokens, { lexer::token_type::int_keyword }); p.has_value())
-    {
-        return std::unexpected{ p.value() };
-    }
-
     auto function_name = parse_identifier(tokens);
     if (function_name.has_value() == false)
     {
@@ -484,16 +487,19 @@ std::expected<function_declaration, parser_error> parse_function_declaration(tok
         }
     }
 
-    return function_declaration{ function_name.value(), std::move(arguments.value()), std::move(body) };
+    return function_declaration{ function_name.value(),
+                                 std::move(arguments.value()),
+                                 std::move(body),
+                                 specifieres.storage };
 }
 
 std::expected<program, parser_error> parse_program(tokens &tokens)
 {
-    std::vector<function_declaration> functions;
+    std::vector<declaration> functions;
 
     while (tokens.remaining_tokens() != 0)
     {
-        auto function = parse_function_declaration(tokens);
+        auto function = parse_declaration(tokens);
         if (function.has_value() == false)
         {
             return std::unexpected{ function.error() };
@@ -580,7 +586,57 @@ std::expected<std::vector<identifier>, parser_error> parse_params_list(tokens &t
 
     return arguments;
 }
+std::expected<specifier, parser_error> parse_specifier(tokens &tokens)
+{
+    std::vector<storage_class> storage;
+    std::vector<int> type;
+    while (true)
+    {
+        if (tokens.peek().type == lexer::token_type::int_keyword)
+        {
+            consume_tokens(tokens, { lexer::token_type::int_keyword });
+            type.push_back(1);
+        }
+        else if (tokens.peek().type == lexer::token_type::static_keyword)
+        {
+            consume_tokens(tokens, { lexer::token_type::static_keyword });
+            storage.emplace_back(storage_class::static_storage);
+        }
+        else if (tokens.peek().type == lexer::token_type::extern_keyword)
+        {
+            consume_tokens(tokens, { lexer::token_type::extern_keyword });
+            storage.emplace_back(storage_class::extern_storage);
+        }
+        else if (tokens.peek().type == lexer::token_type::identifier)
+        {
+            break;
+        }
+        else
+        {
+            auto msg = fmt::format("Unexpected token: Expected an identifier but found {}", tokens.peek().type);
+            return std::unexpected{ parser_error{ msg } };
+        }
+    }
 
+    if (type.size() != 1)
+    {
+        auto msg = fmt::format("Found more than one type specifier");
+        return std::unexpected{ parser_error{ msg } };
+    }
+
+    if (storage.size() > 1)
+    {
+        auto msg = fmt::format("Found more than one storage specifier");
+        return std::unexpected{ parser_error{ msg } };
+    }
+
+    if (storage.size() == 1)
+    {
+        return specifier{ storage.front() };
+    }
+
+    return specifier{ storage_class::no_storage };
+}
 std::expected<statement, parser_error> parse_statement(tokens &tokens)
 {
     using enum lexer::token_type;
@@ -1044,11 +1100,8 @@ std::expected<int_constant, parser_error> parse_constant(tokens &tokens)
     return int_constant{ int32_t_from_string(token->text) };
 }
 
-std::expected<variable_declaration, parser_error> parse_variable_declaration(tokens &tokens)
+std::expected<variable_declaration, parser_error> parse_variable_declaration(tokens &tokens, specifier specifieres)
 {
-    // Discard the int keyword.
-    tokens.discard_token();
-
     auto id = parse_identifier(tokens);
     if (id.has_value() == false)
     {
@@ -1063,7 +1116,7 @@ std::expected<variable_declaration, parser_error> parse_variable_declaration(tok
 
     if (next_token->type == lexer::token_type::semicolon)
     {
-        return variable_declaration{ id.value(), std::nullopt };
+        return variable_declaration{ id.value(), std::nullopt, specifieres.storage };
     }
 
     if (next_token->type == lexer::token_type::assignment_operator)
@@ -1080,7 +1133,7 @@ std::expected<variable_declaration, parser_error> parse_variable_declaration(tok
             return std::unexpected{ s.value() };
         }
 
-        return variable_declaration{ id.value(), std::optional{ std::move(init.value()) } };
+        return variable_declaration{ id.value(), std::optional{ std::move(init.value()) }, specifieres.storage };
     }
 
     auto msg = fmt::format("Parse failure at: {}. Expected '=' or ';' but found {}", next_token->loc, next_token->type);

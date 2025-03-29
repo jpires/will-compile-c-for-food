@@ -226,10 +226,10 @@ auto process_labelled_statement(const std::unique_ptr<parser::labelled_statement
 
 auto process_program(const parser::program &node) -> std::expected<parser::program, semantic_error>
 {
-    std::vector<parser::function_declaration> functions;
+    std::vector<parser::declaration> functions;
     for (const auto &f : node.f)
     {
-        auto func = process_function_declaration(f);
+        auto func = process_declaration(f);
         if (func.has_value() == false)
         {
             return std::unexpected{ func.error() };

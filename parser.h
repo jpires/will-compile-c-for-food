@@ -231,6 +231,18 @@ struct unary_node;
 struct assignment_node;
 struct while_statement;
 
+enum class storage_class
+{
+    no_storage,
+    extern_storage,
+    static_storage,
+};
+
+struct specifier
+{
+    storage_class storage = storage_class::no_storage;
+};
+
 struct int_constant
 {
     int32_t value;
@@ -347,6 +359,7 @@ struct variable_declaration
 {
     identifier name;
     std::optional<expression> init;
+    storage_class storage_class;
 };
 
 struct init_declaration
@@ -383,6 +396,7 @@ struct function_declaration
     identifier name;
     std::vector<identifier> arguments;
     std::optional<block> body;
+    storage_class storage_class;
 };
 
 struct compound_statement
@@ -397,7 +411,7 @@ struct function
 
 struct program
 {
-    std::vector<function_declaration> f;
+    std::vector<declaration> f;
 };
 
 /**
@@ -428,16 +442,17 @@ std::expected<declaration, parser_error> parse_declaration(tokens &tokens);
 std::expected<for_init, parser_error> parse_for_init(tokens &tokens);
 std::expected<std::unique_ptr<for_statement>, parser_error> parse_for_statement(tokens &tokens);
 std::expected<std::unique_ptr<function_call>, parser_error> parse_function_call(tokens &tokens);
-std::expected<function_declaration, parser_error> parse_function_declaration(tokens &tokens);
+std::expected<function_declaration, parser_error> parse_function_declaration(tokens &tokens, specifier specifieres);
 std::expected<identifier, parser_error> parse_identifier(tokens &tokens);
 std::expected<std::unique_ptr<if_node>, parser_error> parse_if_node(tokens &tokens);
 std::expected<expression, parser_error> parse_expression(tokens &tokens, int32_t min_precedence = 0);
 std::expected<expression, parser_error> parse_factor(tokens &tokens);
 std::expected<std::vector<identifier>, parser_error> parse_params_list(tokens &tokens);
 std::optional<parser_error> parse_semicolon(tokens &tokens);
+std::expected<specifier, parser_error> parse_specifier(tokens &tokens);
 std::expected<statement, parser_error> parse_statement(tokens &tokens);
 std::expected<std::unique_ptr<unary_node>, parser_error> parse_unary_node(tokens &tokens);
-std::expected<variable_declaration, parser_error> parse_variable_declaration(tokens &tokens);
+std::expected<variable_declaration, parser_error> parse_variable_declaration(tokens &tokens, specifier specifieres);
 std::expected<std::unique_ptr<while_statement>, parser_error> parse_while_statement(tokens &tokens);
 
 std::expected<program, parser_error> parse(tokens &tokens);

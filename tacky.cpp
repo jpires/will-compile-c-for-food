@@ -577,9 +577,12 @@ program process(const parser::program &input)
     std::vector<function_definition> functions;
     for (const auto &f : input.f)
     {
-        if (auto tmp = process_function_definition(f); tmp.has_value())
+        if (std::holds_alternative<parser::function_declaration>(f))
         {
-            functions.push_back(tmp.value());
+            if (auto tmp = process_function_definition(std::get<parser::function_declaration>(f)); tmp.has_value())
+            {
+                functions.push_back(tmp.value());
+            }
         }
     }
     return { functions };

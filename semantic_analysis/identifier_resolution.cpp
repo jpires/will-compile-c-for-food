@@ -398,10 +398,10 @@ auto process_labelled_statement(const std::unique_ptr<parser::labelled_statement
 auto process_program(const parser::program &node, identifier_map &variable_map)
   -> std::expected<parser::program, semantic_error>
 {
-    std::vector<parser::function_declaration> functions;
+    std::vector<parser::declaration> functions;
     for (const auto &f : node.f)
     {
-        auto tmp = process_function_declaration(f, variable_map);
+        auto tmp = process_declaration(f, variable_map);
         if (tmp.has_value() == false)
         {
             return std::unexpected{ tmp.error() };

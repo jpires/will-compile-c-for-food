@@ -83,7 +83,7 @@ auto process_block_item(const parser::block_item &node, symbol_table::symbol_tab
     return std::visit(
       visitor{
         [&table](const parser::declaration &n) -> std::expected<parser::block_item, semantic_error> {
-            return process_declaration(n, table);
+            return process_declaration(n, table, true);
         },
         [&table](const parser::statement &n) -> std::expected<parser::block_item, semantic_error> {
             return process_statement(n, table);
@@ -131,13 +131,14 @@ auto process_conditional_node(const std::unique_ptr<parser::conditional_node> &n
                                                       std::move(e2.value()));
 }
 
-auto process_declaration(const parser::declaration &node, symbol_table::symbol_table &table)
+auto process_declaration(const parser::declaration &node, symbol_table::symbol_table &table, bool inner_block)
   -> std::expected<parser::declaration, semantic_error>
 {
     return std::visit(
       visitor{
-        [&table](const parser::function_declaration &n) -> std::expected<parser::declaration, semantic_error> {
-            return process_function_declaration(n, table, true);
+        [&table,
+         inner_block](const parser::function_declaration &n) -> std::expected<parser::declaration, semantic_error> {
+            return process_function_declaration(n, table, inner_block);
         },
         [&table](const parser::variable_declaration &n) -> std::expected<parser::declaration, semantic_error> {
             return process_variable_declaration(n, table);
@@ -397,10 +398,10 @@ auto process_labelled_statement(const std::unique_ptr<parser::labelled_statement
 auto process_program(const parser::program &node, symbol_table::symbol_table &table)
   -> std::expected<parser::program, semantic_error>
 {
-    std::vector<parser::function_declaration> function_declarations;
+    std::vector<parser::declaration> function_declarations;
     for (const auto &f : node.f)
     {
-        auto tmp = process_function_declaration(f, table);
+        auto tmp = process_declaration(f, table, false);
         if (tmp.has_value() == false)
         {
             return std::unexpected{ tmp.error() };
