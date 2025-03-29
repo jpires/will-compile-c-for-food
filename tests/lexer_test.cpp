@@ -221,6 +221,15 @@ TEST_CASE("Keywords", "[lexer]")
         REQUIRE(result.value().at(0).type == wccff::lexer::token_type::else_keyword);
         REQUIRE(result.value().at(0).text == "else");
     }
+    SECTION("extern")
+    {
+        std::string_view input{ "extern" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::extern_keyword);
+        REQUIRE(result.value().at(0).text == "extern");
+    }
     SECTION("for")
     {
         std::string_view input{ "for" };
@@ -277,6 +286,17 @@ TEST_CASE("Keywords", "[lexer]")
         REQUIRE(result.value().at(0).type == wccff::lexer::token_type::return_keyword);
         REQUIRE(result.value().at(0).text == "return");
     }
+
+    SECTION("static")
+    {
+        std::string_view input{ "static" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::static_keyword);
+        REQUIRE(result.value().at(0).text == "static");
+    }
+
     SECTION("while")
     {
         std::string_view input{ "while" };

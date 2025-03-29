@@ -48,11 +48,13 @@ enum class token_type
     continue_keyword,
     do_keyword,
     else_keyword,
+    extern_keyword,
     for_keyword,
     goto_keyword,
     if_keyword,
     int_keyword,
     void_keyword,
+    static_keyword,
     return_keyword,
     while_keyword,
     open_parenthesis,
@@ -159,6 +161,9 @@ struct fmt::formatter<wccff::lexer::token_type> : formatter<string_view>
             case token_type::else_keyword:
                 str = "Else Keyword";
                 break;
+            case token_type::extern_keyword:
+                str = "Extern Keyword";
+                break;
             case token_type::for_keyword:
                 str = "For Keyword";
                 break;
@@ -176,6 +181,9 @@ struct fmt::formatter<wccff::lexer::token_type> : formatter<string_view>
                 break;
             case token_type::return_keyword:
                 str = "Return Keyword";
+                break;
+            case token_type::static_keyword:
+                str = "Static Keyword";
                 break;
             case token_type::while_keyword:
                 str = "While Keyword";

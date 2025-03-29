@@ -229,6 +229,10 @@ std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, fil
                 {
                     result.emplace_back(token_type::else_keyword, m, location);
                 }
+                else if (m == "extern")
+                {
+                    result.emplace_back(token_type::extern_keyword, m, location);
+                }
                 else if (m == "for")
                 {
                     result.emplace_back(token_type::for_keyword, m, location);
@@ -252,6 +256,10 @@ std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, fil
                 else if (m == "return")
                 {
                     result.emplace_back(token_type::return_keyword, m, location);
+                }
+                else if (m == "static")
+                {
+                    result.emplace_back(token_type::static_keyword, m, location);
                 }
                 else if (m == "while")
                 {
