@@ -522,6 +522,13 @@ std::expected<std::vector<identifier>, parser_error> parse_params_list(tokens &t
         {
             return std::unexpected{ p.value() };
         }
+
+        if (tokens.peek().type != lexer::token_type::close_parenthesis)
+        {
+            auto msg = fmt::format("Unexpected token: Expected an ')' but found {}", tokens.peek().type);
+            return std::unexpected{ parser_error{ msg } };
+        }
+
         return arguments;
     }
 
