@@ -53,7 +53,7 @@ class symbol_table
     void add(const parser::identifier &name, type type, bool has_body = false)
     {
         symbol s{ has_body, name, type };
-        m_table.insert({ name.name, s });
+        m_table[name.name] = s;
     }
 
     std::optional<symbol> get(const parser::identifier &name) const

@@ -7,12 +7,14 @@ add_executable(unit_tests
         lexer_test.cpp
         parser_test.cpp
         semantic_analysis_test.cpp
+        symbol_table_test.cpp
         tacky_test.cpp
         variable_map_test.cpp
         ../assembly_generation.cpp
         ../lexer.cpp
         ../parser.cpp
         ../semantic_analysis.cpp
+        ../symbol_table.cpp
         ../tacky.cpp
         ../semantic_analysis/identifier_resolution.cpp
         ../semantic_analysis/labelled_statements.cpp

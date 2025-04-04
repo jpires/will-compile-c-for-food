@@ -284,7 +284,7 @@ auto process_function_declaration(const parser::function_declaration &node,
                                   bool inner_block) -> std::expected<parser::function_declaration, semantic_error>
 {
     symbol_table::type t = symbol_table::func_type{ node.arguments.size() };
-
+    bool has_body = node.body.has_value();
     if (auto s = table.get(node.name); s.has_value())
     {
         if (s->type != t)
@@ -292,13 +292,14 @@ auto process_function_declaration(const parser::function_declaration &node,
             auto msg = fmt::format("Incompatible function declaration for '{}'", node.name.name);
             return std::unexpected{ semantic_error{ msg } };
         }
-        if (s->has_body && node.body.has_value())
+        if (s->has_body && has_body)
         {
             auto msg = fmt::format("Duplicate function declaration for '{}'", node.name.name);
             return std::unexpected{ semantic_error{ msg } };
         }
+        has_body = has_body || s->has_body;
     }
-    table.add(node.name, t, node.body.has_value());
+    table.add(node.name, t, has_body);
 
     std::optional<parser::block> block;
     if (node.body.has_value())
