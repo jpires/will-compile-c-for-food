@@ -251,12 +251,7 @@ using expression = std::variant<int_constant,
 
 struct assignment_node
 {
-    assignment_node(binary_operator op_, expression lhs_, expression rhs_)
-      : op(op_)
-      , lhs(std::move(lhs_))
-      , rhs(std::move(rhs_))
-    {
-    }
+    assignment_node(binary_operator op_, expression lhs_, expression rhs_);
     binary_operator op;
     expression lhs;
     expression rhs;
@@ -277,23 +272,14 @@ struct function_call
 
 struct unary_node
 {
-    unary_node(unary_operator op_, expression expression_)
-      : op(op_)
-      , exp(std::move(expression_))
-    {
-    }
+    unary_node(unary_operator op_, expression expression_);
     unary_operator op;
     expression exp;
 };
 
 struct binary_node
 {
-    binary_node(binary_operator op_, expression left_, expression right_)
-      : op(op_)
-      , left(std::move(left_))
-      , right(std::move(right_))
-    {
-    }
+    binary_node(binary_operator op_, expression left_, expression right_);
 
     binary_operator op;
     expression left;

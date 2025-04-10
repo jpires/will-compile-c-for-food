@@ -40,6 +40,26 @@ int32_t int32_t_from_string(std::string_view str)
     return value;
 }
 
+assignment_node::assignment_node(binary_operator op_, expression lhs_, expression rhs_)
+  : op(op_)
+  , lhs(std::move(lhs_))
+  , rhs(std::move(rhs_))
+{
+}
+
+binary_node::binary_node(binary_operator op_, expression left_, expression right_)
+  : op(op_)
+  , left(std::move(left_))
+  , right(std::move(right_))
+{
+}
+
+unary_node::unary_node(unary_operator op_, expression expression_)
+  : op(op_)
+  , exp(std::move(expression_))
+{
+}
+
 std::optional<parser_error> consume_tokens(tokens &tokens, const std::vector<lexer::token_type> &list)
 {
     if (list.size() > tokens.remaining_tokens())
