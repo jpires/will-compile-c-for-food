@@ -1,0 +1,4 @@
+DeclVar(foo
+        Storage(extern)
+        NO_INIT
+)

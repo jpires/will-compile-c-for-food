@@ -1,0 +1,10 @@
+FunctionDecl(sub
+             Storage(none)
+             (a, b)
+             Return(
+                    Binary(Subtract
+                           Var(a)
+                           Var(b)
+                    )
+             )
+)

@@ -340,7 +340,6 @@ auto process_function_declaration(const parser::function_declaration &node,
         {
             auto attrs = symbol_table::local_attributes{};
             table.add(arg, symbol_table::int_type{}, attrs);
-            // table.add(arg, symbol_table::int_type{});
         }
 
         auto tmp = process_block(node.body.value(), table);
@@ -352,7 +351,7 @@ auto process_function_declaration(const parser::function_declaration &node,
         block = std::move(tmp.value());
     }
 
-    return parser::function_declaration{ node.name, node.arguments, std::move(block) };
+    return parser::function_declaration{ node.name, node.arguments, std::move(block), node.storage_class };
 }
 
 auto process_if_node(const std::unique_ptr<parser::if_node> &node, symbol_table::symbol_table &table)

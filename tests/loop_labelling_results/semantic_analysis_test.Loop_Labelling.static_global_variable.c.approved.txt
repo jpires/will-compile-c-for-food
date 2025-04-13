@@ -1,0 +1,4 @@
+DeclVar(foo
+        Storage(static)
+        NO_INIT
+)

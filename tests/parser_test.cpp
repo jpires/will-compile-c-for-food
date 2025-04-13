@@ -1359,6 +1359,13 @@ TEST_CASE("parser_pretty_printers", "[parser]")
         auto ret = return_node{ int_constant{ 55 } };
         ApprovalTests::Approvals::verify(pretty_print(ret));
     }
+    SECTION("storage_class")
+    {
+        using wccff::parser::storage_class;
+        REQUIRE(pretty_print(storage_class::extern_storage) == "Storage(extern)");
+        REQUIRE(pretty_print(storage_class::static_storage) == "Storage(static)");
+        REQUIRE(pretty_print(storage_class::no_storage) == "Storage(none)");
+    }
 
     SECTION("unary_node")
     {

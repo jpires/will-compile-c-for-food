@@ -101,7 +101,7 @@ variable_declaration copy_declaration(const variable_declaration &node)
     {
         init = copy_expression(node.init.value());
     }
-    return variable_declaration{ node.name, std::move(init) };
+    return variable_declaration{ node.name, std::move(init), node.storage_class };
 }
 expression copy_expression(const expression &exp)
 {
@@ -1319,6 +1319,7 @@ std::string pretty_print(const function &node, int32_t ident)
 std::string pretty_print(const function_declaration &node, int32_t ident)
 {
     auto prefix = wccff::format_indented(ident, "FunctionDecl({}", pretty_print(node.name));
+    auto storage = pretty_print(node.storage_class, ident + 13);
     auto params = wccff::format_indented(ident + 13, "(");
     for (const auto &p : node.arguments)
     {
@@ -1344,7 +1345,7 @@ std::string pretty_print(const function_declaration &node, int32_t ident)
 
     auto sufix = wccff::format_indented(ident, ")");
 
-    return fmt::format("{}\n{}\n{}\n{}", prefix, params, body, sufix);
+    return fmt::format("{}\n{}\n{}\n{}\n{}", prefix, storage, params, body, sufix);
 }
 std::string pretty_print(const goto_statement &node, int32_t ident)
 {
@@ -1386,6 +1387,20 @@ std::string pretty_print(const statement &node, int32_t ident)
         [ident](const std::unique_ptr<parser::labelled_statement> &n) { return pretty_print(n, ident); },
       },
       node);
+}
+std::string pretty_print(const storage_class &node, int32_t ident)
+{
+    auto prefix = wccff::format_indented(ident, "Storage(");
+    switch (node)
+    {
+        case storage_class::extern_storage:
+            return wccff::format_indented(ident, "Storage(extern)");
+        case storage_class::static_storage:
+            return wccff::format_indented(ident, "Storage(static)");
+        case storage_class::no_storage:
+            return wccff::format_indented(ident, "Storage(none)");
+    }
+    return wccff::format_indented(ident, "Storage(INVALID-ERROR)");
 }
 
 std::string pretty_print(const return_node &node, int32_t ident)
@@ -1543,6 +1558,7 @@ std::string pretty_print(const var &node, int32_t ident)
 std::string pretty_print(const variable_declaration &node, int32_t ident)
 {
     auto name = wccff::format_indented(0, "{}", pretty_print(node.name));
+    auto storage = pretty_print(node.storage_class, ident + 8);
     std::string init;
     if (node.init.has_value())
     {
@@ -1554,6 +1570,6 @@ std::string pretty_print(const variable_declaration &node, int32_t ident)
     }
     auto sufix = wccff::format_indented(ident, ")");
 
-    return format_indented(ident, "DeclVar({}\n{}\n{}", name, init, sufix);
+    return format_indented(ident, "DeclVar({}\n{}\n{}\n{}", name, storage, init, sufix);
 }
 } // namespace wccff::parser

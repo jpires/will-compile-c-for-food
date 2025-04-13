@@ -1,4 +1,4 @@
-DeclVar(var_name
+DeclVar(foo
         Storage(none)
         NO_INIT
 )

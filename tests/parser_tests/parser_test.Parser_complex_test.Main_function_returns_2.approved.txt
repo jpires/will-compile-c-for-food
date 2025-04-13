@@ -1,4 +1,5 @@
 FunctionDecl(main
+             Storage(none)
              ()
              Return(
                     IntConstant(2)

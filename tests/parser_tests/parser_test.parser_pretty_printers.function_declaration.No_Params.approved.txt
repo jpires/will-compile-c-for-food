@@ -1,4 +1,5 @@
 FunctionDecl(function_name
+             Storage(none)
              ()
              Return(
                     IntConstant(42)

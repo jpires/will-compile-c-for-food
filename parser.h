@@ -472,6 +472,7 @@ std::string pretty_print(const identifier &node, int32_t ident = 0);
 std::string pretty_print(const int_constant &node, int32_t ident = 0);
 std::string pretty_print(const program &node, int32_t ident = 0);
 std::string pretty_print(const statement &node, int32_t ident = 0);
+std::string pretty_print(const storage_class &node, int32_t ident = 0);
 std::string pretty_print(const return_node &node, int32_t ident = 0);
 std::string pretty_print(const std::optional<expression> &node, int32_t ident = 0);
 std::string pretty_print(const std::unique_ptr<assignment_node> &node, int32_t ident = 0);

@@ -1,3 +1,4 @@
 DeclVar(var_name
+        Storage(none)
         IntConstant(42)
 )

@@ -1,4 +1,5 @@
 DeclVar(var_name
+        Storage(none)
         NO_INIT
 )
 Return(
