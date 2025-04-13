@@ -19,6 +19,7 @@
 #ifndef TYPE_CHECKER_H
 #define TYPE_CHECKER_H
 
+#include "assembly_generation.h"
 #include "parser.h"
 #include "semantic_analysis.h"
 #include "symbol_table.h"
@@ -96,9 +97,17 @@ auto process_unary_node(const std::unique_ptr<parser::unary_node> &node, symbol_
 auto process_var(const parser::var &node, symbol_table::symbol_table &table)
   -> std::expected<parser::var, semantic_error>;
 
-auto process_variable_declaration(const parser::variable_declaration &node, symbol_table::symbol_table &table)
+auto process_variable_declaration(const parser::variable_declaration &node,
+                                  symbol_table::symbol_table &table,
+                                  bool inner_block) -> std::expected<parser::variable_declaration, semantic_error>;
+
+auto process_variable_declaration_file_scope(const parser::variable_declaration &node,
+                                             symbol_table::symbol_table &table)
   -> std::expected<parser::variable_declaration, semantic_error>;
 
+auto process_variable_declaration_local_scope(const parser::variable_declaration &node,
+                                              symbol_table::symbol_table &table)
+  -> std::expected<parser::variable_declaration, semantic_error>;
 auto process_while_statement(const std::unique_ptr<parser::while_statement> &node, symbol_table::symbol_table &table)
   -> std::expected<std::unique_ptr<parser::while_statement>, semantic_error>;
 } // namespace wccff::sema::type_checker

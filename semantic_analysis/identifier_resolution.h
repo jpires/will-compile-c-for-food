@@ -20,6 +20,7 @@
 #ifndef VARIABLE_RESOLUTION_H
 #define VARIABLE_RESOLUTION_H
 
+#include "assembly_generation.h"
 #include "parser.h"
 #include "semantic_analysis.h"
 
@@ -43,7 +44,7 @@ auto process_compound_statement(const std::unique_ptr<parser::compound_statement
 auto process_conditional_node(const std::unique_ptr<parser::conditional_node> &node, identifier_map &variable_map)
   -> std::expected<std::unique_ptr<parser::conditional_node>, semantic_error>;
 
-auto process_declaration(const parser::declaration &node, identifier_map &variable_map)
+auto process_declaration(const parser::declaration &node, identifier_map &variable_map, scope_type scope)
   -> std::expected<parser::declaration, semantic_error>;
 
 auto process_do_while_statement(const std::unique_ptr<parser::do_while_statement> &node, identifier_map &variable_map)
@@ -90,8 +91,9 @@ auto process_unary_node(const std::unique_ptr<parser::unary_node> &node, identif
 
 auto process_var(const parser::var &node, identifier_map &variable_map) -> std::expected<parser::var, semantic_error>;
 
-auto process_variable_declaration(const parser::variable_declaration &node, identifier_map &variable_map)
-  -> std::expected<parser::variable_declaration, semantic_error>;
+auto process_variable_declaration(const parser::variable_declaration &node,
+                                  identifier_map &variable_map,
+                                  scope_type scope) -> std::expected<parser::variable_declaration, semantic_error>;
 
 auto process_while_statement(const std::unique_ptr<parser::while_statement> &node, identifier_map &variable_map)
   -> std::expected<std::unique_ptr<parser::while_statement>, semantic_error>;

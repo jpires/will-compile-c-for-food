@@ -134,17 +134,17 @@ auto process_conditional_node(const std::unique_ptr<parser::conditional_node> &n
 auto process_declaration(const parser::declaration &node, symbol_table::symbol_table &table, bool inner_block)
   -> std::expected<parser::declaration, semantic_error>
 {
-    return std::visit(
-      visitor{
-        [&table,
-         inner_block](const parser::function_declaration &n) -> std::expected<parser::declaration, semantic_error> {
-            return process_function_declaration(n, table, inner_block);
-        },
-        [&table](const parser::variable_declaration &n) -> std::expected<parser::declaration, semantic_error> {
-            return process_variable_declaration(n, table);
-        },
-      },
-      node);
+    return std::visit(visitor{
+                        [&table, inner_block](
+                          const parser::function_declaration &n) -> std::expected<parser::declaration, semantic_error> {
+                            return process_function_declaration(n, table, inner_block);
+                        },
+                        [&table, inner_block](
+                          const parser::variable_declaration &n) -> std::expected<parser::declaration, semantic_error> {
+                            return process_variable_declaration(n, table, inner_block);
+                        },
+                      },
+                      node);
 }
 
 auto process_do_while_statement(const std::unique_ptr<parser::do_while_statement> &node,
@@ -286,6 +286,15 @@ auto process_function_declaration(const parser::function_declaration &node,
 {
     symbol_table::type t = symbol_table::func_type{ node.arguments.size() };
     bool has_body = node.body.has_value();
+    bool is_defined = false;
+    bool is_global = node.storage_class != parser::storage_class::static_storage;
+
+    if (node.storage_class == parser::storage_class::static_storage && inner_block == true)
+    {
+        auto msg = fmt::format("Function declaration {} cannot be static in a inner scope", node.name.name);
+        return std::unexpected{ semantic_error{ msg } };
+    }
+
     if (auto s = table.get(node.name); s.has_value())
     {
         if (s->type != t)
@@ -293,14 +302,31 @@ auto process_function_declaration(const parser::function_declaration &node,
             auto msg = fmt::format("Incompatible function declaration for '{}'", node.name.name);
             return std::unexpected{ semantic_error{ msg } };
         }
-        if (s->has_body && has_body)
+
+        if (std::holds_alternative<symbol_table::func_attributes>(s->attrs) == false)
+        {
+            auto msg = fmt::format("Internal error: function {} doesn't have func_attributes", s->name.name);
+            return std::unexpected{ semantic_error{ msg } };
+        }
+        auto attrs = std::get<symbol_table::func_attributes>(s->attrs);
+
+        is_defined = attrs.is_defined;
+        if (attrs.is_defined && has_body)
         {
             auto msg = fmt::format("Duplicate function declaration for '{}'", node.name.name);
             return std::unexpected{ semantic_error{ msg } };
         }
-        has_body = has_body || s->has_body;
+
+        if (attrs.is_global && node.storage_class == parser::storage_class::static_storage)
+        {
+            auto msg = fmt::format("Static function declaration follows non static declarations for {}", s->name.name);
+            return std::unexpected{ semantic_error{ msg } };
+        }
+        has_body = has_body || attrs.is_defined;
+        is_global = attrs.is_global;
     }
-    table.add(node.name, t, has_body);
+    auto new_attrs = symbol_table::func_attributes{ is_defined || has_body, is_global };
+    table.add(node.name, t, new_attrs);
 
     std::optional<parser::block> block;
     if (node.body.has_value())
@@ -312,7 +338,9 @@ auto process_function_declaration(const parser::function_declaration &node,
         }
         for (const auto &arg : node.arguments)
         {
-            table.add(arg, symbol_table::int_type{});
+            auto attrs = symbol_table::local_attributes{};
+            table.add(arg, symbol_table::int_type{}, attrs);
+            // table.add(arg, symbol_table::int_type{});
         }
 
         auto tmp = process_block(node.body.value(), table);
@@ -359,7 +387,7 @@ auto process_if_node(const std::unique_ptr<parser::if_node> &node, symbol_table:
 auto process_init_declaration(const parser::init_declaration &node, symbol_table::symbol_table &table)
   -> std::expected<parser::init_declaration, semantic_error>
 {
-    auto tmp = process_variable_declaration(node.decl, table);
+    auto tmp = process_variable_declaration_local_scope(node.decl, table);
     if (tmp.has_value() == false)
     {
         return std::unexpected{ tmp.error() };
@@ -483,23 +511,163 @@ auto process_var(const parser::var &node, symbol_table::symbol_table &table)
     return parser::var{ node.name };
 }
 
-auto process_variable_declaration(const parser::variable_declaration &node, symbol_table::symbol_table &table)
+auto process_variable_declaration(const parser::variable_declaration &node,
+                                  symbol_table::symbol_table &table,
+                                  bool inner_block) -> std::expected<parser::variable_declaration, semantic_error>
+{
+    return inner_block ? process_variable_declaration_local_scope(node, table)
+                       : process_variable_declaration_file_scope(node, table);
+}
+
+auto process_variable_declaration_file_scope(const parser::variable_declaration &node,
+                                             symbol_table::symbol_table &table)
   -> std::expected<parser::variable_declaration, semantic_error>
 {
-    table.add(node.name, symbol_table::int_type{});
-    std::optional<parser::expression> init;
+    auto copy_init = [](const std::optional<parser::expression> &init) {
+        return init.has_value() ? std::make_optional(parser::copy_expression(init.value())) : std::nullopt;
+    };
+    symbol_table::initial_value init_value;
     if (node.init.has_value())
     {
-        auto tmp = process_expression(node.init.value(), table);
-        if (tmp.has_value() == false)
+        if (std::holds_alternative<parser::int_constant>(node.init.value()))
         {
-            return std::unexpected{ tmp.error() };
+            init_value = symbol_table::initial{ std::get<parser::int_constant>(node.init.value()).value };
         }
-
-        init = std::move(tmp.value());
+        else
+        {
+            return std::unexpected<semantic_error>{ fmt::format("Non Constant initialiser for {}", node.name.name) };
+        }
+    }
+    else
+    {
+        if (node.storage_class == parser::storage_class::extern_storage)
+        {
+            init_value = symbol_table::no_initialiser{};
+        }
+        else
+        {
+            init_value = symbol_table::tentative{};
+        }
     }
 
-    return parser::variable_declaration{ node.name, std::move(init) };
+    bool global = node.storage_class != parser::storage_class::static_storage;
+
+    if (auto s = table.get(node.name); s.has_value())
+    {
+        if (std::holds_alternative<symbol_table::int_type>(s->type) == false)
+        {
+            auto msg = fmt::format("Function redeclared as variable {}", node.name.name);
+            return std::unexpected<semantic_error>{ msg };
+        }
+
+        if (std::holds_alternative<symbol_table::static_attributes>(s->attrs) == false)
+        {
+            auto msg = fmt::format("Internal error: File scope variable {} doesn't have static_attributes",
+                                   s->name.name);
+            return std::unexpected{ semantic_error{ msg } };
+        }
+        auto attrs = std::get<symbol_table::static_attributes>(s->attrs);
+
+        if (node.storage_class == parser::storage_class::extern_storage)
+        {
+            global = attrs.is_global;
+        }
+        else if (attrs.is_global != global)
+        {
+            auto msg = fmt::format("Conflicting variable '{}' linkage", node.name.name);
+            return std::unexpected<semantic_error>{ msg };
+        }
+
+        if (std::holds_alternative<symbol_table::initial>(attrs.init))
+        {
+            if (std::holds_alternative<symbol_table::initial>(init_value))
+            {
+                auto msg = fmt::format("Conflicting file scope variable '{}' definitions", node.name.name);
+                return std::unexpected<semantic_error>{ msg };
+            }
+            else
+            {
+                init_value = attrs.init;
+            }
+        }
+        else if (std::holds_alternative<symbol_table::initial>(init_value) == false &&
+                 std::holds_alternative<symbol_table::tentative>(attrs.init))
+        {
+            init_value = symbol_table::tentative{};
+        }
+    }
+
+    symbol_table::static_attributes attrs{ init_value, global };
+    table.add(node.name, symbol_table::int_type{}, attrs);
+    return parser::variable_declaration{ node.name, copy_init(node.init), node.storage_class };
+}
+
+auto process_variable_declaration_local_scope(const parser::variable_declaration &node,
+                                              symbol_table::symbol_table &table)
+  -> std::expected<parser::variable_declaration, semantic_error>
+{
+    auto copy_init = [](const std::optional<parser::expression> &init) {
+        return init.has_value() ? std::make_optional(parser::copy_expression(init.value())) : std::nullopt;
+    };
+
+    if (node.storage_class == parser::storage_class::extern_storage)
+    {
+        if (node.init.has_value())
+        {
+            auto msg = fmt::format("Initializer on a local extern variable declaration {}", node.name.name);
+            return std::unexpected<semantic_error>{ msg };
+        }
+        if (auto s = table.get(node.name); s.has_value())
+        {
+            if (std::holds_alternative<symbol_table::int_type>(s->type) == false)
+            {
+                auto msg = fmt::format("Function redeclared as variable {}", node.name.name);
+                return std::unexpected{ semantic_error{ msg } };
+            }
+        }
+        else
+        {
+            auto attrs = symbol_table::static_attributes{ symbol_table::no_initialiser{}, true };
+            table.add(node.name, symbol_table::int_type{}, attrs);
+        }
+    }
+    else if (node.storage_class == parser::storage_class::static_storage)
+    {
+        symbol_table::initial_value init_value{};
+        if (node.init.has_value() == false)
+        {
+            init_value = symbol_table::initial{ 0 };
+        }
+        else if (std::holds_alternative<parser::int_constant>(node.init.value()))
+        {
+            init_value = symbol_table::initial{ std::get<parser::int_constant>(node.init.value()).value };
+        }
+        else
+        {
+            auto msg = fmt::format("Non-Constant initialiser for {} on local static variable", node.name.name);
+            return std::unexpected{ semantic_error{ msg } };
+        }
+        auto attrs = symbol_table::static_attributes{ init_value, false };
+        table.add(node.name, symbol_table::int_type{}, attrs);
+    }
+    else
+    {
+        auto attrs = symbol_table::local_attributes{};
+        table.add(node.name, symbol_table::int_type{}, attrs);
+        std::optional<parser::expression> init;
+        if (node.init.has_value())
+        {
+            auto tmp = process_expression(node.init.value(), table);
+            if (tmp.has_value() == false)
+            {
+                return std::unexpected{ tmp.error() };
+            }
+
+            init = std::move(tmp.value());
+        }
+        return parser::variable_declaration{ node.name, std::move(init), node.storage_class };
+    }
+    return parser::variable_declaration{ node.name, copy_init(node.init), node.storage_class };
 }
 
 auto process_while_statement(const std::unique_ptr<parser::while_statement> &node, symbol_table::symbol_table &table)

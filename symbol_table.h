@@ -26,12 +26,40 @@
 
 namespace wccff::symbol_table {
 
+struct initial
+{
+    int value;
+};
+struct no_initialiser
+{
+};
+struct tentative
+{
+};
+using initial_value = std::variant<initial, no_initialiser, tentative>;
+
+struct func_attributes
+{
+    bool is_defined;
+    bool is_global;
+};
+struct local_attributes
+{
+};
+
+struct static_attributes
+{
+    initial_value init;
+    bool is_global;
+};
+using identifier_attributes = std::variant<func_attributes, local_attributes, static_attributes>;
+
 struct func_type
 {
     int param_num;
     func_type() = default;
     explicit func_type(size_t size)
-      : param_num(size){};
+      : param_num(size) {};
 
     bool operator==(const func_type &rhs) const = default;
 };
@@ -42,7 +70,7 @@ struct int_type
 using type = std::variant<int_type, func_type>;
 struct symbol
 {
-    bool has_body;
+    identifier_attributes attrs;
     parser::identifier name;
     type type;
 };
@@ -50,9 +78,9 @@ struct symbol
 class symbol_table
 {
   public:
-    void add(const parser::identifier &name, type type, bool has_body = false)
+    void add(const parser::identifier &name, type type, identifier_attributes attrs)
     {
-        symbol s{ has_body, name, type };
+        symbol s{ attrs, name, type };
         m_table[name.name] = s;
     }
 

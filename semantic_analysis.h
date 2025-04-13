@@ -26,6 +26,11 @@
 
 namespace wccff::sema {
 
+enum class scope_type
+{
+    file,
+    inner,
+};
 struct semantic_error
 {
     std::string message;

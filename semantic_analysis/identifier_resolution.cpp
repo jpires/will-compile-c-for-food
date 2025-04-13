@@ -83,7 +83,7 @@ auto process_block_item(const parser::block_item &node, identifier_map &variable
     return std::visit(
       visitor{
         [&variable_map](const parser::declaration &n) mutable -> std::expected<parser::block_item, semantic_error> {
-            auto d = process_declaration(n, variable_map);
+            auto d = process_declaration(n, variable_map, scope_type::inner);
             if (d.has_value() == false)
             {
                 return std::unexpected{ d.error() };
@@ -144,7 +144,7 @@ auto process_conditional_node(const std::unique_ptr<parser::conditional_node> &n
                                                       std::move(e2.value()));
 }
 
-auto process_declaration(const parser::declaration &node, identifier_map &variable_map)
+auto process_declaration(const parser::declaration &node, identifier_map &variable_map, scope_type scope)
   -> std::expected<parser::declaration, semantic_error>
 {
     return std::visit(
@@ -153,9 +153,9 @@ auto process_declaration(const parser::declaration &node, identifier_map &variab
           const parser::function_declaration &node) -> std::expected<parser::declaration, semantic_error> {
             return process_function_declaration(node, variable_map);
         },
-        [&variable_map](
-          const parser::variable_declaration &node) -> std::expected<parser::declaration, semantic_error> {
-            return process_variable_declaration(node, variable_map);
+        [&variable_map,
+         scope](const parser::variable_declaration &node) -> std::expected<parser::declaration, semantic_error> {
+            return process_variable_declaration(node, variable_map, scope);
         },
       },
       node);
@@ -327,7 +327,7 @@ auto process_function_declaration(const parser::function_declaration &node, iden
     }
 
     variable_map.destroy_scope();
-    return parser::function_declaration{ node.name, std::move(args), std::move(block) };
+    return parser::function_declaration{ node.name, std::move(args), std::move(block), node.storage_class };
 }
 
 auto process_if_node(const std::unique_ptr<parser::if_node> &node, identifier_map &variable_map)
@@ -360,7 +360,7 @@ auto process_if_node(const std::unique_ptr<parser::if_node> &node, identifier_ma
 auto process_init_declaration(const parser::init_declaration &node, identifier_map &variable_map)
   -> std::expected<parser::init_declaration, semantic_error>
 {
-    auto tmp = process_variable_declaration(node.decl, variable_map);
+    auto tmp = process_variable_declaration(node.decl, variable_map, scope_type::inner);
     if (tmp.has_value() == false)
     {
         return std::unexpected{ tmp.error() };
@@ -401,7 +401,7 @@ auto process_program(const parser::program &node, identifier_map &variable_map)
     std::vector<parser::declaration> functions;
     for (const auto &f : node.f)
     {
-        auto tmp = process_declaration(f, variable_map);
+        auto tmp = process_declaration(f, variable_map, scope_type::file);
         if (tmp.has_value() == false)
         {
             return std::unexpected{ tmp.error() };
@@ -495,29 +495,53 @@ auto process_var(const parser::var &node, identifier_map &variable_map) -> std::
     return parser::var{ s->unique_name };
 }
 
-auto process_variable_declaration(const parser::variable_declaration &node, identifier_map &variable_map)
-  -> std::expected<parser::variable_declaration, semantic_error>
+auto process_variable_declaration(const parser::variable_declaration &node,
+                                  identifier_map &variable_map,
+                                  scope_type scope) -> std::expected<parser::variable_declaration, semantic_error>
 {
-    if (variable_map.find(node.name, identifier_map::scopes::current_scope).has_value())
+    auto copy_init = [](const std::optional<parser::expression> &init) {
+        return init.has_value() ? std::make_optional(parser::copy_expression(init.value())) : std::nullopt;
+    };
+
+    if (scope == scope_type::file)
     {
-        auto msg = fmt::format("Duplicate definition for variable {}", node.name.name);
-        return std::unexpected{ semantic_error{ msg } };
+        variable_map.add(node.name, identifier_map::linkage::external);
+        return parser::variable_declaration{ node.name, copy_init(node.init), node.storage_class };
     }
-
-    parser::identifier unique_name = variable_map.add(node.name);
-
-    std::optional<parser::expression> init;
-    if (node.init.has_value())
+    else
     {
-        auto a = process_expression(node.init.value(), variable_map);
-        if (a.has_value() == false)
+        auto s = variable_map.find(node.name, identifier_map::scopes::current_scope);
+        if (s.has_value())
         {
-            return std::unexpected{ a.error() };
+            if ((s.value().linkage == identifier_map::linkage::external &&
+                 node.storage_class == parser::storage_class::extern_storage) == false)
+            {
+                auto msg = fmt::format("Conflicting local declarations for variable {}", node.name.name);
+                return std::unexpected{ semantic_error{ msg } };
+            }
         }
-        init = std::move(a.value());
-    }
 
-    return parser::variable_declaration{ unique_name, std::move(init) };
+        // parser::identifier unique_name;
+        if (node.storage_class == parser::storage_class::extern_storage)
+        {
+            variable_map.add(node.name, identifier_map::linkage::external);
+            return parser::variable_declaration{ node.name, copy_init(node.init), node.storage_class };
+        }
+
+        parser::identifier unique_name = variable_map.add(node.name);
+        std::optional<parser::expression> init;
+        if (node.init.has_value())
+        {
+            auto a = process_expression(node.init.value(), variable_map);
+            if (a.has_value() == false)
+            {
+                return std::unexpected{ a.error() };
+            }
+            init = std::move(a.value());
+        }
+
+        return parser::variable_declaration{ unique_name, std::move(init), node.storage_class };
+    }
 }
 
 auto process_while_statement(const std::unique_ptr<parser::while_statement> &node, identifier_map &variable_map)
