@@ -380,95 +380,111 @@ program process(const wccff::tacky::program &program)
     return { std::move(functions) };
 }
 
-void replace_pseudo_registers_q(mov_instruction &i)
+operand convert_pseudo(pseudo &r)
+{
+    return stack{ table.get_address(r.name) };
+}
+
+void replace_pseudo_registers(mov_instruction &i)
 {
     if (std::holds_alternative<pseudo>(i.src))
     {
         auto r = std::get<pseudo>(i.src);
-        i.src = stack{ table.get_address(r.name) };
+        i.src = convert_pseudo(r);
     }
     if (std::holds_alternative<pseudo>(i.dst))
     {
         auto r = std::get<pseudo>(i.dst);
-        i.dst = stack{ table.get_address(r.name) };
+        i.dst = convert_pseudo(r);
     }
 }
-void replace_pseudo_registers_q(unary &i)
+void replace_pseudo_registers(unary &i)
 {
     if (std::holds_alternative<pseudo>(i.dst))
     {
         auto r = std::get<pseudo>(i.dst);
-        i.dst = stack{ table.get_address(r.name) };
+        i.dst = convert_pseudo(r);
     }
 }
 
-void replace_pseudo_registers_q(binary &i)
+void replace_pseudo_registers(binary &i)
 {
     if (std::holds_alternative<pseudo>(i.src))
     {
         auto r = std::get<pseudo>(i.src);
-        i.src = stack{ table.get_address(r.name) };
+        i.src = convert_pseudo(r);
     }
 
     if (std::holds_alternative<pseudo>(i.dst))
     {
         auto r = std::get<pseudo>(i.dst);
-        i.dst = stack{ table.get_address(r.name) };
+        i.dst = convert_pseudo(r);
     }
 }
-void replace_pseudo_registers_q(cmp &i)
+void replace_pseudo_registers(cmp &i)
 {
     if (std::holds_alternative<pseudo>(i.lhs))
     {
         auto r = std::get<pseudo>(i.lhs);
-        i.lhs = stack{ table.get_address(r.name) };
+        i.lhs = convert_pseudo(r);
     }
 
     if (std::holds_alternative<pseudo>(i.rhs))
     {
         auto r = std::get<pseudo>(i.rhs);
-        i.rhs = stack{ table.get_address(r.name) };
+        i.rhs = convert_pseudo(r);
     }
 }
-void replace_pseudo_registers_q(idiv &i)
+void replace_pseudo_registers(idiv &i)
 {
     if (std::holds_alternative<pseudo>(i.src))
     {
         auto r = std::get<pseudo>(i.src);
-        i.src = stack{ table.get_address(r.name) };
+        i.src = convert_pseudo(r);
     }
 }
-void replace_pseudo_registers_q(cdq &i) {}
-void replace_pseudo_registers_q(jmp &i) {}
-void replace_pseudo_registers_q(jmpcc &i) {}
-void replace_pseudo_registers_q(setcc &i)
+
+void replace_pseudo_registers(setcc &i)
 {
     if (std::holds_alternative<pseudo>(i.dst))
     {
         auto r = std::get<pseudo>(i.dst);
-        i.dst = stack{ table.get_address(r.name) };
+        i.dst = convert_pseudo(r);
     }
 }
-void replace_pseudo_registers_q(label &i) {}
-void replace_pseudo_registers_q(allocate_stack &i) {}
-void replace_pseudo_registers_q(deallocate_stack &i) {}
-void replace_pseudo_registers_q(push &i)
+
+void replace_pseudo_registers(push &i)
 {
     if (std::holds_alternative<pseudo>(i.src))
     {
         auto r = std::get<pseudo>(i.src);
-        i.src = stack{ table.get_address(r.name) };
+        i.src = convert_pseudo(r);
     }
 }
-void replace_pseudo_registers_q(call &i) {}
-void replace_pseudo_registers_q(ret_instruction &i) {}
 
 void replace_pseudo_registers(function &f)
 {
     table.symbols.clear();
     for (auto &i : f.instructions)
     {
-        std::visit(visitor{ [](auto &inst) { replace_pseudo_registers_q(inst); } }, i);
+        std::visit(visitor{
+                     [](mov_instruction &inst) { replace_pseudo_registers(inst); },
+                     [](unary &inst) { replace_pseudo_registers(inst); },
+                     [](binary &inst) { replace_pseudo_registers(inst); },
+                     [](cmp &inst) { replace_pseudo_registers(inst); },
+                     [](idiv &inst) { replace_pseudo_registers(inst); },
+                     [](cdq &) { /*Nothing to do */ },
+                     [](jmp &) { /*Nothing to do */ },
+                     [](jmpcc &) { /*Nothing to do */ },
+                     [](setcc &inst) { replace_pseudo_registers(inst); },
+                     [](label &) { /*Nothing to do */ },
+                     [](allocate_stack &) { /*Nothing to do */ },
+                     [](deallocate_stack &) { /*Nothing to do */ },
+                     [](push &inst) { replace_pseudo_registers(inst); },
+                     [](call &) { /*Nothing to do */ },
+                     [](ret_instruction &) { /*Nothing to do */ },
+                   },
+                   i);
     }
     f.stack_size = std::abs(table.get_last_address());
 }
@@ -481,9 +497,14 @@ void replace_pseudo_registers(program &program)
     }
 }
 
+bool is_memory_operand(const operand &o)
+{
+    return std::holds_alternative<stack>(o);
+}
+
 std::optional<std::vector<instruction>> fixing_up_instructions11(const mov_instruction &n)
 {
-    if (std::holds_alternative<stack>(n.src) && std::holds_alternative<stack>(n.dst))
+    if (is_memory_operand(n.src) && is_memory_operand(n.dst))
     {
         std::vector<instruction> ret_insts;
         mov_instruction m1{ n.src, R10{} };
@@ -498,7 +519,7 @@ std::optional<std::vector<instruction>> fixing_up_instructions11(const mov_instr
 
 std::optional<std::vector<instruction>> fixing_up_instructions11(const cmp &n)
 {
-    if (std::holds_alternative<stack>(n.lhs) && std::holds_alternative<stack>(n.rhs))
+    if (is_memory_operand(n.lhs) && is_memory_operand(n.rhs))
     {
         std::vector<instruction> ret_insts;
         mov_instruction m1{ n.lhs, R10{} };
@@ -527,7 +548,7 @@ std::optional<std::vector<instruction>> fixing_up_instructions_binary(const bina
         std::holds_alternative<binary_and>(n.op) || std::holds_alternative<binary_or>(n.op) ||
         std::holds_alternative<binary_xor>(n.op))
     {
-        if (std::holds_alternative<stack>(n.src) && std::holds_alternative<stack>(n.dst))
+        if (is_memory_operand(n.src) && is_memory_operand(n.dst))
         {
             std::vector<instruction> ret_insts;
             mov_instruction m1{ n.src, R10{} };
@@ -550,7 +571,7 @@ std::optional<std::vector<instruction>> fixing_up_instructions_binary(const bina
 
     if (std::holds_alternative<mul>(n.op))
     {
-        if (std::holds_alternative<stack>(n.dst))
+        if (is_memory_operand(n.dst))
         {
             std::vector<instruction> ret_insts;
             mov_instruction m1{ n.dst, R11{} };
