@@ -21,6 +21,7 @@
 #define TACKY_H
 
 #include "parser.h"
+#include "symbol_table.h"
 #include <cstdint>
 #include <string>
 #include <utility>
@@ -274,50 +275,81 @@ using instruction = std::variant<return_statement,
 struct function_definition
 {
     identifier name;
+    bool global;
     std::vector<identifier> params;
     std::vector<instruction> instructions;
 };
 
+struct static_variable
+{
+    identifier name;
+    bool global;
+    int init;
+};
+
+using top_level = std::variant<function_definition, static_variable>;
+
 struct program
 {
-    std::vector<function_definition> function;
+    std::vector<top_level> function;
 };
 
 val process_assignment_node(const std::unique_ptr<parser::assignment_node> &node,
                             std::vector<instruction> &instructions);
 val process_binary_node(const std::unique_ptr<parser::binary_node> &node, std::vector<instruction> &instructions);
 binary_operator process_binary_operator(const parser::binary_operator &op);
-void process_block(const parser::block &node, std::vector<instruction> &instructions);
-void process_block_item(const parser::block_item &node, std::vector<instruction> &instructions);
+void process_block(const parser::block &node,
+                   std::vector<instruction> &instructions,
+                   const symbol_table::symbol_table &table);
+void process_block_item(const parser::block_item &node,
+                        std::vector<instruction> &instructions,
+                        const symbol_table::symbol_table &table);
 void process_break_statement(const parser::break_statement &node, std::vector<instruction> &instructions);
 void process_compound_statement(const std::unique_ptr<parser::compound_statement> &node,
-                                std::vector<instruction> &instructions);
+                                std::vector<instruction> &instructions,
+                                const symbol_table::symbol_table &table);
 val process_conditional_node(const std::unique_ptr<parser::conditional_node> &node,
                              std::vector<instruction> &instructions);
 void process_continue_statement(const parser::continue_statement &node, std::vector<instruction> &instructions);
-void process_declaration(const parser::declaration &node, std::vector<instruction> &instructions);
+void process_declaration(const parser::declaration &node,
+                         std::vector<instruction> &instructions,
+                         const symbol_table::symbol_table &table);
 void process_do_while_statement(const std::unique_ptr<parser::do_while_statement> &node,
-                                std::vector<instruction> &instructions);
+                                std::vector<instruction> &instructions,
+                                const symbol_table::symbol_table &table);
 val process_expression(const wccff::parser::expression &exp, std::vector<instruction> &instructions);
-void process_for_init(const parser::for_init &node, std::vector<instruction> &instructions);
-void process_for_statement(const std::unique_ptr<parser::for_statement> &node, std::vector<instruction> &instructions);
+void process_for_init(const parser::for_init &node,
+                      std::vector<instruction> &instructions,
+                      const symbol_table::symbol_table &table);
+void process_for_statement(const std::unique_ptr<parser::for_statement> &node,
+                           std::vector<instruction> &instructions,
+                           const symbol_table::symbol_table &table);
 val process_function_call(const std::unique_ptr<parser::function_call> &f, std::vector<instruction> &instructions);
-std::optional<function_definition> process_function_definition(const parser::function_declaration &f);
+std::optional<function_definition> process_function_definition(const parser::function_declaration &f,
+                                                               const symbol_table::symbol_table &table);
 void process_goto_statement(const parser::goto_statement &node, std::vector<instruction> &instructions);
 identifier process_identifier(const parser::identifier &id);
-void process_if(const std::unique_ptr<parser::if_node> &id, std::vector<instruction> &instructions);
+void process_if(const std::unique_ptr<parser::if_node> &id,
+                std::vector<instruction> &instructions,
+                const symbol_table::symbol_table &table);
 constant process_int_constant(const parser::int_constant &int_con);
 void process_labeled_statement(const std::unique_ptr<parser::labelled_statement> &id,
-                               std::vector<instruction> &instructions);
+                               std::vector<instruction> &instructions,
+                               const symbol_table::symbol_table &table);
 void process_return_node(const wccff::parser::return_node &stmt, std::vector<instruction> &instructions);
-void process_statement(const wccff::parser::statement &s, std::vector<instruction> &instructions);
+void process_statement(const wccff::parser::statement &s,
+                       std::vector<instruction> &instructions,
+                       const symbol_table::symbol_table &table);
 val process_unary_node(const std::unique_ptr<parser::unary_node> &node, std::vector<instruction> &instructions);
 unary_operator process_unary_operator(const parser::unary_operator &op);
-void process_variable_declaration(const wccff::parser::variable_declaration &s, std::vector<instruction> &instructions);
+void process_variable_declaration(const wccff::parser::variable_declaration &s,
+                                  std::vector<instruction> &instructions,
+                                  const symbol_table::symbol_table &table);
 void process_while_statement(const std::unique_ptr<parser::while_statement> &node,
-                             std::vector<instruction> &instructions);
+                             std::vector<instruction> &instructions,
+                             const symbol_table::symbol_table &table);
 
-program process(const parser::program &input);
+program process(const parser::program &input, const symbol_table::symbol_table &table);
 
 std::string pretty_print(const binary_statement &i, int32_t ident = 0);
 std::string pretty_print(const constant &val, int32_t ident = 0);
@@ -331,7 +363,9 @@ std::string pretty_print(const jump_if_not_zero_statement &i, int32_t ident = 0)
 std::string pretty_print(const label_statement &i, int32_t ident = 0);
 std::string pretty_print(const program &p, int32_t ident = 0);
 std::string pretty_print(const return_statement &instruction, int32_t ident = 0);
+std::string pretty_print(const static_variable &top, int32_t ident = 0);
 std::string pretty_print(const std::vector<instruction> &instructions, int32_t ident = 0);
+std::string pretty_print(const top_level &top, int32_t ident = 0);
 std::string pretty_print(const unary_statement &instruction, int32_t ident = 0);
 std::string pretty_print(const unary_operator &val, int32_t ident = 0);
 std::string pretty_print(const var &val, int32_t ident = 0);

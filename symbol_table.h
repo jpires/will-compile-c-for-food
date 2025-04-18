@@ -95,6 +95,11 @@ class symbol_table
         return it->second;
     };
 
+    std::unordered_map<std::string, symbol>::const_iterator begin() const { return m_table.begin(); }
+    std::unordered_map<std::string, symbol>::const_iterator cbegin() const { return m_table.cbegin(); }
+    std::unordered_map<std::string, symbol>::const_iterator end() const { return m_table.end(); }
+    std::unordered_map<std::string, symbol>::const_iterator cend() const { return m_table.cend(); }
+
   private:
     std::unordered_map<std::string, symbol> m_table;
 };

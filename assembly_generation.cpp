@@ -375,7 +375,7 @@ program process(const wccff::tacky::program &program)
     functions.reserve(program.function.size());
     for (const auto &f : program.function)
     {
-        functions.push_back(process_function(f));
+        functions.push_back(process_function(std::get<tacky::function_definition>(f)));
     }
     return { std::move(functions) };
 }

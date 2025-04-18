@@ -89,7 +89,7 @@ bool compile(const std::filesystem::path &source_filename,
     }
 
     fmt::print("VALIDATE PRETTY PRINT BEGIN\n");
-    fmt::print("{}", pretty_print(sema_result.value()));
+    fmt::print("{}", pretty_print(std::get<parser::program>(sema_result.value())));
     fmt::print("VALIDATE PRETTY PRINT END\n");
 
     if (stop == stop_phase::validate)
@@ -100,7 +100,8 @@ bool compile(const std::filesystem::path &source_filename,
     //
     // TACKY
     //
-    auto tacky_result = tacky::process(sema_result.value());
+    auto tacky_result = tacky::process(std::get<parser::program>(sema_result.value()),
+                                       std::get<symbol_table::symbol_table>(sema_result.value()));
     fmt::print("{}", pretty_print(tacky_result));
     if (stop == stop_phase::tacky)
     {

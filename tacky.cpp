@@ -18,6 +18,7 @@
  */
 
 #include "tacky.h"
+#include "assembly_generation.h"
 #include "utils.h"
 #include "visitor.h"
 #include <fmt/format.h>
@@ -127,11 +128,13 @@ val process_assignment_node(const std::unique_ptr<parser::assignment_node> &node
     // copy tmp to left
 }
 
-void process_block(const parser::block &node, std::vector<instruction> &instructions)
+void process_block(const parser::block &node,
+                   std::vector<instruction> &instructions,
+                   const symbol_table::symbol_table &table)
 {
     for (const auto &child : node.items)
     {
-        process_block_item(child, instructions);
+        process_block_item(child, instructions, table);
     }
 }
 
@@ -160,7 +163,9 @@ identifier process_identifier(const parser::identifier &id)
     return { id.name };
 }
 
-void process_if(const std::unique_ptr<parser::if_node> &node, std::vector<instruction> &instructions)
+void process_if(const std::unique_ptr<parser::if_node> &node,
+                std::vector<instruction> &instructions,
+                const symbol_table::symbol_table &table)
 {
     // Create both else and end label, so that the numbering don't get out of sync.
     // i.e. both labels will have the same number no matter if the 'if' doesn't have an 'else'
@@ -171,16 +176,16 @@ void process_if(const std::unique_ptr<parser::if_node> &node, std::vector<instru
     if (node->else_stmt.has_value())
     {
         instructions.emplace_back(jump_if_zero_statement{ result, else_label });
-        process_statement(node->then_stmt, instructions);
+        process_statement(node->then_stmt, instructions, table);
         instructions.emplace_back(jump_statement{ end_label });
         instructions.emplace_back(label_statement{ else_label });
-        process_statement(node->else_stmt.value(), instructions);
+        process_statement(node->else_stmt.value(), instructions, table);
         instructions.emplace_back(label_statement{ end_label });
     }
     else
     {
         instructions.emplace_back(jump_if_zero_statement{ result, end_label });
-        process_statement(node->then_stmt, instructions);
+        process_statement(node->then_stmt, instructions, table);
         instructions.emplace_back(label_statement{ end_label });
     }
 }
@@ -402,33 +407,41 @@ void process_return_node(const wccff::parser::return_node &stmt, std::vector<ins
     instructions.emplace_back(return_statement{ node });
 }
 
-void process_statement(const wccff::parser::statement &s, std::vector<instruction> &instructions)
+void process_statement(const wccff::parser::statement &s,
+                       std::vector<instruction> &instructions,
+                       const symbol_table::symbol_table &table)
 {
     std::visit(
       visitor{
         [&instructions](const parser::return_node &n) { process_return_node(n, instructions); },
         [&instructions](const parser::expression &n) { process_expression(n, instructions); },
-        [&](const std::unique_ptr<parser::if_node> &n) { process_if(n, instructions); },
-        [&](const std::unique_ptr<parser::compound_statement> &n) { process_compound_statement(n, instructions); },
+        [&](const std::unique_ptr<parser::if_node> &n) { process_if(n, instructions, table); },
+        [&](const std::unique_ptr<parser::compound_statement> &n) {
+            process_compound_statement(n, instructions, table);
+        },
         [&](const parser::break_statement &n) { process_break_statement(n, instructions); },
         [&](const parser::continue_statement &n) { process_continue_statement(n, instructions); },
         [&](const parser::goto_statement &n) { process_goto_statement(n, instructions); },
-        [&](const std::unique_ptr<parser::while_statement> &n) { process_while_statement(n, instructions); },
-        [&](const std::unique_ptr<parser::do_while_statement> &n) { process_do_while_statement(n, instructions); },
-        [&](const std::unique_ptr<parser::for_statement> &n) { process_for_statement(n, instructions); },
+        [&](const std::unique_ptr<parser::while_statement> &n) { process_while_statement(n, instructions, table); },
+        [&](const std::unique_ptr<parser::do_while_statement> &n) {
+            process_do_while_statement(n, instructions, table);
+        },
+        [&](const std::unique_ptr<parser::for_statement> &n) { process_for_statement(n, instructions, table); },
         [&](const std::unique_ptr<parser::labelled_statement> &n) {
-            return process_labeled_statement(n, instructions);
+            return process_labeled_statement(n, instructions, table);
         },
         [](const std::monostate) {},
       },
       s);
 }
 
-void process_block_item(const parser::block_item &s, std::vector<instruction> &instructions)
+void process_block_item(const parser::block_item &s,
+                        std::vector<instruction> &instructions,
+                        const symbol_table::symbol_table &table)
 {
     std::visit(visitor{
-                 [&instructions](const parser::declaration &n) { process_declaration(n, instructions); },
-                 [&instructions](const parser::statement &n) { process_statement(n, instructions); },
+                 [&instructions, &table](const parser::declaration &n) { process_declaration(n, instructions, table); },
+                 [&instructions, &table](const parser::statement &n) { process_statement(n, instructions, table); },
                  [](const std::monostate n) {},
                },
                s);
@@ -440,9 +453,10 @@ void process_break_statement(const parser::break_statement &node, std::vector<in
     instructions.emplace_back(jump_statement{ label });
 }
 void process_compound_statement(const std::unique_ptr<parser::compound_statement> &node,
-                                std::vector<instruction> &instructions)
+                                std::vector<instruction> &instructions,
+                                const symbol_table::symbol_table &table)
 {
-    process_block(node->block, instructions);
+    process_block(node->block, instructions, table);
 }
 
 void process_continue_statement(const parser::continue_statement &node, std::vector<instruction> &instructions)
@@ -451,58 +465,67 @@ void process_continue_statement(const parser::continue_statement &node, std::vec
     instructions.emplace_back(jump_statement{ label });
 }
 
-void process_declaration(const parser::declaration &node, std::vector<instruction> &instructions)
+void process_declaration(const parser::declaration &node,
+                         std::vector<instruction> &instructions,
+                         const symbol_table::symbol_table &table)
 {
-    std::visit(
-      visitor{
-        [](const parser::function_declaration &node) {
-            if (process_function_definition(node).has_value())
-            {
-                throw std::runtime_error("Found unexpected function definition");
-            }
-        },
-        [&instructions](const parser::variable_declaration &node) { process_variable_declaration(node, instructions); },
-      },
-      node);
+    std::visit(visitor{
+                 [&table](const parser::function_declaration &node) {
+                     if (process_function_definition(node, table).has_value())
+                     {
+                         throw std::runtime_error("Found unexpected function definition");
+                     }
+                 },
+                 [&instructions, &table](const parser::variable_declaration &node) {
+                     process_variable_declaration(node, instructions, table);
+                 },
+               },
+               node);
 }
 
 void process_do_while_statement(const std::unique_ptr<parser::do_while_statement> &node,
-                                std::vector<instruction> &instructions)
+                                std::vector<instruction> &instructions,
+                                const symbol_table::symbol_table &table)
 {
     auto start_label = identifier{ fmt::format("start_{}", node->label.name) };
     auto continue_label = get_loop_continue_label(process_identifier(node->label));
     auto break_label = get_loop_break_label(process_identifier(node->label));
 
     instructions.emplace_back(label_statement{ start_label });
-    process_statement(node->body, instructions);
+    process_statement(node->body, instructions, table);
     instructions.emplace_back(label_statement{ continue_label });
     auto result = process_expression(node->condition, instructions);
     instructions.emplace_back(jump_if_not_zero_statement{ result, start_label });
     instructions.emplace_back(label_statement{ break_label });
 }
 
-void process_for_init(const parser::for_init &node, std::vector<instruction> &instructions)
+void process_for_init(const parser::for_init &node,
+                      std::vector<instruction> &instructions,
+                      const symbol_table::symbol_table &table)
 {
-    std::visit(
-      visitor{
-        [&instructions](const parser::init_declaration &n) { process_variable_declaration(n.decl, instructions); },
-        [&instructions](const parser::init_expression &n) {
-            if (n.expression.has_value())
-            {
-                process_expression(n.expression.value(), instructions);
-            }
-        },
-      },
-      node);
+    std::visit(visitor{
+                 [&instructions, &table](const parser::init_declaration &n) {
+                     process_variable_declaration(n.decl, instructions, table);
+                 },
+                 [&instructions](const parser::init_expression &n) {
+                     if (n.expression.has_value())
+                     {
+                         process_expression(n.expression.value(), instructions);
+                     }
+                 },
+               },
+               node);
 }
 
-void process_for_statement(const std::unique_ptr<parser::for_statement> &node, std::vector<instruction> &instructions)
+void process_for_statement(const std::unique_ptr<parser::for_statement> &node,
+                           std::vector<instruction> &instructions,
+                           const symbol_table::symbol_table &table)
 {
     auto start_label = identifier{ fmt::format("start_{}", node->label.name) };
     auto continue_label = get_loop_continue_label(process_identifier(node->label));
     auto break_label = get_loop_break_label(process_identifier(node->label));
 
-    process_for_init(node->init, instructions);
+    process_for_init(node->init, instructions, table);
     instructions.emplace_back(label_statement{ start_label });
     if (node->condition.has_value())
     {
@@ -510,7 +533,7 @@ void process_for_statement(const std::unique_ptr<parser::for_statement> &node, s
         instructions.emplace_back(jump_if_zero_statement{ result, break_label });
     }
 
-    process_statement(node->body, instructions);
+    process_statement(node->body, instructions, table);
 
     instructions.emplace_back(label_statement{ continue_label });
     if (node->post.has_value())
@@ -537,7 +560,8 @@ val process_function_call(const std::unique_ptr<parser::function_call> &f, std::
 
     return dst;
 }
-std::optional<function_definition> process_function_definition(const parser::function_declaration &f)
+std::optional<function_definition> process_function_definition(const parser::function_declaration &f,
+                                                               const symbol_table::symbol_table &table)
 {
     if (f.body.has_value())
     {
@@ -550,10 +574,14 @@ std::optional<function_definition> process_function_definition(const parser::fun
             params.emplace_back(process_identifier(p));
         }
 
-        process_block(f.body.value(), instructions);
+        process_block(f.body.value(), instructions, table);
         instructions.emplace_back(return_statement{ constant{ 0 } });
 
-        return function_definition{ process_identifier(f.name), std::move(params), std::move(instructions) };
+        auto attrs = std::get<symbol_table::func_attributes>(table.get(f.name)->attrs);
+        return function_definition{ process_identifier(f.name),
+                                    attrs.is_global,
+                                    std::move(params),
+                                    std::move(instructions) };
     }
 
     return std::nullopt;
@@ -565,32 +593,63 @@ void process_goto_statement(const parser::goto_statement &node, std::vector<inst
 }
 
 void process_labeled_statement(const std::unique_ptr<parser::labelled_statement> &id,
-                               std::vector<instruction> &instructions)
+                               std::vector<instruction> &instructions,
+                               const symbol_table::symbol_table &table)
 {
     auto start_label = identifier{ fmt::format("{}", id->label.name) };
     instructions.emplace_back(label_statement{ start_label });
-    process_statement(id->body, instructions);
+    process_statement(id->body, instructions, table);
 }
 
-program process(const parser::program &input)
+program process(const parser::program &input, const symbol_table::symbol_table &table)
 {
-    std::vector<function_definition> functions;
+    std::vector<top_level> functions;
     for (const auto &f : input.f)
     {
         if (std::holds_alternative<parser::function_declaration>(f))
         {
-            if (auto tmp = process_function_definition(std::get<parser::function_declaration>(f)); tmp.has_value())
+            if (auto tmp = process_function_definition(std::get<parser::function_declaration>(f), table);
+                tmp.has_value())
             {
-                functions.push_back(tmp.value());
+                functions.emplace_back(tmp.value());
             }
         }
     }
+
+    std::vector<static_variable> tacky_definition;
+    for (const auto &[_, symbol] : table)
+    {
+        if (std::holds_alternative<symbol_table::static_attributes>(symbol.attrs))
+        {
+            auto attrs = std::get<symbol_table::static_attributes>(symbol.attrs);
+            if (std::holds_alternative<symbol_table::initial>(attrs.init))
+            {
+                auto initial = std::get<symbol_table::initial>(attrs.init);
+                tacky_definition.push_back(
+                  static_variable{ process_identifier(symbol.name), attrs.is_global, initial.value });
+            }
+            else if (std::holds_alternative<symbol_table::tentative>(attrs.init))
+            {
+                tacky_definition.push_back(static_variable{ process_identifier(symbol.name), attrs.is_global, 0 });
+            }
+        }
+    }
+
+    functions.insert(functions.begin(), tacky_definition.begin(), tacky_definition.end());
+
     return { functions };
 }
 
-void process_variable_declaration(const wccff::parser::variable_declaration &s, std::vector<instruction> &instructions)
+void process_variable_declaration(const wccff::parser::variable_declaration &s,
+                                  std::vector<instruction> &instructions,
+                                  const symbol_table::symbol_table &table)
 {
     if (s.init.has_value() == false)
+    {
+        return;
+    }
+
+    if (std::holds_alternative<symbol_table::static_attributes>(table.get(s.name)->attrs))
     {
         return;
     }
@@ -601,7 +660,8 @@ void process_variable_declaration(const wccff::parser::variable_declaration &s, 
 }
 
 void process_while_statement(const std::unique_ptr<parser::while_statement> &node,
-                             std::vector<instruction> &instructions)
+                             std::vector<instruction> &instructions,
+                             const symbol_table::symbol_table &table)
 {
     auto continue_label = get_loop_continue_label(process_identifier(node->label));
     auto break_label = get_loop_break_label(process_identifier(node->label));
@@ -609,7 +669,7 @@ void process_while_statement(const std::unique_ptr<parser::while_statement> &nod
     instructions.emplace_back(label_statement{ continue_label });
     auto result = process_expression(node->condition, instructions);
     instructions.emplace_back(jump_if_zero_statement{ result, break_label });
-    process_statement(node->body, instructions);
+    process_statement(node->body, instructions, table);
     instructions.emplace_back(jump_statement{ continue_label });
     instructions.emplace_back(label_statement{ break_label });
 }
@@ -676,6 +736,16 @@ std::string pretty_print(const val &val, int32_t ident)
 std::string pretty_print(const return_statement &instruction, int32_t ident)
 {
     return wccff::format_indented(ident, "Return({})\n", pretty_print(instruction.val, 0));
+}
+std::string pretty_print(const static_variable &top, int32_t ident)
+{
+    return wccff::format_indented(ident, "StaticVar({}, global={}, init={})\n", top.name.name, top.global, top.init);
+}
+std::string pretty_print(const top_level &top, int32_t ident)
+{
+    return std::visit(visitor{ [ident](const function_definition &n) { return pretty_print(n, ident); },
+                               [ident](const static_variable &n) { return pretty_print(n, ident); } },
+                      top);
 }
 std::string pretty_print(const unary_statement &i, int32_t ident)
 {
@@ -745,7 +815,11 @@ std::string pretty_print(const std::vector<instruction> &instructions, int32_t i
 
 std::string pretty_print(const function_definition &f, int ident)
 {
-    return wccff::format_indented(ident, "Function({})\n{}", f.name.name, pretty_print(f.instructions, ident + 4));
+    return wccff::format_indented(ident,
+                                  "Function({}, global={})\n{}",
+                                  f.name.name,
+                                  f.global,
+                                  pretty_print(f.instructions, ident + 4));
 }
 
 std::string pretty_print(const program &p, int ident)

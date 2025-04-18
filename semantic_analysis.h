@@ -21,6 +21,7 @@
 #define SEMANTIC_ANALYSIS_H
 
 #include "parser.h"
+#include "symbol_table.h"
 #include <unordered_map>
 #include <vector>
 
@@ -78,7 +79,8 @@ class identifier_map
     int32_t m_scope_counter = 0;
 };
 
-std::expected<parser::program, semantic_error> analyse(const parser::program &input);
+std::expected<std::tuple<parser::program, symbol_table::symbol_table>, semantic_error> analyse(
+  const parser::program &input);
 
 bool is_lvalue(const parser::expression &e);
 

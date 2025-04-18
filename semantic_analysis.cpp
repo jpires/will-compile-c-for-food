@@ -94,7 +94,8 @@ parser::identifier identifier_map::generate_unique_name(const parser::identifier
     return { fmt::format("var-{}-{}", name.name, m_counter++) };
 }
 
-std::expected<parser::program, semantic_error> analyse(const parser::program &input)
+std::expected<std::tuple<parser::program, symbol_table::symbol_table>, semantic_error> analyse(
+  const parser::program &input)
 {
     identifier_map variable_map;
     auto var_result = variable_resolution::process_program(input, variable_map);
@@ -116,7 +117,13 @@ std::expected<parser::program, semantic_error> analyse(const parser::program &in
         return std::unexpected{ labelled_result.error() };
     }
 
-    return loop_labelling::process_program(labelled_result.value());
+    auto loop_labelling_result = loop_labelling::process_program(labelled_result.value());
+    if (loop_labelling_result.has_value() == false)
+    {
+        return std::unexpected{ loop_labelling_result.error() };
+    }
+
+    return std::make_tuple(std::move(loop_labelling_result.value()), symbol_table);
 }
 
 bool is_lvalue(const std::unique_ptr<parser::binary_node> &e)
@@ -141,4 +148,4 @@ bool is_lvalue(const parser::expression &e)
                       e);
 }
 
-}
+} // namespace wccff::sema
