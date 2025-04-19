@@ -117,7 +117,7 @@ bool compile(const std::filesystem::path &source_filename,
     fmt::print("{}\n", pretty_print(codegen_result));
     fmt::print("Stop Assembly Generation");
     fmt::print("\nReplace Pseudo Register\n");
-    replace_pseudo_registers(codegen_result);
+    replace_pseudo_registers(codegen_result, std::get<symbol_table::symbol_table>(sema_result.value()));
     fmt::print("{}\n", pretty_print(codegen_result));
 
     fmt::print("Fixup instructions\n");

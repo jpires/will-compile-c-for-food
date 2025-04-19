@@ -21,6 +21,7 @@
 #define CODEGEN_H
 
 #include "parser.h"
+#include "symbol_table.h"
 #include "tacky.h"
 #include <compare>
 #include <string>
@@ -78,7 +79,12 @@ struct stack
 {
     immediate value;
 };
-using operand = std::variant<immediate, reg, pseudo, stack>;
+struct data
+{
+    identifier name;
+};
+
+using operand = std::variant<immediate, reg, pseudo, stack, data>;
 
 struct neg_op
 {
@@ -228,11 +234,20 @@ struct function
     identifier name;
     std::vector<instruction> instructions;
     int32_t stack_size;
+    bool is_global;
 };
 
+struct static_variable
+{
+    identifier name;
+    bool is_global;
+    int init;
+};
+
+using top_level = std::variant<function, static_variable>;
 struct program
 {
-    std::vector<function> functions;
+    std::vector<top_level> functions;
 };
 
 std::vector<instruction> process_statement(const wccff::tacky::copy_statement &stmt);
@@ -243,10 +258,12 @@ std::vector<instruction> process_statement(const tacky::instruction &i);
 std::vector<instruction> process_statement(const std::vector<tacky::instruction> &s);
 std::vector<instruction> fun_call(const tacky::fun_call &i);
 
-function process_function(const wccff::tacky::function_definition &f);
+function process_function(const wccff::tacky::function_definition &f, const symbol_table::symbol_table &t);
+top_level process_top_level(const wccff::tacky::top_level &f);
+static_variable process_static_variable(const wccff::tacky::static_variable &f);
 program process(const wccff::tacky::program &program);
 
-void replace_pseudo_registers(program &node);
+void replace_pseudo_registers(program &node, const symbol_table::symbol_table &t);
 
 void fixing_up_instructions(std::vector<instruction> &node);
 void fixing_up_instructions(function &node);
@@ -266,6 +283,7 @@ std::string pretty_print(const immediate &node);
 std::string pretty_print(const reg &node);
 std::string pretty_print(const pseudo &node);
 std::string pretty_print(const stack &node);
+std::string pretty_print(const data &node);
 std::string pretty_print(const operand &node);
 std::string pretty_print(const mov_instruction &node);
 std::string pretty_print(const unary &node);
@@ -275,6 +293,8 @@ std::string pretty_print(const ret_instruction &node);
 std::string pretty_print(const instruction &node);
 std::string pretty_print(const std::vector<instruction> &node);
 std::string pretty_print(const function &node);
+std::string pretty_print(const static_variable &node);
+std::string pretty_print(const top_level &node);
 std::string pretty_print(const program &program);
 std::string pretty_print(const push &program);
 } // namespace wccff::assembly_generation

@@ -97,10 +97,13 @@ std::string process_cond_code(assembly_generation::cond_code cond)
 std::string process_operand(const assembly_generation::operand &operand, operand_size size = operand_size::four_bytes)
 {
     return std::visit(
-      visitor{ [](const assembly_generation::immediate &immediate) { return process_immediate(immediate); },
-               [size](const assembly_generation::reg &reg) { return process_register(reg, size); },
-               [](const assembly_generation::pseudo &reg) { return process_pseudo(reg); },
-               [](const assembly_generation::stack &reg) { return process_stack(reg); } },
+      visitor{
+        [](const assembly_generation::immediate &immediate) { return process_immediate(immediate); },
+        [size](const assembly_generation::reg &reg) { return process_register(reg, size); },
+        [](const assembly_generation::pseudo &reg) { return process_pseudo(reg); },
+        [](const assembly_generation::stack &reg) { return process_stack(reg); },
+        [](const assembly_generation::data &) -> std::string { throw std::runtime_error("data not supported"); },
+      },
       operand);
 }
 
@@ -240,13 +243,22 @@ std::string process_function(const assembly_generation::function &f)
     }
     return result;
 }
+
+std::string process_top_level(const assembly_generation::top_level &t)
+{
+    if (std::holds_alternative<assembly_generation::function>(t))
+    {
+        return process_function(std::get<assembly_generation::function>(t));
+    }
+    throw std::runtime_error("Static Variable not supported");
+}
 std::string process_program(const assembly_generation::program &p)
 {
     std::string output;
 
     for (auto const &f : p.functions)
     {
-        output += process_function(f);
+        output += process_top_level(f);
     }
     return output;
 }
