@@ -80,6 +80,10 @@ std::string process_stack(const assembly_generation::stack &node)
 {
     return fmt::format("{}(%rbp)", node.value.value);
 }
+std::string process_data(const assembly_generation::data &node)
+{
+    return fmt::format("{}(%rip)", process_identifier(node.name));
+}
 
 std::string process_cond_code(assembly_generation::cond_code cond)
 {
@@ -96,15 +100,14 @@ std::string process_cond_code(assembly_generation::cond_code cond)
 
 std::string process_operand(const assembly_generation::operand &operand, operand_size size = operand_size::four_bytes)
 {
-    return std::visit(
-      visitor{
-        [](const assembly_generation::immediate &immediate) { return process_immediate(immediate); },
-        [size](const assembly_generation::reg &reg) { return process_register(reg, size); },
-        [](const assembly_generation::pseudo &reg) { return process_pseudo(reg); },
-        [](const assembly_generation::stack &reg) { return process_stack(reg); },
-        [](const assembly_generation::data &) -> std::string { throw std::runtime_error("data not supported"); },
-      },
-      operand);
+    return std::visit(visitor{
+                        [](const assembly_generation::immediate &immediate) { return process_immediate(immediate); },
+                        [size](const assembly_generation::reg &reg) { return process_register(reg, size); },
+                        [](const assembly_generation::pseudo &reg) { return process_pseudo(reg); },
+                        [](const assembly_generation::stack &reg) { return process_stack(reg); },
+                        [](const assembly_generation::data &reg) { return process_data(reg); },
+                      },
+                      operand);
 }
 
 std::string process_mov_instruction(const assembly_generation::mov_instruction &mov)
@@ -235,7 +238,8 @@ std::string process_instruction(const assembly_generation::instruction &instruct
 std::string process_function(const assembly_generation::function &f)
 {
     auto function_name = process_identifier(f.name);
-    auto result = fmt::format(".globl {}\n{}:\n", function_name, function_name);
+    auto globl = f.is_global ? fmt::format(".globl {}\n.text", function_name) : ".text";
+    auto result = fmt::format("{}\n{}:\n", globl, function_name);
     result += fmt::format("pushq %rbp\nmovq %rsp, %rbp\n");
     for (const auto &i : f.instructions)
     {
@@ -244,13 +248,27 @@ std::string process_function(const assembly_generation::function &f)
     return result;
 }
 
+std::string process_static_variable(const assembly_generation::static_variable &f)
+{
+    auto function_name = process_identifier(f.name);
+    auto globl = f.is_global ? fmt::format(".globl {}\n", function_name) : "";
+    if (f.init == 0)
+    {
+        return fmt::format("{}\n.bss\n.balign 4\n{}:\n.zero 4\n", globl, function_name);
+    }
+    else
+    {
+        return fmt::format("{}\n.data\n.balign 4\n{}:\n.long {}\n", globl, function_name, f.init);
+    }
+}
+
 std::string process_top_level(const assembly_generation::top_level &t)
 {
-    if (std::holds_alternative<assembly_generation::function>(t))
-    {
-        return process_function(std::get<assembly_generation::function>(t));
-    }
-    throw std::runtime_error("Static Variable not supported");
+    return std::visit(visitor{
+                        [](const assembly_generation::function &f) { return process_function(f); },
+                        [](const assembly_generation::static_variable &f) { return process_static_variable(f); },
+                      },
+                      t);
 }
 std::string process_program(const assembly_generation::program &p)
 {
