@@ -91,7 +91,7 @@ std::optional<identifier_map::symbol> identifier_map::find(const parser::identif
 
 parser::identifier identifier_map::generate_unique_name(const parser::identifier &name)
 {
-    return { fmt::format("var-{}-{}", name.name, m_counter++) };
+    return { fmt::format("var.{}.{}", name.name, m_counter++) };
 }
 
 std::expected<std::tuple<parser::program, symbol_table::symbol_table>, semantic_error> analyse(

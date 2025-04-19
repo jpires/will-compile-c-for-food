@@ -1,10 +1,10 @@
 FunctionDecl(sub
              Storage(none)
-             (var-a-0, var-b-1)
+             (var.a.0, var.b.1)
              Return(
                     Binary(Subtract
-                           Var(var-a-0)
-                           Var(var-b-1)
+                           Var(var.a.0)
+                           Var(var.b.1)
                     )
              )
 )
