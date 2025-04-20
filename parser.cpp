@@ -869,7 +869,7 @@ std::expected<expression, parser_error> parse_factor(tokens &tokens)
 
             return var{ i.value() };
         }
-        case lexer::token_type::constant:
+        case lexer::token_type::int_constant:
         {
             auto e = parse_constant(tokens);
             if (e.has_value() == false)
@@ -1091,7 +1091,7 @@ std::expected<int_constant, parser_error> parse_constant(tokens &tokens)
         return std::unexpected{ generate_unexpected_end_of_tokens(tokens) };
     }
 
-    if (token->type != lexer::token_type::constant)
+    if (token->type != lexer::token_type::int_constant)
     {
         auto msg = fmt::format("Parse failure at: {}. Expected Constant found {}", token->loc, token->type);
         return std::unexpected{ parser_error{ msg } };

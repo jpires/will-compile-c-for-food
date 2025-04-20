@@ -28,7 +28,8 @@
 namespace wccff::lexer {
 
 constexpr auto identifier_pattern{ R"(([a-zA-Z_]\w*\b))" };
-constexpr auto constant_pattern{ R"(([0-9]+\b))" };
+constexpr auto int_constant_pattern{ R"(([0-9]+\b))" };
+constexpr auto long_constant_pattern{ R"(([0-9]+[lL]\b))" };
 constexpr auto open_parenthesis_pattern{ R"((\())" };
 constexpr auto close_parenthesis_pattern{ R"((\)))" };
 constexpr auto open_brace_pattern{ R"((\{))" };
@@ -75,7 +76,8 @@ constexpr auto get_patters()
 {
     return std::array{
         identifier_pattern,
-        constant_pattern,
+        long_constant_pattern,
+        int_constant_pattern,
         open_parenthesis_pattern,
         close_parenthesis_pattern,
         open_brace_pattern,
@@ -249,6 +251,10 @@ std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, fil
                 {
                     result.emplace_back(token_type::int_keyword, m, location);
                 }
+                else if (m == "long")
+                {
+                    result.emplace_back(token_type::long_keyword, m, location);
+                }
                 else if (m == "void")
                 {
                     result.emplace_back(token_type::void_keyword, m, location);
@@ -271,9 +277,14 @@ std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, fil
                 }
             }
 
-            if (ctre::get<get_pattern_position(constant_pattern)>(m))
+            if (ctre::get<get_pattern_position(int_constant_pattern)>(m))
             {
-                result.emplace_back(token_type::constant, m, location);
+                result.emplace_back(token_type::int_constant, m, location);
+            }
+
+            if (ctre::get<get_pattern_position(long_constant_pattern)>(m))
+            {
+                result.emplace_back(token_type::long_constant, m, location);
             }
 
             if (ctre::get<get_pattern_position(open_parenthesis_pattern)>(m))

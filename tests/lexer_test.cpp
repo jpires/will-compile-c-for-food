@@ -115,7 +115,7 @@ TEST_CASE("Lexer", "[lexer]")
             REQUIRE(result.value().size() == 2);
             REQUIRE(result.value().at(0).type == token_type::identifier);
             REQUIRE(result.value().at(0).text == "a");
-            REQUIRE(result.value().at(1).type == token_type::constant);
+            REQUIRE(result.value().at(1).type == token_type::int_constant);
             REQUIRE(result.value().at(1).text == "11");
         }
 
@@ -127,7 +127,7 @@ TEST_CASE("Lexer", "[lexer]")
             REQUIRE(result.value().size() == 2);
             REQUIRE(result.value().at(0).type == token_type::identifier);
             REQUIRE(result.value().at(0).text == "a");
-            REQUIRE(result.value().at(1).type == token_type::constant);
+            REQUIRE(result.value().at(1).type == token_type::int_constant);
             REQUIRE(result.value().at(1).text == "11");
         }
     }
@@ -257,6 +257,15 @@ TEST_CASE("Keywords", "[lexer]")
         REQUIRE(result.value().at(0).type == wccff::lexer::token_type::if_keyword);
         REQUIRE(result.value().at(0).text == "if");
     }
+    SECTION("long")
+    {
+        std::string_view input{ "long" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::long_keyword);
+        REQUIRE(result.value().at(0).text == "long");
+    }
     SECTION("void")
     {
         std::string_view input{ "void" };
@@ -308,7 +317,7 @@ TEST_CASE("Keywords", "[lexer]")
     }
 }
 
-TEST_CASE("Constants", "[lexer]")
+TEST_CASE("Int Constants", "[lexer]")
 {
     SECTION("One digit")
     {
@@ -316,7 +325,7 @@ TEST_CASE("Constants", "[lexer]")
         auto result = wccff::lexer::lexer(input);
         REQUIRE(result.has_value());
         REQUIRE(result.value().size() == 1);
-        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::constant);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::int_constant);
         REQUIRE(result.value().at(0).text == "1");
     }
 
@@ -326,8 +335,50 @@ TEST_CASE("Constants", "[lexer]")
         auto result = wccff::lexer::lexer(input);
         REQUIRE(result.has_value());
         REQUIRE(result.value().size() == 1);
-        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::constant);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::int_constant);
         REQUIRE(result.value().at(0).text == "1234");
+    }
+}
+
+TEST_CASE("Long Constants", "[lexer]")
+{
+    SECTION("One digit, lowercase")
+    {
+        std::string_view input{ "1l" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::long_constant);
+        REQUIRE(result.value().at(0).text == "1l");
+    }
+
+    SECTION("One digit, uppercase")
+    {
+        std::string_view input{ "1L" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::long_constant);
+        REQUIRE(result.value().at(0).text == "1L");
+    }
+
+    SECTION("Four digits, lowercase")
+    {
+        std::string_view input{ "1234l" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::long_constant);
+        REQUIRE(result.value().at(0).text == "1234l");
+    }
+    SECTION("Four digits, uppercase")
+    {
+        std::string_view input{ "1234L" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::long_constant);
+        REQUIRE(result.value().at(0).text == "1234L");
     }
 }
 

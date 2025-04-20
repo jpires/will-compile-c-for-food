@@ -24,7 +24,7 @@ TEST_CASE("Parser", "[parser]")
     {
         wccff::lexer::file_location location{ 1, 3 };
         std::vector<wccff::lexer::token> tokens_vector;
-        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "123", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "123", location);
 
         wccff::parser::tokens tokens{ tokens_vector };
 
@@ -39,7 +39,7 @@ TEST_CASE("Parser", "[parser]")
         wccff::lexer::file_location location{ 1, 3 };
         std::vector<wccff::lexer::token> tokens_vector;
         tokens_vector.emplace_back(wccff::lexer::token_type::negation_operator, "-", location);
-        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "2", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "2", location);
 
         wccff::parser::tokens tokens{ tokens_vector };
 
@@ -56,7 +56,7 @@ TEST_CASE("Parser", "[parser]")
         wccff::lexer::file_location location{ 1, 3 };
         std::vector<wccff::lexer::token> tokens_vector;
         tokens_vector.emplace_back(wccff::lexer::token_type::bitwise_complement_operator, "~", location);
-        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "2", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "2", location);
 
         wccff::parser::tokens tokens{ tokens_vector };
 
@@ -76,7 +76,7 @@ TEST_CASE("Parser", "[parser]")
             std::vector<wccff::lexer::token> tokens_vector;
             tokens_vector.emplace_back(wccff::lexer::token_type::bitwise_complement_operator, "~", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::bitwise_complement_operator, "~", location);
-            tokens_vector.emplace_back(wccff::lexer::token_type::constant, "2", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "2", location);
 
             wccff::parser::tokens tokens{ tokens_vector };
 
@@ -97,7 +97,7 @@ TEST_CASE("Parser", "[parser]")
             std::vector<wccff::lexer::token> tokens_vector;
             tokens_vector.emplace_back(wccff::lexer::token_type::negation_operator, "-", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::bitwise_complement_operator, "~", location);
-            tokens_vector.emplace_back(wccff::lexer::token_type::constant, "2", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "2", location);
 
             wccff::parser::tokens tokens{ tokens_vector };
 
@@ -119,9 +119,9 @@ TEST_CASE("Parser", "[parser]")
         {
             wccff::lexer::file_location location{ 0, 0 };
             std::vector<wccff::lexer::token> tokens_vector;
-            tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "1", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::plus_operator, "~", location);
-            tokens_vector.emplace_back(wccff::lexer::token_type::constant, "2", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "2", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
             wccff::parser::tokens tokens{ tokens_vector };
 
@@ -144,9 +144,9 @@ TEST_CASE("Parser", "[parser]")
         {
             wccff::lexer::file_location location{ 0, 0 };
             std::vector<wccff::lexer::token> tokens_vector;
-            tokens_vector.emplace_back(wccff::lexer::token_type::constant, "2", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "2", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::negation_operator, "-", location);
-            tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "1", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
             wccff::parser::tokens tokens{ tokens_vector };
 
@@ -169,9 +169,9 @@ TEST_CASE("Parser", "[parser]")
         {
             wccff::lexer::file_location location{ 0, 0 };
             std::vector<wccff::lexer::token> tokens_vector;
-            tokens_vector.emplace_back(wccff::lexer::token_type::constant, "2", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "2", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::multiplication_operator, "*", location);
-            tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "1", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
             wccff::parser::tokens tokens{ tokens_vector };
 
@@ -200,11 +200,11 @@ TEST_CASE("Parser", "[parser]")
             //      1  3
             wccff::lexer::file_location location{ 0, 0 };
             std::vector<wccff::lexer::token> tokens_vector;
-            tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "1", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::plus_operator, "+", location);
-            tokens_vector.emplace_back(wccff::lexer::token_type::constant, "3", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "3", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::negation_operator, "-", location);
-            tokens_vector.emplace_back(wccff::lexer::token_type::constant, "5", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "5", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
             wccff::parser::tokens tokens{ tokens_vector };
 
@@ -239,11 +239,11 @@ TEST_CASE("Parser", "[parser]")
             //      1  3
             wccff::lexer::file_location location{ 0, 0 };
             std::vector<wccff::lexer::token> tokens_vector;
-            tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "1", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::multiplication_operator, "*", location);
-            tokens_vector.emplace_back(wccff::lexer::token_type::constant, "3", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "3", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::negation_operator, "-", location);
-            tokens_vector.emplace_back(wccff::lexer::token_type::constant, "5", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "5", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
             wccff::parser::tokens tokens{ tokens_vector };
 
@@ -278,11 +278,11 @@ TEST_CASE("Parser", "[parser]")
             //           3  4
             wccff::lexer::file_location location{ 0, 0 };
             std::vector<wccff::lexer::token> tokens_vector;
-            tokens_vector.emplace_back(wccff::lexer::token_type::constant, "2", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "2", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::plus_operator, "+", location);
-            tokens_vector.emplace_back(wccff::lexer::token_type::constant, "3", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "3", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::multiplication_operator, "*", location);
-            tokens_vector.emplace_back(wccff::lexer::token_type::constant, "4", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "4", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
             wccff::parser::tokens tokens{ tokens_vector };
 
@@ -317,12 +317,12 @@ TEST_CASE("Parser", "[parser]")
             wccff::lexer::file_location location{ 0, 0 };
             std::vector<wccff::lexer::token> tokens_vector;
             tokens_vector.emplace_back(wccff::lexer::token_type::open_parenthesis, "(", location);
-            tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "1", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::plus_operator, "+", location);
-            tokens_vector.emplace_back(wccff::lexer::token_type::constant, "3", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "3", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::multiplication_operator, "*", location);
-            tokens_vector.emplace_back(wccff::lexer::token_type::constant, "5", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "5", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
             wccff::parser::tokens tokens{ tokens_vector };
 
@@ -363,7 +363,7 @@ TEST_CASE("Parser complex test", "[parser]")
         tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::open_brace, "{", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::return_keyword, "return", location);
-        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "2", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "2", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::close_brace, "}", location);
 
@@ -382,9 +382,9 @@ TEST_CASE("Binary Operators", "[parser]")
     {
         wccff::lexer::file_location location{ 1, 2 };
         std::vector<wccff::lexer::token> tokens_vector;
-        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "1", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::bitwise_and_operator, "&", location);
-        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "2", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "2", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
 
         wccff::parser::tokens tokens{ tokens_vector };
@@ -404,9 +404,9 @@ TEST_CASE("Binary Operators", "[parser]")
     {
         wccff::lexer::file_location location{ 1, 2 };
         std::vector<wccff::lexer::token> tokens_vector;
-        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "1", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::bitwise_or_operator, "|", location);
-        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "2", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "2", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
 
         wccff::parser::tokens tokens{ tokens_vector };
@@ -425,9 +425,9 @@ TEST_CASE("Binary Operators", "[parser]")
     {
         wccff::lexer::file_location location{ 1, 2 };
         std::vector<wccff::lexer::token> tokens_vector;
-        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "1", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::bitwise_xor_operator, "^", location);
-        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "2", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "2", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
 
         wccff::parser::tokens tokens{ tokens_vector };
@@ -446,9 +446,9 @@ TEST_CASE("Binary Operators", "[parser]")
     {
         wccff::lexer::file_location location{ 1, 2 };
         std::vector<wccff::lexer::token> tokens_vector;
-        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "1", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::left_shift_operator, "<<", location);
-        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "2", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "2", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
 
         wccff::parser::tokens tokens{ tokens_vector };
@@ -467,9 +467,9 @@ TEST_CASE("Binary Operators", "[parser]")
     {
         wccff::lexer::file_location location{ 1, 2 };
         std::vector<wccff::lexer::token> tokens_vector;
-        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "1", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::right_shift_operator, ">>", location);
-        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "2", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "2", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
 
         wccff::parser::tokens tokens{ tokens_vector };
@@ -492,7 +492,7 @@ TEST_CASE("Binary Operators", "[parser]")
 
         tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "a", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::assignment_operator, "=", location);
-        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "2", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "2", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
 
         wccff::parser::tokens tokens{ tokens_vector };
@@ -510,7 +510,7 @@ TEST_CASE("Binary Operators", "[parser]")
         tokens_vector.emplace_back(wccff::lexer::token_type::assignment_operator, "=", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "b", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::assignment_operator, "=", location);
-        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "2", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "2", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
 
         wccff::parser::tokens tokens{ tokens_vector };
@@ -535,7 +535,7 @@ TEST_CASE("Parse Statements")
 
         tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "var1", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::compound_plus, "+=", location);
-        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "42", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "42", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
 
         wccff::parser::tokens tokens{ tokens_vector };
@@ -575,7 +575,7 @@ TEST_CASE("Loop Statements")
 
             tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "i", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::compound_plus, "+=", location);
-            tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "1", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
 
             tokens_vector.emplace_back(wccff::lexer::token_type::while_keyword, "while", location);
@@ -583,7 +583,7 @@ TEST_CASE("Loop Statements")
 
             tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "a", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::less_than_operator, "<", location);
-            tokens_vector.emplace_back(wccff::lexer::token_type::constant, "10", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "10", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
 
@@ -606,22 +606,22 @@ TEST_CASE("Loop Statements")
                 tokens_vector.emplace_back(wccff::lexer::token_type::int_keyword, "int", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "a", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::assignment_operator, "=", location);
-                tokens_vector.emplace_back(wccff::lexer::token_type::constant, "0", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "0", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
 
                 tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "a", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::less_than_operator, "<", location);
-                tokens_vector.emplace_back(wccff::lexer::token_type::constant, "10", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "10", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
 
                 tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "a", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::compound_plus, "+=", location);
-                tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "1", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
 
                 tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "i", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::compound_plus, "+=", location);
-                tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "1", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
 
                 wccff::parser::tokens tokens{ tokens_vector };
@@ -640,17 +640,17 @@ TEST_CASE("Loop Statements")
 
                 tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "a", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::less_than_operator, "<", location);
-                tokens_vector.emplace_back(wccff::lexer::token_type::constant, "10", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "10", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
 
                 tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "a", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::compound_plus, "+=", location);
-                tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "1", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
 
                 tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "i", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::compound_plus, "+=", location);
-                tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "1", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
 
                 wccff::parser::tokens tokens{ tokens_vector };
@@ -667,19 +667,19 @@ TEST_CASE("Loop Statements")
                 tokens_vector.emplace_back(wccff::lexer::token_type::int_keyword, "int", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "a", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::assignment_operator, "=", location);
-                tokens_vector.emplace_back(wccff::lexer::token_type::constant, "0", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "0", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
 
                 tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
 
                 tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "a", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::compound_plus, "+=", location);
-                tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "1", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
 
                 tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "i", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::compound_plus, "+=", location);
-                tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "1", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
 
                 wccff::parser::tokens tokens{ tokens_vector };
@@ -696,19 +696,19 @@ TEST_CASE("Loop Statements")
                 tokens_vector.emplace_back(wccff::lexer::token_type::int_keyword, "int", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "a", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::assignment_operator, "=", location);
-                tokens_vector.emplace_back(wccff::lexer::token_type::constant, "0", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "0", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
 
                 tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "a", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::less_than_operator, "<", location);
-                tokens_vector.emplace_back(wccff::lexer::token_type::constant, "10", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "10", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
 
                 tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
 
                 tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "i", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::compound_plus, "+=", location);
-                tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+                tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "1", location);
                 tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
 
                 wccff::parser::tokens tokens{ tokens_vector };
@@ -731,12 +731,12 @@ TEST_CASE("Loop Statements")
 
             tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "a", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::less_than_operator, "<", location);
-            tokens_vector.emplace_back(wccff::lexer::token_type::constant, "10", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "10", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
 
             tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "i", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::compound_plus, "+=", location);
-            tokens_vector.emplace_back(wccff::lexer::token_type::constant, "1", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "1", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
 
             wccff::parser::tokens tokens{ tokens_vector };
@@ -768,7 +768,7 @@ TEST_CASE("parse_argument_list", "[parser]")
     SECTION("One Argument")
     {
         std::vector<wccff::lexer::token> tokens_vector;
-        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "42", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "42", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
 
         wccff::parser::tokens tokens{ tokens_vector };
@@ -782,11 +782,11 @@ TEST_CASE("parse_argument_list", "[parser]")
     SECTION("Three Argument")
     {
         std::vector<wccff::lexer::token> tokens_vector;
-        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "42", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "42", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::comma, ",", location);
-        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "43", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "43", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::comma, ",", location);
-        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "44", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "44", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
 
         wccff::parser::tokens tokens{ tokens_vector };
@@ -804,9 +804,9 @@ TEST_CASE("parse_argument_list", "[parser]")
     SECTION("One Argument with complex expression")
     {
         std::vector<wccff::lexer::token> tokens_vector;
-        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "42", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "42", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::plus_operator, "+", location);
-        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "43", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "43", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
 
         wccff::parser::tokens tokens{ tokens_vector };
@@ -828,7 +828,7 @@ TEST_CASE("parse_argument_list", "[parser]")
         tokens_vector.emplace_back(wccff::lexer::token_type::int_keyword, "int", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "a", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::assignment_operator, "=", location);
-        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "44", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "44", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
 
         wccff::parser::tokens tokens{ tokens_vector };
@@ -839,7 +839,7 @@ TEST_CASE("parse_argument_list", "[parser]")
     SECTION("Invalid Comma")
     {
         std::vector<wccff::lexer::token> tokens_vector;
-        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "44", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "44", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::comma, ",", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
 
@@ -873,7 +873,7 @@ TEST_CASE("parse_function_call", "[parser]")
         std::vector<wccff::lexer::token> tokens_vector;
         tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "func1", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::open_parenthesis, "(", location);
-        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "42", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "42", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
 
         wccff::parser::tokens tokens{ tokens_vector };
@@ -916,7 +916,7 @@ TEST_CASE("parse_function_declaration", "[parser]")
         tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::open_brace, "{", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::return_keyword, "return", location);
-        tokens_vector.emplace_back(wccff::lexer::token_type::constant, "42", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "42", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::close_brace, "}", location);
 

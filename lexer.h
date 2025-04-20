@@ -43,7 +43,8 @@ struct file_location
 enum class token_type
 {
     identifier,
-    constant,
+    int_constant,
+    long_constant,
     break_keyword,
     continue_keyword,
     do_keyword,
@@ -53,6 +54,7 @@ enum class token_type
     goto_keyword,
     if_keyword,
     int_keyword,
+    long_keyword,
     void_keyword,
     static_keyword,
     return_keyword,
@@ -146,8 +148,11 @@ struct fmt::formatter<wccff::lexer::token_type> : formatter<string_view>
             case token_type::identifier:
                 str = "Identifier";
                 break;
-            case token_type::constant:
-                str = "Constant";
+            case token_type::int_constant:
+                str = "Int Constant";
+                break;
+            case token_type::long_constant:
+                str = "Long Constant";
                 break;
             case token_type::break_keyword:
                 str = "Break Keyword";
@@ -175,6 +180,9 @@ struct fmt::formatter<wccff::lexer::token_type> : formatter<string_view>
                 break;
             case token_type::int_keyword:
                 str = "Int Keyword";
+                break;
+            case token_type::long_keyword:
+                str = "Long Keyword";
                 break;
             case token_type::void_keyword:
                 str = "Void Keyword";
