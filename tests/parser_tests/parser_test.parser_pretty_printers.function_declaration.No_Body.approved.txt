@@ -1,5 +1,0 @@
-FunctionDecl(function_name
-             Storage(none)
-             (param_1, param_2)
-             EMPTY BODY
-)

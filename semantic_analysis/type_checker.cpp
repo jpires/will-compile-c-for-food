@@ -174,6 +174,9 @@ auto process_expression(const parser::expression &node, symbol_table::symbol_tab
         [&](const std::unique_ptr<parser::assignment_node> &n) -> std::expected<parser::expression, semantic_error> {
             return process_assignment_node(n, table);
         },
+        [&](const std::unique_ptr<parser::cast_expression> &n) -> std::expected<parser::expression, semantic_error> {
+            throw std::runtime_error("Cast expression not implemented");
+        },
         [&](const std::unique_ptr<parser::conditional_node> &n) -> std::expected<parser::expression, semantic_error> {
             return process_conditional_node(n, table);
         },
@@ -189,7 +192,7 @@ auto process_expression(const parser::expression &node, symbol_table::symbol_tab
         [&](const parser::var &n) -> std::expected<parser::expression, semantic_error> {
             return process_var(n, table);
         },
-        [&](const parser::int_constant &n) -> std::expected<parser::expression, semantic_error> { return n; },
+        [&](const parser::constant &n) -> std::expected<parser::expression, semantic_error> { return n; },
       },
       node);
 }
@@ -351,7 +354,11 @@ auto process_function_declaration(const parser::function_declaration &node,
         block = std::move(tmp.value());
     }
 
-    return parser::function_declaration{ node.name, node.arguments, std::move(block), node.storage_class };
+    return parser::function_declaration{ node.name,
+                                         node.arguments,
+                                         std::move(block),
+                                         parser::copy_type(node.f_type),
+                                         node.storage_class };
 }
 
 auto process_if_node(const std::unique_ptr<parser::if_node> &node, symbol_table::symbol_table &table)
@@ -528,9 +535,10 @@ auto process_variable_declaration_file_scope(const parser::variable_declaration 
     symbol_table::initial_value init_value;
     if (node.init.has_value())
     {
-        if (std::holds_alternative<parser::int_constant>(node.init.value()))
+        if (std::holds_alternative<parser::constant>(node.init.value()))
         {
-            init_value = symbol_table::initial{ std::get<parser::int_constant>(node.init.value()).value };
+            auto int_node = std::get<parser::constant>(node.init.value());
+            init_value = symbol_table::initial{ std::get<parser::int_constant>(int_node).value };
         }
         else
         {
@@ -598,7 +606,10 @@ auto process_variable_declaration_file_scope(const parser::variable_declaration 
 
     symbol_table::static_attributes attrs{ init_value, global };
     table.add(node.name, symbol_table::int_type{}, attrs);
-    return parser::variable_declaration{ node.name, copy_init(node.init), node.storage_class };
+    return parser::variable_declaration{ node.name,
+                                         copy_init(node.init),
+                                         copy_type(node.var_type),
+                                         node.storage_class };
 }
 
 auto process_variable_declaration_local_scope(const parser::variable_declaration &node,
@@ -637,9 +648,10 @@ auto process_variable_declaration_local_scope(const parser::variable_declaration
         {
             init_value = symbol_table::initial{ 0 };
         }
-        else if (std::holds_alternative<parser::int_constant>(node.init.value()))
+        else if (std::holds_alternative<parser::constant>(node.init.value()))
         {
-            init_value = symbol_table::initial{ std::get<parser::int_constant>(node.init.value()).value };
+            auto tmp = std::get<parser::constant>(node.init.value());
+            init_value = symbol_table::initial{ std::get<parser::int_constant>(tmp).value };
         }
         else
         {
@@ -664,9 +676,12 @@ auto process_variable_declaration_local_scope(const parser::variable_declaration
 
             init = std::move(tmp.value());
         }
-        return parser::variable_declaration{ node.name, std::move(init), node.storage_class };
+        return parser::variable_declaration{ node.name, std::move(init), copy_type(node.var_type), node.storage_class };
     }
-    return parser::variable_declaration{ node.name, copy_init(node.init), node.storage_class };
+    return parser::variable_declaration{ node.name,
+                                         copy_init(node.init),
+                                         copy_type(node.var_type),
+                                         node.storage_class };
 }
 
 auto process_while_statement(const std::unique_ptr<parser::while_statement> &node, symbol_table::symbol_table &table)

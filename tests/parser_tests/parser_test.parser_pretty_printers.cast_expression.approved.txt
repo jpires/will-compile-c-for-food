@@ -1,0 +1,22 @@
+Cast(
+      Target(Int)
+      LongConstant(42)
+)
+Cast(
+      Target(Long)
+      Var(foo)
+)
+Cast(
+      Target(Long)
+      Unary(Negate
+            IntConstant(42)
+      )
+)
+Cast(
+      Target(Long)
+      Binary(Plus
+             IntConstant(42)
+             IntConstant(42)
+      )
+)
+

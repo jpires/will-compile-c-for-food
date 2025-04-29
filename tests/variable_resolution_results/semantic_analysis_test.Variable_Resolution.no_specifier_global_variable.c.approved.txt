@@ -1,4 +1,6 @@
 DeclVar(foo
         Storage(none)
+        Type(Int)
         NO_INIT
 )
+

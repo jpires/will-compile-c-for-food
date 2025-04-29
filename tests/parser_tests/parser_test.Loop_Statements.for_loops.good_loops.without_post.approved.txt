@@ -1,6 +1,7 @@
 For Loop(
          DeclVar(a
                  Storage(none)
+                 Type(Int)
                  IntConstant(0)
          )
          Binary(Less Than

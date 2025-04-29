@@ -1,0 +1,29 @@
+FunctionDecl(function_name
+             Storage(none)
+             FunType(RetType(Long)
+                     Param(Int,Long)
+             )
+             (param_1, param_2)
+             Return(
+                    IntConstant(42)
+             )
+)
+FunctionDecl(function_name
+             Storage(extern)
+             FunType(RetType(Int)
+                     Param(Void)
+             )
+             ()
+             Return(
+                    IntConstant(42)
+             )
+)
+FunctionDecl(function_name
+             Storage(static)
+             FunType(RetType(Int)
+                     Param(Void)
+             )
+             ()
+             EMPTY BODY
+)
+

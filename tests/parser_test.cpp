@@ -1,6 +1,7 @@
 #include "../parser.h"
 #include "../tacky.h"
-
+#include "parser_data.h"
+#include "parser_helpers.h"
 #include <ApprovalTests.hpp>
 #include <catch2/catch_test_macros.hpp>
 
@@ -19,21 +20,6 @@ TEST_CASE("Parser", "[parser]")
         REQUIRE(r.has_value());
         REQUIRE(r.value().name == "main");
     }
-
-    SECTION("Parse Constant")
-    {
-        wccff::lexer::file_location location{ 1, 3 };
-        std::vector<wccff::lexer::token> tokens_vector;
-        tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "123", location);
-
-        wccff::parser::tokens tokens{ tokens_vector };
-
-        auto r = wccff::parser::parse_constant(tokens);
-
-        REQUIRE(r.has_value());
-        REQUIRE(r->value == 123);
-    }
-
     SECTION("Parse Negate Operator")
     {
         wccff::lexer::file_location location{ 1, 3 };
@@ -47,8 +33,7 @@ TEST_CASE("Parser", "[parser]")
 
         REQUIRE(r.has_value());
         REQUIRE(std::holds_alternative<wccff::parser::negate_operator>(r.value()->op) == true);
-        REQUIRE(std::holds_alternative<wccff::parser::int_constant>(r.value()->exp) == true);
-        REQUIRE(std::get<wccff::parser::int_constant>(r.value()->exp).value == 2);
+        REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(r.value()->exp, 2));
     }
 
     SECTION("Parse Bitwise Complement Operator")
@@ -64,8 +49,7 @@ TEST_CASE("Parser", "[parser]")
 
         REQUIRE(r.has_value());
         REQUIRE(std::holds_alternative<wccff::parser::bitwise_complement_operator>(r.value()->op) == true);
-        REQUIRE(std::holds_alternative<wccff::parser::int_constant>(r.value()->exp) == true);
-        REQUIRE(std::get<wccff::parser::int_constant>(r.value()->exp).value == 2);
+        REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(r.value()->exp, 2));
     }
 
     SECTION("Parse two Unary Operator in a row")
@@ -88,7 +72,7 @@ TEST_CASE("Parser", "[parser]")
 
             auto inner_expression = std::move(std::get<std::unique_ptr<wccff::parser::unary_node>>(r.value()->exp));
             REQUIRE(std::holds_alternative<wccff::parser::bitwise_complement_operator>(inner_expression->op) == true);
-            REQUIRE(std::get<wccff::parser::int_constant>(inner_expression->exp).value == 2);
+            REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(inner_expression->exp, 2));
         }
 
         SECTION("Negate and bitwise complement operators")
@@ -109,7 +93,7 @@ TEST_CASE("Parser", "[parser]")
 
             auto inner_expression = std::move(std::get<std::unique_ptr<wccff::parser::unary_node>>(r.value()->exp));
             REQUIRE(std::holds_alternative<wccff::parser::bitwise_complement_operator>(inner_expression->op) == true);
-            REQUIRE(std::get<wccff::parser::int_constant>(inner_expression->exp).value == 2);
+            REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(inner_expression->exp, 2));
         }
     }
 
@@ -120,7 +104,7 @@ TEST_CASE("Parser", "[parser]")
             wccff::lexer::file_location location{ 0, 0 };
             std::vector<wccff::lexer::token> tokens_vector;
             tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "1", location);
-            tokens_vector.emplace_back(wccff::lexer::token_type::plus_operator, "~", location);
+            tokens_vector.emplace_back(wccff::lexer::token_type::plus_operator, "+", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "2", location);
             tokens_vector.emplace_back(wccff::lexer::token_type::semicolon, ";", location);
             wccff::parser::tokens tokens{ tokens_vector };
@@ -131,13 +115,8 @@ TEST_CASE("Parser", "[parser]")
             auto &exp = std::get<std::unique_ptr<wccff::parser::binary_node>>(r.value());
 
             REQUIRE(std::holds_alternative<wccff::parser::plus_operator>(exp->op));
-            REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->left));
-            auto &left = std::get<wccff::parser::int_constant>(exp->left);
-            REQUIRE(left.value == 1);
-
-            REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->right));
-            auto &right = std::get<wccff::parser::int_constant>(exp->right);
-            REQUIRE(right.value == 2);
+            REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(exp->left, 1));
+            REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(exp->right, 2));
         }
 
         SECTION("Subtraction operator")
@@ -156,13 +135,8 @@ TEST_CASE("Parser", "[parser]")
             auto &exp = std::get<std::unique_ptr<wccff::parser::binary_node>>(r.value());
 
             REQUIRE(std::holds_alternative<wccff::parser::subtract_operator>(exp->op));
-            REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->left));
-            auto &left = std::get<wccff::parser::int_constant>(exp->left);
-            REQUIRE(left.value == 2);
-
-            REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->right));
-            auto &right = std::get<wccff::parser::int_constant>(exp->right);
-            REQUIRE(right.value == 1);
+            REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(exp->left, 2));
+            REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(exp->right, 1));
         }
 
         SECTION("Multiplication operator")
@@ -181,13 +155,8 @@ TEST_CASE("Parser", "[parser]")
             auto &exp = std::get<std::unique_ptr<wccff::parser::binary_node>>(r.value());
 
             REQUIRE(std::holds_alternative<wccff::parser::multiply_operator>(exp->op));
-            REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->left));
-            auto &left = std::get<wccff::parser::int_constant>(exp->left);
-            REQUIRE(left.value == 2);
-
-            REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->right));
-            auto &right = std::get<wccff::parser::int_constant>(exp->right);
-            REQUIRE(right.value == 1);
+            REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(exp->left, 2));
+            REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(exp->right, 1));
         }
 
         SECTION("1 + 3 - 5")
@@ -219,14 +188,10 @@ TEST_CASE("Parser", "[parser]")
             auto &left = std::get<std::unique_ptr<wccff::parser::binary_node>>(exp->left);
 
             REQUIRE(std::holds_alternative<wccff::parser::plus_operator>(left->op));
-            REQUIRE(std::holds_alternative<wccff::parser::int_constant>(left->left));
-            REQUIRE(std::get<wccff::parser::int_constant>(left->left).value == 1);
-            REQUIRE(std::holds_alternative<wccff::parser::int_constant>(left->right));
-            REQUIRE(std::get<wccff::parser::int_constant>(left->right).value == 3);
 
-            REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->right));
-            auto &right = std::get<wccff::parser::int_constant>(exp->right);
-            REQUIRE(right.value == 5);
+            REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(left->left, 1));
+            REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(left->right, 3));
+            REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(exp->right, 5));
         }
 
         SECTION("1 * 3 - 5")
@@ -258,14 +223,10 @@ TEST_CASE("Parser", "[parser]")
             auto &left = std::get<std::unique_ptr<wccff::parser::binary_node>>(exp->left);
 
             REQUIRE(std::holds_alternative<wccff::parser::multiply_operator>(left->op));
-            REQUIRE(std::holds_alternative<wccff::parser::int_constant>(left->left));
-            REQUIRE(std::get<wccff::parser::int_constant>(left->left).value == 1);
-            REQUIRE(std::holds_alternative<wccff::parser::int_constant>(left->right));
-            REQUIRE(std::get<wccff::parser::int_constant>(left->right).value == 3);
 
-            REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->right));
-            auto &right = std::get<wccff::parser::int_constant>(exp->right);
-            REQUIRE(right.value == 5);
+            REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(left->left, 1));
+            REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(left->right, 3));
+            REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(exp->right, 5));
         }
 
         SECTION("2 + 3 * 4")
@@ -292,18 +253,12 @@ TEST_CASE("Parser", "[parser]")
             auto &exp = std::get<std::unique_ptr<wccff::parser::binary_node>>(r.value());
 
             REQUIRE(std::holds_alternative<wccff::parser::plus_operator>(exp->op));
-
-            REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->left));
-            REQUIRE(std::get<wccff::parser::int_constant>(exp->left).value == 2);
-
             REQUIRE(std::holds_alternative<std::unique_ptr<wccff::parser::binary_node>>(exp->right));
             auto &right = std::get<std::unique_ptr<wccff::parser::binary_node>>(exp->right);
 
-            REQUIRE(std::holds_alternative<wccff::parser::multiply_operator>(right->op));
-            REQUIRE(std::holds_alternative<wccff::parser::int_constant>(right->left));
-            REQUIRE(std::get<wccff::parser::int_constant>(right->left).value == 3);
-            REQUIRE(std::holds_alternative<wccff::parser::int_constant>(right->right));
-            REQUIRE(std::get<wccff::parser::int_constant>(right->right).value == 4);
+            REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(exp->left, 2));
+            REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(right->left, 3));
+            REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(right->right, 4));
         }
 
         SECTION("(1 + 3) * 5")
@@ -337,14 +292,10 @@ TEST_CASE("Parser", "[parser]")
             auto &left = std::get<std::unique_ptr<wccff::parser::binary_node>>(exp->left);
 
             REQUIRE(std::holds_alternative<wccff::parser::plus_operator>(left->op));
-            REQUIRE(std::holds_alternative<wccff::parser::int_constant>(left->left));
-            REQUIRE(std::get<wccff::parser::int_constant>(left->left).value == 1);
-            REQUIRE(std::holds_alternative<wccff::parser::int_constant>(left->right));
-            REQUIRE(std::get<wccff::parser::int_constant>(left->right).value == 3);
 
-            REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->right));
-            auto &right = std::get<wccff::parser::int_constant>(exp->right);
-            REQUIRE(right.value == 5);
+            REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(left->left, 1));
+            REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(left->right, 3));
+            REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(exp->right, 5));
         }
     }
 }
@@ -394,10 +345,8 @@ TEST_CASE("Binary Operators", "[parser]")
         const auto &exp = std::get<std::unique_ptr<wccff::parser::binary_node>>(r.value());
 
         REQUIRE(std::holds_alternative<wccff::parser::bitwise_and_operator>(exp->op));
-        REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->left));
-        REQUIRE(std::get<wccff::parser::int_constant>(exp->left).value == 1);
-        REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->right));
-        REQUIRE(std::get<wccff::parser::int_constant>(exp->right).value == 2);
+        REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(exp->left, 1));
+        REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(exp->right, 2));
     }
 
     SECTION("Bitwise Or Operator")
@@ -416,10 +365,8 @@ TEST_CASE("Binary Operators", "[parser]")
         const auto &exp = std::get<std::unique_ptr<wccff::parser::binary_node>>(r.value());
 
         REQUIRE(std::holds_alternative<wccff::parser::bitwise_or_operator>(exp->op));
-        REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->left));
-        REQUIRE(std::get<wccff::parser::int_constant>(exp->left).value == 1);
-        REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->right));
-        REQUIRE(std::get<wccff::parser::int_constant>(exp->right).value == 2);
+        REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(exp->left, 1));
+        REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(exp->right, 2));
     }
     SECTION("Bitwise Xor Operator")
     {
@@ -437,10 +384,8 @@ TEST_CASE("Binary Operators", "[parser]")
         const auto &exp = std::get<std::unique_ptr<wccff::parser::binary_node>>(r.value());
 
         REQUIRE(std::holds_alternative<wccff::parser::bitwise_xor_operator>(exp->op));
-        REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->left));
-        REQUIRE(std::get<wccff::parser::int_constant>(exp->left).value == 1);
-        REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->right));
-        REQUIRE(std::get<wccff::parser::int_constant>(exp->right).value == 2);
+        REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(exp->left, 1));
+        REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(exp->right, 2));
     }
     SECTION("Left Shift Operator")
     {
@@ -458,10 +403,8 @@ TEST_CASE("Binary Operators", "[parser]")
         const auto &exp = std::get<std::unique_ptr<wccff::parser::binary_node>>(r.value());
 
         REQUIRE(std::holds_alternative<wccff::parser::left_shift_operator>(exp->op));
-        REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->left));
-        REQUIRE(std::get<wccff::parser::int_constant>(exp->left).value == 1);
-        REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->right));
-        REQUIRE(std::get<wccff::parser::int_constant>(exp->right).value == 2);
+        REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(exp->left, 1));
+        REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(exp->right, 2));
     }
     SECTION("Right Shift Operator")
     {
@@ -479,10 +422,8 @@ TEST_CASE("Binary Operators", "[parser]")
         const auto &exp = std::get<std::unique_ptr<wccff::parser::binary_node>>(r.value());
 
         REQUIRE(std::holds_alternative<wccff::parser::right_shift_operator>(exp->op));
-        REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->left));
-        REQUIRE(std::get<wccff::parser::int_constant>(exp->left).value == 1);
-        REQUIRE(std::holds_alternative<wccff::parser::int_constant>(exp->right));
-        REQUIRE(std::get<wccff::parser::int_constant>(exp->right).value == 2);
+        REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(exp->left, 1));
+        REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(exp->right, 2));
     }
 
     SECTION("Single Assignment")
@@ -520,7 +461,149 @@ TEST_CASE("Binary Operators", "[parser]")
     }
 }
 
-TEST_CASE("Parse Statements")
+TEST_CASE("Parse Constants", "[parser]")
+{
+    SECTION("Invalid")
+    {
+        SECTION("Wrong token")
+        {
+            wccff::lexer::file_location location{ 1, 3 };
+            std::vector<wccff::lexer::token> tokens_vector;
+            tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "foo", location);
+
+            wccff::parser::tokens tokens{ tokens_vector };
+
+            auto r = wccff::parser::parse_constant(tokens);
+
+            REQUIRE(r.has_value() == false);
+        }
+
+        SECTION("Out of range")
+        {
+            wccff::lexer::file_location location{ 1, 3 };
+            std::vector<wccff::lexer::token> tokens_vector;
+            // The token is 9223372036854775807 + 1.
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "9223372036854775808", location);
+
+            wccff::parser::tokens tokens{ tokens_vector };
+
+            auto r = wccff::parser::parse_constant(tokens);
+
+            REQUIRE(r.has_value() == false);
+        }
+
+        SECTION("Unable to parse")
+        {
+            wccff::lexer::file_location location{ 1, 3 };
+            std::vector<wccff::lexer::token> tokens_vector;
+            // Check the behaviour for when the text isn't parsable as an integer value
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "xpto", location);
+
+            wccff::parser::tokens tokens{ tokens_vector };
+
+            auto r = wccff::parser::parse_constant(tokens);
+
+            REQUIRE(r.has_value() == false);
+        }
+    }
+    SECTION("Int")
+    {
+        SECTION("Small int")
+        {
+            wccff::lexer::file_location location{ 1, 3 };
+            std::vector<wccff::lexer::token> tokens_vector;
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "123", location);
+
+            wccff::parser::tokens tokens{ tokens_vector };
+
+            auto r = wccff::parser::parse_constant(tokens);
+
+            REQUIRE(r.has_value());
+            REQUIRE(std::holds_alternative<wccff::parser::int_constant>(r.value()));
+            REQUIRE(std::get<wccff::parser::int_constant>(r.value()).value == 123);
+        }
+
+        SECTION("max int32 value")
+        {
+            wccff::lexer::file_location location{ 1, 3 };
+            std::vector<wccff::lexer::token> tokens_vector;
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "2147483647", location);
+
+            wccff::parser::tokens tokens{ tokens_vector };
+
+            auto r = wccff::parser::parse_constant(tokens);
+
+            REQUIRE(r.has_value());
+            REQUIRE(std::holds_alternative<wccff::parser::int_constant>(r.value()));
+            REQUIRE(std::get<wccff::parser::int_constant>(r.value()).value == 2'147'483'647);
+        }
+
+        SECTION("Bigger than max int32 value")
+        {
+            wccff::lexer::file_location location{ 1, 3 };
+            std::vector<wccff::lexer::token> tokens_vector;
+            tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "2147483648", location);
+
+            wccff::parser::tokens tokens{ tokens_vector };
+
+            auto r = wccff::parser::parse_constant(tokens);
+
+            REQUIRE(r.has_value());
+            REQUIRE(std::holds_alternative<wccff::parser::long_constant>(r.value()));
+            REQUIRE(std::get<wccff::parser::long_constant>(r.value()).value == 2'147'483'648);
+        }
+    }
+
+    SECTION("Long")
+    {
+        SECTION("Small long")
+        {
+            wccff::lexer::file_location location{ 1, 3 };
+            std::vector<wccff::lexer::token> tokens_vector;
+            tokens_vector.emplace_back(wccff::lexer::token_type::long_constant, "123l", location);
+
+            wccff::parser::tokens tokens{ tokens_vector };
+
+            auto r = wccff::parser::parse_constant(tokens);
+
+            REQUIRE(r.has_value());
+            REQUIRE(std::holds_alternative<wccff::parser::long_constant>(r.value()));
+            REQUIRE(std::get<wccff::parser::long_constant>(r.value()).value == 123);
+        }
+
+        SECTION("max int32 value")
+        {
+            wccff::lexer::file_location location{ 1, 3 };
+            std::vector<wccff::lexer::token> tokens_vector;
+            tokens_vector.emplace_back(wccff::lexer::token_type::long_constant, "2147483647l", location);
+
+            wccff::parser::tokens tokens{ tokens_vector };
+
+            auto r = wccff::parser::parse_constant(tokens);
+
+            REQUIRE(r.has_value());
+            REQUIRE(std::holds_alternative<wccff::parser::long_constant>(r.value()));
+            REQUIRE(std::get<wccff::parser::long_constant>(r.value()).value == 2'147'483'647);
+        }
+
+        SECTION("Bigger than max int32 value")
+        {
+            wccff::lexer::file_location location{ 1, 3 };
+            std::vector<wccff::lexer::token> tokens_vector;
+            tokens_vector.emplace_back(wccff::lexer::token_type::long_constant, "2147483648l", location);
+
+            wccff::parser::tokens tokens{ tokens_vector };
+
+            auto r = wccff::parser::parse_constant(tokens);
+
+            REQUIRE(r.has_value());
+            REQUIRE(std::holds_alternative<wccff::parser::long_constant>(r.value()));
+            REQUIRE(std::get<wccff::parser::long_constant>(r.value()).value == 2'147'483'648);
+        }
+    }
+}
+
+TEST_CASE("Parse Statements", "[parser]")
 {
     using wccff::parser::pretty_print;
 
@@ -559,7 +642,7 @@ TEST_CASE("Parse Statements")
     }
 }
 
-TEST_CASE("Loop Statements")
+TEST_CASE("Loop Statements", "[parser]")
 {
     using wccff::parser::pretty_print;
 
@@ -775,8 +858,7 @@ TEST_CASE("parse_argument_list", "[parser]")
         auto result = wccff::parser::parse_argument_list(tokens);
         REQUIRE(result.has_value());
         REQUIRE(result.value().size() == 1);
-        REQUIRE(std::holds_alternative<parser::int_constant>(result.value()[0]));
-        REQUIRE(std::get<parser::int_constant>(result.value()[0]).value == 42);
+        REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(result.value()[0], 42));
     }
 
     SECTION("Three Argument")
@@ -793,12 +875,9 @@ TEST_CASE("parse_argument_list", "[parser]")
         auto result = wccff::parser::parse_argument_list(tokens);
         REQUIRE(result.has_value());
         REQUIRE(result.value().size() == 3);
-        REQUIRE(std::holds_alternative<parser::int_constant>(result.value()[0]));
-        REQUIRE(std::get<parser::int_constant>(result.value()[0]).value == 42);
-        REQUIRE(std::holds_alternative<parser::int_constant>(result.value()[1]));
-        REQUIRE(std::get<parser::int_constant>(result.value()[1]).value == 43);
-        REQUIRE(std::holds_alternative<parser::int_constant>(result.value()[2]));
-        REQUIRE(std::get<parser::int_constant>(result.value()[2]).value == 44);
+        REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(result.value()[0], 42));
+        REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(result.value()[1], 43));
+        REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(result.value()[2], 44));
     }
 
     SECTION("One Argument with complex expression")
@@ -816,10 +895,8 @@ TEST_CASE("parse_argument_list", "[parser]")
         REQUIRE(std::holds_alternative<std::unique_ptr<parser::binary_node>>(result.value()[0]));
         auto &node = std::get<std::unique_ptr<parser::binary_node>>(result.value()[0]);
         REQUIRE(std::holds_alternative<parser::plus_operator>(node->op));
-        REQUIRE(std::holds_alternative<parser::int_constant>(node->left));
-        REQUIRE(std::get<parser::int_constant>(node->left).value == 42);
-        REQUIRE(std::holds_alternative<parser::int_constant>(node->right));
-        REQUIRE(std::get<parser::int_constant>(node->right).value == 43);
+        REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(node->left, 42));
+        REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(node->right, 43));
     }
 
     SECTION("Invalid Argument")
@@ -849,6 +926,20 @@ TEST_CASE("parse_argument_list", "[parser]")
     }
 }
 
+TEST_CASE("parse_cast_expression", "[parser]")
+{
+    using namespace wccff;
+    wccff::lexer::file_location location{ 0, 0 };
+    std::vector<wccff::lexer::token> tokens_vector;
+    tokens_vector.emplace_back(wccff::lexer::token_type::open_parenthesis, "(", location);
+    tokens_vector.emplace_back(wccff::lexer::token_type::int_keyword, "int", location);
+    tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
+    tokens_vector.emplace_back(wccff::lexer::token_type::int_constant, "42", location);
+
+    wccff::parser::tokens tokens{ tokens_vector };
+    auto restult = parse_cast_expression(tokens);
+    REQUIRE(restult.has_value());
+}
 TEST_CASE("parse_function_call", "[parser]")
 {
     using namespace wccff;
@@ -881,8 +972,8 @@ TEST_CASE("parse_function_call", "[parser]")
         REQUIRE(result.has_value());
         REQUIRE(result.value()->name.name == "func1");
         REQUIRE(result.value()->arguments.size() == 1);
-        REQUIRE(std::holds_alternative<parser::int_constant>(result.value()->arguments.at(0)));
-        REQUIRE(std::get<parser::int_constant>(result.value()->arguments.at(0)).value == 42);
+        REQUIRE(
+          wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(result.value()->arguments[0], 42));
     }
 }
 
@@ -932,23 +1023,32 @@ TEST_CASE("parse_function_declaration", "[parser]")
 TEST_CASE("parse_params_list", "[parser]")
 {
     using namespace wccff;
+    using parser::identifier;
+    using parser::int_type;
+    using parser::long_type;
     auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("parser_tests");
 
     wccff::lexer::file_location location{ 0, 0 };
     SECTION("No Arguments")
     {
         std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::open_parenthesis, "(", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::void_keyword, "void", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
 
         wccff::parser::tokens tokens{ tokens_vector };
         auto result = wccff::parser::parse_params_list(tokens);
         REQUIRE(result.has_value());
-        REQUIRE(result.value().empty());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value()[0].name == identifier{ "NOT.VALID" });
+        REQUIRE(std::holds_alternative<parser::void_type>(result.value()[0].p_type));
+        REQUIRE(tokens.get_next_token().has_value() == false);
     }
 
-    SECTION("One Argument")
+    SECTION("Int Argument")
     {
         std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::open_parenthesis, "(", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::int_keyword, "int", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "hello", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
@@ -957,19 +1057,75 @@ TEST_CASE("parse_params_list", "[parser]")
         auto result = wccff::parser::parse_params_list(tokens);
         REQUIRE(result.has_value());
         REQUIRE(result.value().size() == 1);
-        REQUIRE(result.value()[0].name == "hello");
+        REQUIRE(result.value()[0].name == identifier{ "hello" });
+        REQUIRE(std::holds_alternative<int_type>(result.value()[0].p_type));
+        REQUIRE(tokens.get_next_token().has_value() == false);
     }
 
+    SECTION("Long Argument")
+    {
+        std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::open_parenthesis, "(", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::long_keyword, "long", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "hello", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
+
+        wccff::parser::tokens tokens{ tokens_vector };
+        auto result = wccff::parser::parse_params_list(tokens);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value()[0].name == identifier{ "hello" });
+        REQUIRE(std::holds_alternative<long_type>(result.value()[0].p_type));
+        REQUIRE(tokens.get_next_token().has_value() == false);
+    }
+
+    SECTION("Int Long Argument")
+    {
+        std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::open_parenthesis, "(", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_keyword, "int", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::long_keyword, "long", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "hello", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
+
+        wccff::parser::tokens tokens{ tokens_vector };
+        auto result = wccff::parser::parse_params_list(tokens);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value()[0].name == identifier{ "hello" });
+        REQUIRE(std::holds_alternative<long_type>(result.value()[0].p_type));
+        REQUIRE(tokens.get_next_token().has_value() == false);
+    }
+
+    SECTION("Long Int Argument")
+    {
+        std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::open_parenthesis, "(", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::long_keyword, "long", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::int_keyword, "int", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "hello", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
+
+        wccff::parser::tokens tokens{ tokens_vector };
+        auto result = wccff::parser::parse_params_list(tokens);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value()[0].name == identifier{ "hello" });
+        REQUIRE(std::holds_alternative<long_type>(result.value()[0].p_type));
+        REQUIRE(tokens.get_next_token().has_value() == false);
+    }
     SECTION("Three Argument")
     {
         std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::open_parenthesis, "(", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::int_keyword, "int", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "hello1", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::comma, ",", location);
-        tokens_vector.emplace_back(wccff::lexer::token_type::int_keyword, "int", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::long_keyword, "long", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "hello2", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::comma, ",", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::int_keyword, "int", location);
+        tokens_vector.emplace_back(wccff::lexer::token_type::long_keyword, "long", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "hello3", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
 
@@ -977,14 +1133,19 @@ TEST_CASE("parse_params_list", "[parser]")
         auto result = wccff::parser::parse_params_list(tokens);
         REQUIRE(result.has_value());
         REQUIRE(result.value().size() == 3);
-        REQUIRE(result.value()[0].name == "hello1");
-        REQUIRE(result.value()[1].name == "hello2");
-        REQUIRE(result.value()[2].name == "hello3");
+        REQUIRE(result.value()[0].name == identifier{ "hello1" });
+        REQUIRE(std::holds_alternative<int_type>(result.value()[0].p_type));
+        REQUIRE(result.value()[1].name == identifier{ "hello2" });
+        REQUIRE(std::holds_alternative<long_type>(result.value()[1].p_type));
+        REQUIRE(result.value()[2].name == identifier{ "hello3" });
+        REQUIRE(std::holds_alternative<long_type>(result.value()[2].p_type));
+        REQUIRE(tokens.get_next_token().has_value() == false);
     }
 
     SECTION("Invalid Parameter")
     {
         std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::open_parenthesis, "(", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::void_keyword, "void", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "hello1", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::close_parenthesis, ")", location);
@@ -997,6 +1158,7 @@ TEST_CASE("parse_params_list", "[parser]")
     SECTION("Invalid comma")
     {
         std::vector<wccff::lexer::token> tokens_vector;
+        tokens_vector.emplace_back(wccff::lexer::token_type::open_parenthesis, "(", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::int_keyword, "int", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::identifier, "hello1", location);
         tokens_vector.emplace_back(wccff::lexer::token_type::comma, ",", location);
@@ -1095,6 +1257,27 @@ TEST_CASE("parser_pretty_printers", "[parser]")
         REQUIRE(pretty_print(b) == "Break(label_name)");
     }
 
+    SECTION("cast_expression")
+    {
+        using wccff::parser::cast_expression;
+        using wccff::parser::identifier;
+        using wccff::parser::int_type;
+        using wccff::parser::long_constant;
+        using wccff::parser::long_type;
+        using wccff::parser::var;
+        using wccff::testing::get_binary_node;
+        using wccff::testing::get_long_constant;
+        using wccff::testing::get_unary_node;
+        using wccff::testing::get_var;
+
+        std::string result;
+        result += pretty_print(std::make_unique<cast_expression>(int_type{}, get_long_constant()));
+        result += pretty_print(std::make_unique<cast_expression>(long_type{}, get_var()));
+        result += pretty_print(std::make_unique<cast_expression>(long_type{}, get_unary_node()));
+        result += pretty_print(std::make_unique<cast_expression>(long_type{}, get_binary_node()));
+
+        ApprovalTests::Approvals::verify(result);
+    }
     SECTION("compound_statement")
     {
         using wccff::parser::block;
@@ -1125,25 +1308,6 @@ TEST_CASE("parser_pretty_printers", "[parser]")
         continue_statement b{ var_name };
 
         REQUIRE(pretty_print(b) == "Continue(label_name)");
-    }
-
-    SECTION("declaration")
-    {
-        using wccff::parser::identifier;
-        using wccff::parser::variable_declaration;
-
-        auto name = identifier("var_name");
-        SECTION("with_init")
-        {
-            wccff::parser::int_constant init{ 42 };
-            auto dec = variable_declaration(name, init);
-            ApprovalTests::Approvals::verify(pretty_print(dec));
-        }
-        SECTION("without_init")
-        {
-            auto dec = variable_declaration(name, std::nullopt);
-            ApprovalTests::Approvals::verify(pretty_print(dec));
-        }
     }
 
     SECTION("do_while")
@@ -1279,6 +1443,51 @@ TEST_CASE("parser_pretty_printers", "[parser]")
         }
     }
 
+    SECTION("fun_type")
+    {
+        using wccff::parser::fun_type;
+        using wccff::parser::int_type;
+        using wccff::parser::long_type;
+        using wccff::parser::type;
+        using wccff::parser::void_type;
+
+        std::string result;
+
+        // A fun_type without parameters, Return type Int
+        std::vector<type> params;
+        params.emplace_back(void_type{});
+        auto no_params = std::make_unique<fun_type>(std::move(params), int_type{});
+        result = pretty_print(no_params);
+        result += '\n';
+
+        // A fun_type with one Int parameter, Return type Int
+        params.emplace_back(int_type{});
+        auto one_int_param = std::make_unique<fun_type>(std::move(params), int_type{});
+        result += pretty_print(one_int_param);
+        result += '\n';
+
+        // A fun_type with one Long parameter, Return type Int
+        params.emplace_back(long_type{});
+        auto one_long_param = std::make_unique<fun_type>(std::move(params), int_type{});
+        result += pretty_print(one_long_param);
+        result += '\n';
+
+        // A fun_type with one Long parameter, Return type Long
+        params.emplace_back(long_type{});
+        auto one_long_param_ret_long = std::make_unique<fun_type>(std::move(params), long_type{});
+        result += pretty_print(one_long_param_ret_long);
+        result += '\n';
+
+        // A fun_type with two parameter, one Int and one Long, Return type Long
+        params.emplace_back(int_type{});
+        params.emplace_back(long_type{});
+        auto two_params_ret_long = std::make_unique<fun_type>(std::move(params), long_type{});
+        result += pretty_print(two_params_ret_long);
+        result += '\n';
+
+        ApprovalTests::Approvals::verify(result);
+    }
+
     SECTION("function_declaration")
     {
         using wccff::parser::block;
@@ -1286,34 +1495,65 @@ TEST_CASE("parser_pretty_printers", "[parser]")
         using wccff::parser::function_declaration;
         using wccff::parser::identifier;
         using wccff::parser::int_constant;
+        using wccff::parser::int_type;
+        using wccff::parser::long_type;
         using wccff::parser::return_node;
+        using wccff::parser::void_type;
+        using wccff::testing::get_block;
+        using wccff::testing::get_function_type;
+        using wccff::testing::get_identifier;
+        using enum wccff::lexer::token_type;
 
-        auto function_name = identifier{ "function_name" };
-        std::vector<identifier> arguments;
-        arguments.emplace_back(identifier{ "param_1" });
-        arguments.emplace_back(identifier{ "param_2" });
+        auto get_args_types = [](const std::vector<wccff::lexer::token_type> &types) {
+            std::vector<wccff::parser::type> args;
 
-        std::vector<block_item> items;
-        items.emplace_back(return_node{ int_constant{ 42 } });
-        auto body = block{ std::move(items) };
+            std::ranges::transform(types,
+                                   std::back_inserter(args),
+                                   [](wccff::lexer::token_type t) -> wccff::parser::type {
+                                       switch (t)
+                                       {
+                                           case int_keyword:
+                                               return int_type{};
+                                           case long_keyword:
+                                               return long_type{};
+                                           case void_keyword:
+                                               return void_type{};
+                                           default:
+                                               throw std::runtime_error("unexpected token type");
+                                       }
+                                   });
+            return args;
+        };
 
-        SECTION("Full declaration")
-        {
-            auto f = function_declaration{ function_name, arguments, std::move(body) };
-            ApprovalTests::Approvals::verify(pretty_print(f));
-        }
+        std::string result;
 
-        SECTION("No Params")
-        {
-            auto f = function_declaration{ function_name, {}, std::move(body) };
-            ApprovalTests::Approvals::verify(pretty_print(f));
-        }
+        std::vector<wccff::parser::identifier> arguments;
+        arguments.emplace_back(wccff::parser::identifier{ "param_1" });
+        arguments.emplace_back(wccff::parser::identifier{ "param_2" });
 
-        SECTION("No Body")
-        {
-            auto f = function_declaration{ function_name, arguments, std::nullopt };
-            ApprovalTests::Approvals::verify(pretty_print(f));
-        }
+        result += pretty_print(
+          function_declaration{ get_identifier("function_name"),
+                                arguments,
+                                get_block(),
+                                get_function_type(long_type{}, get_args_types({ int_keyword, long_keyword })),
+                                wccff::parser::storage_class::no_storage });
+        result += '\n';
+
+        result += pretty_print(function_declaration{ get_identifier("function_name"),
+                                                     {},
+                                                     get_block(),
+                                                     get_function_type(int_type{}, get_args_types({ void_keyword })),
+                                                     wccff::parser::storage_class::extern_storage });
+        result += '\n';
+
+        result += pretty_print(function_declaration{ get_identifier("function_name"),
+                                                     {},
+                                                     std::nullopt,
+                                                     get_function_type(int_type{}, get_args_types({ void_keyword })),
+                                                     wccff::parser::storage_class::static_storage });
+        result += '\n';
+
+        ApprovalTests::Approvals::verify(result);
     }
 
     SECTION("goto")
@@ -1367,6 +1607,24 @@ TEST_CASE("parser_pretty_printers", "[parser]")
         REQUIRE(pretty_print(storage_class::no_storage) == "Storage(none)");
     }
 
+    SECTION("type")
+    {
+        SECTION("Int type")
+        {
+            REQUIRE(pretty_print(wccff::parser::int_type{}) == "Int");
+            REQUIRE(pretty_print(wccff::parser::int_type{}, 4) == "    Int");
+        }
+        SECTION("Long type")
+        {
+            REQUIRE(pretty_print(wccff::parser::long_type{}) == "Long");
+            REQUIRE(pretty_print(wccff::parser::long_type{}, 4) == "    Long");
+        }
+        SECTION("Void type")
+        {
+            REQUIRE(pretty_print(wccff::parser::void_type{}, 4) == "    Void");
+        }
+    }
+
     SECTION("unary_node")
     {
         using wccff::parser::int_constant;
@@ -1394,6 +1652,33 @@ TEST_CASE("parser_pretty_printers", "[parser]")
         auto variable = var{ "var_name" };
 
         REQUIRE(pretty_print(variable) == "Var(var_name)");
+    }
+
+    SECTION("variable_declaration")
+    {
+        using wccff::parser::identifier;
+        using wccff::parser::int_type;
+        using wccff::parser::long_type;
+        using wccff::parser::storage_class;
+        using wccff::parser::variable_declaration;
+        using wccff::testing::get_identifier;
+        using wccff::testing::get_int_constant;
+        using wccff::testing::get_long_constant;
+
+        std::string result;
+
+        result = pretty_print(
+          variable_declaration(get_identifier("var_name"), get_int_constant(), int_type{}, storage_class::no_storage));
+        result += '\n';
+        result += pretty_print(variable_declaration(get_identifier("var_name"),
+                                                    get_long_constant(),
+                                                    long_type{},
+                                                    storage_class::extern_storage));
+        result += '\n';
+        result += pretty_print(
+          variable_declaration(get_identifier("var_name"), std::nullopt, long_type{}, storage_class::static_storage));
+
+        ApprovalTests::Approvals::verify(result);
     }
 
     SECTION("while")

@@ -85,4 +85,53 @@ std::expected<std::tuple<parser::program, symbol_table::symbol_table>, semantic_
 bool is_lvalue(const parser::expression &e);
 
 } // namespace wccff::sema
+/*
+template<>
+struct fmt::formatter<wccff::sema::identifier_map::linkage> : formatter<string_view>
+{
+    template<typename FormatContext>
+    auto format(const wccff::sema::identifier_map::linkage link, FormatContext &ctx) const
+    {
+        using wccff::lexer::token_type;
+        string_view str = "linkage::invalid";
+        switch (link)
+        {
+            case wccff::sema::identifier_map::linkage::external:
+                str = "linkage::external";
+                break;
+            case wccff::sema::identifier_map::linkage::internal:
+                str = "linkage::internal";
+                break;
+            default:
+                break;
+        }
+
+        return formatter<string_view>::format(str, ctx);
+    }
+};
+
+template<>
+struct fmt::formatter<wccff::sema::identifier_map::symbol> : formatter<string_view>
+{
+    template<typename FormatContext>
+    auto format(const wccff::sema::identifier_map::symbol &s, FormatContext &ctx) const
+    {
+        auto str = fmt::format("{}:{}:{}", s.name, s.unique_name, s.linkage);
+        return formatter<string_view>::format(str, ctx);
+    }
+};
+
+template<>
+struct fmt::formatter<wccff::sema::identifier_map> : formatter<string_view>
+{
+    template<typename FormatContext>
+    auto format(const wccff::sema::identifier_map &map, FormatContext &ctx) const
+    {
+        for (const auto &s : map)
+        {
+        }
+        auto str = fmt::format("{}:{}:{}", s.name, s.unique_name, s.linkage);
+        return formatter<string_view>::format(str, ctx);
+    }
+};*/
 #endif // SEMANTIC_ANALYSIS_H

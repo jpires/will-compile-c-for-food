@@ -180,7 +180,11 @@ auto process_function_declaration(const parser::function_declaration &node)
         return std::unexpected{ semantic_error{ msg } };
     }
 
-    return parser::function_declaration{ node.name, node.arguments, std::move(body), node.storage_class };
+    return parser::function_declaration{ node.name,
+                                         node.arguments,
+                                         std::move(body),
+                                         copy_type(node.f_type),
+                                         node.storage_class };
 }
 
 auto process_if_node(const std::unique_ptr<parser::if_node> &node, labelled_statement_map &map)

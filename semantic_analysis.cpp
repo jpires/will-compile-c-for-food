@@ -138,12 +138,13 @@ bool is_lvalue(const parser::expression &e)
 {
     return std::visit(visitor{
                         [&](const std::unique_ptr<parser::assignment_node> &n) { return false; },
+                        [&](const std::unique_ptr<parser::cast_expression> &n) { return false; },
                         [&](const std::unique_ptr<parser::conditional_node> &n) { return false; },
                         [&](const std::unique_ptr<parser::binary_node> &n) { return is_lvalue(n); },
                         [&](const std::unique_ptr<parser::function_call> &n) { return false; },
                         [&](const std::unique_ptr<parser::unary_node> &n) { return is_lvalue(n); },
                         [&](const parser::var &n) { return true; },
-                        [&](const parser::int_constant &n) { return false; },
+                        [&](const parser::constant &n) { return false; },
                       },
                       e);
 }

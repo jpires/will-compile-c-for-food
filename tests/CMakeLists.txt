@@ -5,6 +5,8 @@ add_executable(unit_tests
 
         assembly_generation_test.cpp
         lexer_test.cpp
+        parser_data.cpp
+        parser_helpers.cpp
         parser_test.cpp
         semantic_analysis_test.cpp
         symbol_table_test.cpp

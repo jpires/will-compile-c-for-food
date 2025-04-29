@@ -187,6 +187,9 @@ auto process_expression(const parser::expression &node, identifier_map &variable
         [&](const std::unique_ptr<parser::assignment_node> &n) -> std::expected<parser::expression, semantic_error> {
             return process_assignment_node(n, variable_map);
         },
+        [&](const std::unique_ptr<parser::cast_expression> &n) -> std::expected<parser::expression, semantic_error> {
+            throw std::logic_error("unexpected expression");
+        },
         [&](const std::unique_ptr<parser::conditional_node> &n) -> std::expected<parser::expression, semantic_error> {
             return process_conditional_node(n, variable_map);
         },
@@ -202,7 +205,7 @@ auto process_expression(const parser::expression &node, identifier_map &variable
         [&](const parser::var &n) -> std::expected<parser::expression, semantic_error> {
             return process_var(n, variable_map);
         },
-        [&](const parser::int_constant &n) -> std::expected<parser::expression, semantic_error> { return n; },
+        [&](const parser::constant &n) -> std::expected<parser::expression, semantic_error> { return n; },
       },
       node);
 }
@@ -327,7 +330,11 @@ auto process_function_declaration(const parser::function_declaration &node, iden
     }
 
     variable_map.destroy_scope();
-    return parser::function_declaration{ node.name, std::move(args), std::move(block), node.storage_class };
+    return parser::function_declaration{ node.name,
+                                         std::move(args),
+                                         std::move(block),
+                                         copy_type(node.f_type),
+                                         node.storage_class };
 }
 
 auto process_if_node(const std::unique_ptr<parser::if_node> &node, identifier_map &variable_map)
@@ -506,7 +513,10 @@ auto process_variable_declaration(const parser::variable_declaration &node,
     if (scope == scope_type::file)
     {
         variable_map.add(node.name, identifier_map::linkage::external);
-        return parser::variable_declaration{ node.name, copy_init(node.init), node.storage_class };
+        return parser::variable_declaration{ node.name,
+                                             copy_init(node.init),
+                                             copy_type(node.var_type),
+                                             node.storage_class };
     }
     else
     {
@@ -525,7 +535,10 @@ auto process_variable_declaration(const parser::variable_declaration &node,
         if (node.storage_class == parser::storage_class::extern_storage)
         {
             variable_map.add(node.name, identifier_map::linkage::external);
-            return parser::variable_declaration{ node.name, copy_init(node.init), node.storage_class };
+            return parser::variable_declaration{ node.name,
+                                                 copy_init(node.init),
+                                                 copy_type(node.var_type),
+                                                 node.storage_class };
         }
 
         parser::identifier unique_name = variable_map.add(node.name);
@@ -540,7 +553,10 @@ auto process_variable_declaration(const parser::variable_declaration &node,
             init = std::move(a.value());
         }
 
-        return parser::variable_declaration{ unique_name, std::move(init), node.storage_class };
+        return parser::variable_declaration{ unique_name,
+                                             std::move(init),
+                                             copy_type(node.var_type),
+                                             node.storage_class };
     }
 }
 

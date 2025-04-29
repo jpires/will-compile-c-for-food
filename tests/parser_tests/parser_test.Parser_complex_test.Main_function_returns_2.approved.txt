@@ -1,7 +1,11 @@
 FunctionDecl(main
              Storage(none)
+             FunType(RetType(Int)
+                     Param(Void)
+             )
              ()
              Return(
                     IntConstant(2)
              )
 )
+

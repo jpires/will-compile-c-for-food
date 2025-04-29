@@ -1,5 +1,8 @@
 FunctionDecl(sub
              Storage(none)
+             FunType(RetType(Int)
+                     Param(Int,Int)
+             )
              (a, b)
              Return(
                     Binary(Subtract
@@ -8,3 +11,4 @@ FunctionDecl(sub
                     )
              )
 )
+

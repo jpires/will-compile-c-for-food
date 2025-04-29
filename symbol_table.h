@@ -104,4 +104,54 @@ class symbol_table
     std::unordered_map<std::string, symbol> m_table;
 };
 } // namespace wccff::symbol_table
+
+/*
+template<>
+struct fmt::formatter<wccff::sema::identifier_map::linkage> : formatter<string_view>
+{
+    template<typename FormatContext>
+    auto format(const wccff::sema::identifier_map::linkage link, FormatContext &ctx) const
+    {
+        using wccff::lexer::token_type;
+        string_view str = "linkage::invalid";
+        switch (link)
+        {
+            case wccff::sema::identifier_map::linkage::external:
+                str = "linkage::external";
+                break;
+            case wccff::sema::identifier_map::linkage::internal:
+                str = "linkage::internal";
+                break;
+            default:
+                break;
+        }
+
+        return formatter<string_view>::format(str, ctx);
+    }
+};
+
+template<>
+struct fmt::formatter<wccff::symbol_table::symbol> : formatter<string_view>
+{
+    template<typename FormatContext>
+    auto format(const wccff::symbol_table::symbol &s, FormatContext &ctx) const
+    {
+        auto str = fmt::format("{}:{}:{}", s.name, s.unique_name, s.linkage);
+        return formatter<string_view>::format(str, ctx);
+    }
+};
+
+template<>
+struct fmt::formatter<wccff::sema::identifier_map> : formatter<string_view>
+{
+    template<typename FormatContext>
+    auto format(const wccff::sema::identifier_map &map, FormatContext &ctx) const
+    {
+        for (const auto &s : map)
+        {
+        }
+        auto str = fmt::format("{}:{}:{}", s.name, s.unique_name, s.linkage);
+        return formatter<string_view>::format(str, ctx);
+    }
+};*/
 #endif // SYMBOL_TABLE_H

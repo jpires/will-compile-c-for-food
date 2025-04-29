@@ -1,6 +1,7 @@
 Compound(
          DeclVar(var_name
                  Storage(none)
+                 Type(Int)
                  NO_INIT
          )
          Return(

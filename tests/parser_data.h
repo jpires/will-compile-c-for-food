@@ -1,0 +1,82 @@
+/*
+ * Will Compile C for Food, a toy C compiler
+ * Copyright (C) 2024  João Pires
+ * https://github.com/jpires/will-compile-c-for-food
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#include "parser.h"
+#include <utility>
+
+namespace wccff::testing {
+
+constexpr wccff::parser::identifier get_identifier(std::string name = "foo");
+
+constexpr wccff::parser::param get_param(wccff::parser::identifier value = get_identifier(),
+                                         wccff::parser::type type = wccff::parser::void_type{});
+
+constexpr wccff::parser::identifier get_identifier(std::string name)
+{
+    return wccff::parser::identifier{ std::move(name) };
+}
+
+constexpr wccff::parser::int_constant get_int_constant(int32_t value = 42)
+{
+    return wccff::parser::int_constant{ value };
+}
+
+constexpr wccff::parser::long_constant get_long_constant(int64_t value = 42)
+{
+    return wccff::parser::long_constant{ value };
+}
+
+constexpr std::unique_ptr<wccff::parser::binary_node> get_binary_node(
+  wccff::parser::binary_operator op = wccff::parser::plus_operator{},
+  wccff::parser::expression exp1 = get_int_constant(),
+  wccff::parser::expression exp2 = get_int_constant())
+{
+    return std::make_unique<wccff::parser::binary_node>(op, std::move(exp1), std::move(exp2));
+}
+
+constexpr wccff::parser::block get_block()
+{
+    std::vector<wccff::parser::block_item> items;
+    items.emplace_back(wccff::parser::return_node{ wccff::parser::int_constant{ 42 } });
+    return { std::move(items) };
+}
+
+constexpr wccff::parser::type get_function_type(wccff::parser::type ret_type = wccff::parser::int_type{},
+                                                std::vector<wccff::parser::type> params = {})
+{
+    return std::make_unique<wccff::parser::fun_type>(std::move(params), std::move(ret_type));
+}
+
+constexpr std::unique_ptr<wccff::parser::unary_node> get_unary_node(
+  wccff::parser::unary_operator op = wccff::parser::negate_operator{},
+  wccff::parser::expression exp = get_int_constant())
+{
+    return std::make_unique<wccff::parser::unary_node>(op, std::move(exp));
+}
+
+constexpr wccff::parser::var get_var(wccff::parser::identifier value = get_identifier())
+{
+    return wccff::parser::var{ std::move(value) };
+}
+
+constexpr wccff::parser::param get_param(wccff::parser::identifier value, wccff::parser::type type)
+{
+    return wccff::parser::param{ std::move(value), std::move(type) };
+}
+} // namespace wccff::testing

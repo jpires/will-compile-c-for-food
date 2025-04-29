@@ -379,26 +379,30 @@ val process_binary_node(const std::unique_ptr<parser::binary_node> &node, std::v
 
 val process_expression(const wccff::parser::expression &exp, std::vector<instruction> &instructions)
 {
-    return std::visit(visitor{
-                        [](const parser::int_constant &c) -> val { return process_int_constant(c); },
-                        [](const parser::var &c) -> val { return var{ process_identifier(c.name) }; },
-                        [&instructions](const std::unique_ptr<parser::unary_node> &n) -> val {
-                            return process_unary_node(n, instructions);
-                        },
-                        [&instructions](const std::unique_ptr<parser::binary_node> &n) -> val {
-                            return process_binary_node(n, instructions);
-                        },
-                        [&instructions](const std::unique_ptr<parser::assignment_node> &n) -> val {
-                            return process_assignment_node(n, instructions);
-                        },
-                        [&instructions](const std::unique_ptr<parser::conditional_node> &n) -> val {
-                            return process_conditional_node(n, instructions);
-                        },
-                        [&instructions](const std::unique_ptr<parser::function_call> &n) -> val {
-                            return process_function_call(n, instructions);
-                        },
-                      },
-                      exp);
+    return std::visit(
+      visitor{
+        [](const parser::constant &c) -> val { return process_int_constant(std::get<parser::int_constant>(c)); },
+        [](const parser::var &c) -> val { return var{ process_identifier(c.name) }; },
+        [&instructions](const std::unique_ptr<parser::unary_node> &n) -> val {
+            return process_unary_node(n, instructions);
+        },
+        [&instructions](const std::unique_ptr<parser::binary_node> &n) -> val {
+            return process_binary_node(n, instructions);
+        },
+        [&instructions](const std::unique_ptr<parser::cast_expression> &n) -> val {
+            throw std::runtime_error("unexpected cast expression");
+        },
+        [&instructions](const std::unique_ptr<parser::assignment_node> &n) -> val {
+            return process_assignment_node(n, instructions);
+        },
+        [&instructions](const std::unique_ptr<parser::conditional_node> &n) -> val {
+            return process_conditional_node(n, instructions);
+        },
+        [&instructions](const std::unique_ptr<parser::function_call> &n) -> val {
+            return process_function_call(n, instructions);
+        },
+      },
+      exp);
 }
 
 void process_return_node(const wccff::parser::return_node &stmt, std::vector<instruction> &instructions)
