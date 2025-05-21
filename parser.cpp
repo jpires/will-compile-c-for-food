@@ -39,6 +39,16 @@ assignment_node::assignment_node(binary_operator op_, expression lhs_, expressio
   , rhs(std::move(rhs_))
 {
 }
+assignment_node::assignment_node(binary_operator op_,
+                                 expression lhs_,
+                                 expression rhs_,
+                                 std::optional<wccff::type> type_)
+  : op(op_)
+  , lhs(std::move(lhs_))
+  , rhs(std::move(rhs_))
+  , type(std::move(type_))
+{
+}
 
 binary_node::binary_node(binary_operator op_, expression left_, expression right_)
   : op(op_)
@@ -46,11 +56,34 @@ binary_node::binary_node(binary_operator op_, expression left_, expression right
   , right(std::move(right_))
 {
 }
+binary_node::binary_node(binary_operator op_, expression left_, expression right_, std::optional<wccff::type> type_)
+  : op(op_)
+  , left(std::move(left_))
+  , right(std::move(right_))
+  , type(std::move(type_))
+{
+}
 
 unary_node::unary_node(unary_operator op_, expression expression_)
   : op(op_)
   , exp(std::move(expression_))
 {
+}
+unary_node::unary_node(unary_operator op_, expression expression_, std::optional<wccff::type> type_)
+  : op(op_)
+  , exp(std::move(expression_))
+  , type(std::move(type_))
+{
+}
+
+expression convert_to(const expression &e, const type &t)
+{
+    if (get_type(e) == t)
+    {
+        return copy_expression(e);
+    }
+
+    return std::make_unique<cast_expression>(copy_type(t), copy_expression(e), copy_type(t));
 }
 
 std::optional<parser_error> consume_tokens(tokens &tokens, const std::vector<lexer::token_type> &list)
@@ -75,21 +108,30 @@ std::optional<parser_error> consume_tokens(tokens &tokens, const std::vector<lex
 
 std::unique_ptr<assignment_node> copy_assignment_node(const std::unique_ptr<assignment_node> &node)
 {
-    return std::make_unique<assignment_node>(node->op, copy_expression(node->lhs), copy_expression(node->rhs));
+    return std::make_unique<assignment_node>(node->op,
+                                             copy_expression(node->lhs),
+                                             copy_expression(node->rhs),
+                                             copy_optional_type(node->type));
 }
 std::unique_ptr<binary_node> copy_binary_node(const std::unique_ptr<binary_node> &node)
 {
-    return std::make_unique<binary_node>(node->op, copy_expression(node->left), copy_expression(node->right));
+    return std::make_unique<binary_node>(node->op,
+                                         copy_expression(node->left),
+                                         copy_expression(node->right),
+                                         copy_optional_type(node->type));
 }
 std::unique_ptr<cast_expression> copy_cast_expresion(const std::unique_ptr<cast_expression> &node)
 {
-    return std::make_unique<cast_expression>(copy_type(node->target), copy_expression(node->exp));
+    return std::make_unique<cast_expression>(copy_type(node->target),
+                                             copy_expression(node->exp),
+                                             copy_optional_type(node->type));
 }
 std::unique_ptr<conditional_node> copy_conditional_node(const std::unique_ptr<conditional_node> &node)
 {
     return std::make_unique<conditional_node>(copy_expression(node->condition),
                                               copy_expression(node->e1),
-                                              copy_expression(node->e2));
+                                              copy_expression(node->e2),
+                                              copy_optional_type(node->type));
 }
 variable_declaration copy_declaration(const variable_declaration &node)
 {
@@ -105,7 +147,7 @@ expression copy_expression(const expression &exp)
     return std::visit(
       visitor{
         [](const constant &n) -> expression { return n; },
-        [](const var &n) -> expression { return n; },
+        [](const var &n) -> expression { return var{ n.name, copy_optional_type(n.type) }; },
         [](const std::unique_ptr<unary_node> &n) -> expression { return copy_unary_node(n); },
         [](const std::unique_ptr<binary_node> &n) -> expression { return copy_binary_node(n); },
         [](const std::unique_ptr<cast_expression> &n) -> expression { return copy_cast_expresion(n); },
@@ -122,31 +164,12 @@ std::unique_ptr<function_call> copy_function_call(const std::unique_ptr<function
     {
         args.push_back(copy_expression(a));
     }
-    return std::make_unique<function_call>(n->name, std::move(args));
-}
-std::unique_ptr<fun_type> copy_fun_type(const std::unique_ptr<fun_type> &n)
-{
-    std::vector<type> new_params;
-    for (const auto &p : n->params)
-    {
-        new_params.push_back(copy_type(p));
-    }
-    return std::make_unique<fun_type>(std::move(new_params), copy_type(n->return_type));
-}
-type copy_type(const type &n)
-{
-    return std::visit(visitor{
-                        [](const int_type) -> type { return int_type{}; },
-                        [](const long_type) -> type { return long_type{}; },
-                        [](const std::unique_ptr<fun_type> &n) -> type { return copy_fun_type(n); },
-                        [](const void_type) -> type { return void_type{}; },
-                      },
-                      n);
+    return std::make_unique<function_call>(n->name, std::move(args), copy_optional_type(n->type));
 }
 
 std::unique_ptr<unary_node> copy_unary_node(const std::unique_ptr<unary_node> &node)
 {
-    return std::make_unique<unary_node>(node->op, copy_expression(node->exp));
+    return std::make_unique<unary_node>(node->op, copy_expression(node->exp), copy_optional_type(node->type));
 }
 
 std::optional<parser_error> parse_semicolon(tokens &tokens)
@@ -163,6 +186,68 @@ std::optional<parser_error> parse_semicolon(tokens &tokens)
     }
 
     return std::nullopt;
+}
+
+type get_common_type(const type &t1, const type &t2)
+{
+    if (t1 == t2)
+    {
+        return copy_type(t1);
+    }
+
+    return long_type{};
+}
+
+type get_type(const constant &n)
+{
+    return std::visit(visitor{
+                        [](const int_constant &) -> type { return int_type{}; },
+                        [](const long_constant &) -> type { return long_type{}; },
+                      },
+                      n);
+}
+
+type get_type(const expression &n)
+{
+    return std::visit(visitor{
+                        [](const constant &n) { return get_type(n); },
+                        [](const std::unique_ptr<assignment_node> &n) { return get_type(n); },
+                        [](const std::unique_ptr<binary_node> &n) { return get_type(n); },
+                        [](const std::unique_ptr<cast_expression> &n) { return get_type(n); },
+                        [](const std::unique_ptr<conditional_node> &n) { return get_type(n); },
+                        [](const std::unique_ptr<function_call> &n) { return get_type(n); },
+                        [](const std::unique_ptr<unary_node> &n) { return get_type(n); },
+                        [](const var &n) { return get_type(n); },
+                      },
+                      n);
+}
+inline type get_type(const std::unique_ptr<assignment_node> &n)
+{
+    return copy_type(n->type.value());
+}
+inline type get_type(const std::unique_ptr<binary_node> &n)
+{
+    return copy_type(n->type.value());
+}
+inline type get_type(const std::unique_ptr<cast_expression> &n)
+{
+    return copy_type(n->type.value());
+}
+inline type get_type(const std::unique_ptr<conditional_node> &n)
+{
+    return copy_type(n->type.value());
+}
+inline type get_type(const std::unique_ptr<function_call> &n)
+{
+    return copy_type(n->type.value());
+}
+inline type get_type(const std::unique_ptr<unary_node> &n)
+{
+    return copy_type(n->type.value());
+}
+inline type get_type(const var &n)
+{
+    return copy_type(n.type.value());
 }
 
 std::expected<std::vector<expression>, parser_error> parse_argument_list(tokens &tokens)
@@ -541,7 +626,7 @@ std::expected<function_declaration, parser_error> parse_function_declaration(tok
         }
     }
 
-    auto final_type = std::make_unique<parser::fun_type>(std::move(arguments_types), copy_type(specifieres.t));
+    auto final_type = std::make_unique<fun_type>(std::move(arguments_types), copy_type(specifieres.t));
     return function_declaration{ function_name.value(),
                                  std::move(arguments_names),
                                  std::move(body),
@@ -1021,7 +1106,7 @@ std::expected<expression, parser_error> parse_factor(tokens &tokens)
                 return std::unexpected{ e.error() };
             }
 
-            return e.value();
+            return std::move(e.value());
         }
         case lexer::token_type::bitwise_complement_operator:
         case lexer::token_type::decrement_operator:
@@ -1068,7 +1153,6 @@ std::expected<expression, parser_error> parse_factor(tokens &tokens)
 
 std::expected<expression, parser_error> parse_expression(tokens &tokens, int32_t min_precedence)
 {
-
     auto is_right_associative = [](lexer::token_type type) {
         using enum lexer::token_type;
         return type == assignment_operator || type == compound_plus || type == compound_minus ||
@@ -1267,10 +1351,10 @@ std::expected<constant, parser_error> parse_constant(tokens &tokens)
 
     if (token->type == lexer::token_type::int_constant && value <= std::numeric_limits<int32_t>::max())
     {
-        return int_constant{ static_cast<int32_t>(value) };
+        return wccff::parser::constant(int_constant{ static_cast<int32_t>(value) });
     }
 
-    return long_constant{ value };
+    return wccff::parser::constant(long_constant{ value });
 }
 
 std::expected<variable_declaration, parser_error> parse_variable_declaration(tokens &tokens, specifier specifieres)
@@ -1619,6 +1703,16 @@ std::string pretty_print(const std::optional<expression> &node, int32_t ident)
     }
     return wccff::format_indented(ident, "EMPTY EXPRESSION");
 }
+
+std::string pretty_print(const std::optional<type> &node, int32_t ident)
+{
+    if (node.has_value())
+    {
+        return pretty_print(node.value(), ident);
+    }
+    return wccff::format_indented(ident, "EMPTY TYPE");
+}
+
 std::string pretty_print(const std::unique_ptr<assignment_node> &node, int32_t ident)
 {
     auto prefix = wccff::format_indented(ident, "Assign({}", pretty_print(node->op, 0));
@@ -1645,7 +1739,7 @@ std::string pretty_print(const std::unique_ptr<cast_expression> &node, int32_t i
     auto type_text = wccff::format_indented(ident + 6, "Target({})", pretty_print(node->target));
     auto exp_text = wccff::format_indented(0, "{}", pretty_print(node->exp, ident + 6));
     auto sufix = wccff::format_indented(ident, ")");
-    return fmt::format("{}\n{}\n{}\n{}\n", prefix, type_text, exp_text, sufix);
+    return fmt::format("{}\n{}\n{}\n{}", prefix, type_text, exp_text, sufix);
 }
 
 std::string pretty_print(const std::unique_ptr<compound_statement> &node, int32_t ident)
@@ -1691,10 +1785,14 @@ std::string pretty_print(const std::unique_ptr<function_call> &node, int32_t ide
 {
     auto prefix = wccff::format_indented(ident, "Function Call({}", pretty_print(node->name, 0));
     std::string params;
-    for (const auto &a : node->arguments)
+    if (node->arguments.empty() == false)
     {
-        params += pretty_print(a, 0);
-        params += "\n";
+        for (const auto &a : node->arguments)
+        {
+            params += pretty_print(a, ident + 14);
+            params += "\n";
+        }
+        params.erase(params.length() - 1);
     }
     auto sufix = wccff::format_indented(ident, ")");
 

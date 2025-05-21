@@ -1,0 +1,77 @@
+FunctionDecl(explicit_cast_of_variable
+             Storage(none)
+             FunType(RetType(Long)
+                     Param(Int)
+             )
+             (a)
+             Return(
+                    Cast(
+                          Target(Long)
+                          Var(a)
+                    )
+             )
+)
+FunctionDecl(explicit_cast_of_expression
+             Storage(none)
+             FunType(RetType(Long)
+                     Param(Int,Int)
+             )
+             (a, b)
+             Return(
+                    Cast(
+                          Target(Long)
+                          Binary(Plus
+                                 Var(a)
+                                 Var(b)
+                          )
+                    )
+             )
+)
+FunctionDecl(explicit_cast_of_expression1
+             Storage(none)
+             FunType(RetType(Long)
+                     Param(Int,Int)
+             )
+             (a, b)
+             Return(
+                    Binary(Plus
+                           Cast(
+                                 Target(Long)
+                                 Var(a)
+                           )
+                           Var(b)
+                    )
+             )
+)
+FunctionDecl(explicit_cast_of_expression3
+             Storage(none)
+             FunType(RetType(Long)
+                     Param(Int,Int)
+             )
+             (a, b)
+             Return(
+                    Binary(Plus
+                           Var(a)
+                           Cast(
+                                 Target(Long)
+                                 Var(b)
+                           )
+                    )
+             )
+)
+FunctionDecl(explicit_cast_of_function_call
+             Storage(none)
+             FunType(RetType(Long)
+                     Param(Int)
+             )
+             (a)
+             Return(
+                    Cast(
+                          Target(Long)
+                          Function Call(explicit_cast_of_variable
+                                        Var(a)
+                          )
+                    )
+             )
+)
+

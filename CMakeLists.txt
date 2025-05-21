@@ -13,6 +13,7 @@ add_executable(wccff
         assembly_generation.h
         code_emission.cpp
         code_emission.h
+        common.cpp
         compiler.cpp
         compiler.h
         driver.cpp

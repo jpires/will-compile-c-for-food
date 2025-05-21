@@ -1,5 +1,5 @@
 /*
-* Will Compile C for Food, a toy C compiler
+ * Will Compile C for Food, a toy C compiler
  * Copyright (C) 2024  João Pires
  * https://github.com/jpires/will-compile-c-for-food
  *

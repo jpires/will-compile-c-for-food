@@ -8,11 +8,13 @@ add_executable(unit_tests
         parser_data.cpp
         parser_helpers.cpp
         parser_test.cpp
+        parser_type_test.cpp
         semantic_analysis_test.cpp
         symbol_table_test.cpp
         tacky_test.cpp
         variable_map_test.cpp
         ../assembly_generation.cpp
+        ../common.cpp
         ../lexer.cpp
         ../parser.cpp
         ../semantic_analysis.cpp

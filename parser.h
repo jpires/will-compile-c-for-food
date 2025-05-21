@@ -20,7 +20,9 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#include "common.h"
 #include "lexer.h"
+#include "visitor.h"
 #include <compare>
 #include <expected>
 #include <span>
@@ -234,25 +236,6 @@ struct unary_node;
 struct assignment_node;
 struct while_statement;
 
-struct int_type
-{
-};
-struct fun_type;
-struct long_type
-{
-};
-struct void_type
-{
-};
-
-using type = std::variant<int_type, long_type, std::unique_ptr<fun_type>, void_type>;
-
-struct fun_type
-{
-    std::vector<type> params;
-    type return_type;
-};
-
 struct param
 {
     param(identifier name_, type p_type_)
@@ -291,6 +274,7 @@ using constant = std::variant<int_constant, long_constant>;
 struct var
 {
     identifier name;
+    std::optional<type> type;
 };
 
 using expression = std::variant<constant,
@@ -305,15 +289,18 @@ using expression = std::variant<constant,
 struct assignment_node
 {
     assignment_node(binary_operator op_, expression lhs_, expression rhs_);
+    assignment_node(binary_operator op_, expression lhs_, expression rhs_, std::optional<type> type_);
     binary_operator op;
     expression lhs;
     expression rhs;
+    std::optional<type> type;
 };
 
 struct cast_expression
 {
     type target;
     expression exp;
+    std::optional<type> type;
 };
 
 struct conditional_node
@@ -321,28 +308,34 @@ struct conditional_node
     expression condition;
     expression e1;
     expression e2;
+    std::optional<type> type;
 };
 
 struct function_call
 {
     identifier name;
     std::vector<expression> arguments;
+    std::optional<type> type;
 };
 
 struct unary_node
 {
     unary_node(unary_operator op_, expression expression_);
+    unary_node(unary_operator op_, expression expression_, std::optional<type> type_);
     unary_operator op;
     expression exp;
+    std::optional<type> type;
 };
 
 struct binary_node
 {
     binary_node(binary_operator op_, expression left_, expression right_);
+    binary_node(binary_operator op_, expression left_, expression right_, std::optional<type> type_);
 
     binary_operator op;
     expression left;
     expression right;
+    std::optional<type> type;
 };
 
 struct break_statement
@@ -463,6 +456,8 @@ struct program
     std::vector<declaration> f;
 };
 
+expression convert_to(const expression &e, const type &t);
+
 /**
  * This function consumes the tokens on list from the input. It consumes them in the same order.
  * It will return an error, if the input doesn't have the expected tokens.
@@ -474,13 +469,24 @@ std::optional<parser_error> consume_tokens(tokens &tokens, const std::vector<lex
 
 std::unique_ptr<assignment_node> copy_assignment_node(const std::unique_ptr<assignment_node> &node);
 std::unique_ptr<binary_node> copy_binary_node(const std::unique_ptr<binary_node> &node);
+std::unique_ptr<cast_expression> copy_cast_expresion(const std::unique_ptr<cast_expression> &node);
 std::unique_ptr<conditional_node> copy_conditional_node(const std::unique_ptr<conditional_node> &node);
 variable_declaration copy_declaration(const variable_declaration &node);
 expression copy_expression(const expression &expression);
 std::unique_ptr<function_call> copy_function_call(const std::unique_ptr<function_call> &n);
-std::unique_ptr<fun_type> copy_fun_type(const std::unique_ptr<fun_type> &n);
-type copy_type(const type &n);
 std::unique_ptr<unary_node> copy_unary_node(const std::unique_ptr<unary_node> &node);
+
+type get_common_type(const type &t1, const type &t2);
+
+type get_type(const constant &n);
+type get_type(const expression &n);
+type get_type(const std::unique_ptr<assignment_node> &n);
+type get_type(const std::unique_ptr<binary_node> &n);
+type get_type(const std::unique_ptr<cast_expression> &n);
+type get_type(const std::unique_ptr<conditional_node> &n);
+type get_type(const std::unique_ptr<function_call> &n);
+type get_type(const std::unique_ptr<unary_node> &n);
+type get_type(const var &n);
 
 std::expected<std::vector<expression>, parser_error> parse_argument_list(tokens &tokens);
 std::expected<block_item, parser_error> parse_block_item(tokens &tokens);
@@ -531,6 +537,7 @@ std::string pretty_print(const statement &node, int32_t ident = 0);
 std::string pretty_print(const storage_class &node, int32_t ident = 0);
 std::string pretty_print(const return_node &node, int32_t ident = 0);
 std::string pretty_print(const std::optional<expression> &node, int32_t ident = 0);
+std::string pretty_print(const std::optional<type> &node, int32_t ident = 0);
 std::string pretty_print(const std::unique_ptr<assignment_node> &node, int32_t ident = 0);
 std::string pretty_print(const std::unique_ptr<binary_node> &node, int32_t ident = 0);
 std::string pretty_print(const std::unique_ptr<cast_expression> &node, int32_t ident = 0);

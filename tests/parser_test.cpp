@@ -1024,8 +1024,9 @@ TEST_CASE("parse_params_list", "[parser]")
 {
     using namespace wccff;
     using parser::identifier;
-    using parser::int_type;
-    using parser::long_type;
+    using wccff::int_type;
+    using wccff::long_type;
+    using wccff::void_type;
     auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("parser_tests");
 
     wccff::lexer::file_location location{ 0, 0 };
@@ -1041,7 +1042,7 @@ TEST_CASE("parse_params_list", "[parser]")
         REQUIRE(result.has_value());
         REQUIRE(result.value().size() == 1);
         REQUIRE(result.value()[0].name == identifier{ "NOT.VALID" });
-        REQUIRE(std::holds_alternative<parser::void_type>(result.value()[0].p_type));
+        REQUIRE(std::holds_alternative<void_type>(result.value()[0].p_type));
         REQUIRE(tokens.get_next_token().has_value() == false);
     }
 
@@ -1185,7 +1186,7 @@ TEST_CASE("parser_pretty_printers", "[parser]")
         auto value = int_constant{ 55 };
         auto variable = var{ "var_name" };
 
-        auto assignment = std::make_unique<assignment_node>(assignment_operator{}, value, variable);
+        auto assignment = std::make_unique<assignment_node>(assignment_operator{}, value, std::move(variable));
 
         ApprovalTests::Approvals::verify(pretty_print(assignment));
     }
@@ -1200,7 +1201,7 @@ TEST_CASE("parser_pretty_printers", "[parser]")
         auto value = int_constant{ 55 };
         auto variable = var{ "var_name" };
 
-        auto assignment = std::make_unique<binary_node>(logical_and_operator{}, value, variable);
+        auto assignment = std::make_unique<binary_node>(logical_and_operator{}, value, std::move(variable));
 
         ApprovalTests::Approvals::verify(pretty_print(assignment));
     }
@@ -1259,11 +1260,11 @@ TEST_CASE("parser_pretty_printers", "[parser]")
 
     SECTION("cast_expression")
     {
+        using wccff::int_type;
+        using wccff::long_type;
         using wccff::parser::cast_expression;
         using wccff::parser::identifier;
-        using wccff::parser::int_type;
         using wccff::parser::long_constant;
-        using wccff::parser::long_type;
         using wccff::parser::var;
         using wccff::testing::get_binary_node;
         using wccff::testing::get_long_constant;
@@ -1272,9 +1273,13 @@ TEST_CASE("parser_pretty_printers", "[parser]")
 
         std::string result;
         result += pretty_print(std::make_unique<cast_expression>(int_type{}, get_long_constant()));
+        result += "\n";
         result += pretty_print(std::make_unique<cast_expression>(long_type{}, get_var()));
+        result += "\n";
         result += pretty_print(std::make_unique<cast_expression>(long_type{}, get_unary_node()));
+        result += "\n";
         result += pretty_print(std::make_unique<cast_expression>(long_type{}, get_binary_node()));
+        result += "\n";
 
         ApprovalTests::Approvals::verify(result);
     }
@@ -1445,11 +1450,11 @@ TEST_CASE("parser_pretty_printers", "[parser]")
 
     SECTION("fun_type")
     {
-        using wccff::parser::fun_type;
-        using wccff::parser::int_type;
-        using wccff::parser::long_type;
-        using wccff::parser::type;
-        using wccff::parser::void_type;
+        using wccff::fun_type;
+        using wccff::int_type;
+        using wccff::long_type;
+        using wccff::type;
+        using wccff::void_type;
 
         std::string result;
 
@@ -1490,38 +1495,36 @@ TEST_CASE("parser_pretty_printers", "[parser]")
 
     SECTION("function_declaration")
     {
+        using wccff::int_type;
+        using wccff::long_type;
+        using wccff::void_type;
         using wccff::parser::block;
         using wccff::parser::block_item;
         using wccff::parser::function_declaration;
         using wccff::parser::identifier;
         using wccff::parser::int_constant;
-        using wccff::parser::int_type;
-        using wccff::parser::long_type;
         using wccff::parser::return_node;
-        using wccff::parser::void_type;
         using wccff::testing::get_block;
         using wccff::testing::get_function_type;
         using wccff::testing::get_identifier;
         using enum wccff::lexer::token_type;
 
         auto get_args_types = [](const std::vector<wccff::lexer::token_type> &types) {
-            std::vector<wccff::parser::type> args;
+            std::vector<wccff::type> args;
 
-            std::ranges::transform(types,
-                                   std::back_inserter(args),
-                                   [](wccff::lexer::token_type t) -> wccff::parser::type {
-                                       switch (t)
-                                       {
-                                           case int_keyword:
-                                               return int_type{};
-                                           case long_keyword:
-                                               return long_type{};
-                                           case void_keyword:
-                                               return void_type{};
-                                           default:
-                                               throw std::runtime_error("unexpected token type");
-                                       }
-                                   });
+            std::ranges::transform(types, std::back_inserter(args), [](wccff::lexer::token_type t) -> wccff::type {
+                switch (t)
+                {
+                    case int_keyword:
+                        return int_type{};
+                    case long_keyword:
+                        return long_type{};
+                    case void_keyword:
+                        return void_type{};
+                    default:
+                        throw std::runtime_error("unexpected token type");
+                }
+            });
             return args;
         };
 
@@ -1609,19 +1612,23 @@ TEST_CASE("parser_pretty_printers", "[parser]")
 
     SECTION("type")
     {
+        using wccff::int_type;
+        using wccff::long_type;
+        using wccff::type;
+        using wccff::void_type;
         SECTION("Int type")
         {
-            REQUIRE(pretty_print(wccff::parser::int_type{}) == "Int");
-            REQUIRE(pretty_print(wccff::parser::int_type{}, 4) == "    Int");
+            REQUIRE(pretty_print(type{ int_type{} }) == "Int");
+            REQUIRE(pretty_print(type{ int_type{} }, 4) == "    Int");
         }
         SECTION("Long type")
         {
-            REQUIRE(pretty_print(wccff::parser::long_type{}) == "Long");
-            REQUIRE(pretty_print(wccff::parser::long_type{}, 4) == "    Long");
+            REQUIRE(pretty_print(type{ long_type{} }) == "Long");
+            REQUIRE(pretty_print(type{ long_type{} }, 4) == "    Long");
         }
         SECTION("Void type")
         {
-            REQUIRE(pretty_print(wccff::parser::void_type{}, 4) == "    Void");
+            REQUIRE(pretty_print(type{ void_type{} }, 4) == "    Void");
         }
     }
 
@@ -1656,9 +1663,9 @@ TEST_CASE("parser_pretty_printers", "[parser]")
 
     SECTION("variable_declaration")
     {
+        using wccff::int_type;
+        using wccff::long_type;
         using wccff::parser::identifier;
-        using wccff::parser::int_type;
-        using wccff::parser::long_type;
         using wccff::parser::storage_class;
         using wccff::parser::variable_declaration;
         using wccff::testing::get_identifier;
@@ -1696,5 +1703,20 @@ TEST_CASE("parser_pretty_printers", "[parser]")
 
         auto stmt = std::make_unique<while_statement>(std::move(conditional), std::move(body), loop_name);
         ApprovalTests::Approvals::verify(pretty_print(stmt));
+    }
+}
+
+TEST_CASE("parser_miscs", "[parser]")
+{
+    SECTION("get_common_type")
+    {
+        using wccff::int_type;
+        using wccff::long_type;
+        using wccff::parser::get_common_type;
+
+        REQUIRE(std::holds_alternative<int_type>(get_common_type(int_type{}, int_type{})));
+        REQUIRE(std::holds_alternative<long_type>(get_common_type(long_type{}, int_type{})));
+        REQUIRE(std::holds_alternative<long_type>(get_common_type(int_type{}, long_type{})));
+        REQUIRE(std::holds_alternative<long_type>(get_common_type(long_type{}, long_type{})));
     }
 }

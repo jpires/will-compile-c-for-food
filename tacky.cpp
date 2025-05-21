@@ -105,7 +105,7 @@ val process_assignment_node(const std::unique_ptr<parser::assignment_node> &node
         auto right = process_expression(node->rhs, instructions);
         // The previous pass ensures that the left side of an assignment is a var.
         // If it's not, then just terminate.
-        auto left = std::get<parser::var>(node->lhs);
+        auto &left = std::get<parser::var>(node->lhs);
         auto dst = var{ process_identifier(left.name) };
         instructions.emplace_back(copy_statement{ right, dst });
         return dst;
@@ -114,7 +114,7 @@ val process_assignment_node(const std::unique_ptr<parser::assignment_node> &node
     auto right = process_expression(node->rhs, instructions);
     // The previous pass ensures that the left side of an assignment is a var.
     // If it's not, then just terminate.
-    auto left = std::get<parser::var>(node->lhs);
+    auto &left = std::get<parser::var>(node->lhs);
     auto dst = var{ process_identifier(left.name) };
     auto tmp = var{ get_temporary_name() };
     auto op = process_binary_operator(node->op);
@@ -629,8 +629,9 @@ program process(const parser::program &input, const symbol_table::symbol_table &
             if (std::holds_alternative<symbol_table::initial>(attrs.init))
             {
                 auto initial = std::get<symbol_table::initial>(attrs.init);
+                auto int_value = std::get<symbol_table::int_initial>(initial);
                 tacky_definition.push_back(
-                  static_variable{ process_identifier(symbol.name), attrs.is_global, initial.value });
+                  static_variable{ process_identifier(symbol.name), attrs.is_global, int_value.value });
             }
             else if (std::holds_alternative<symbol_table::tentative>(attrs.init))
             {

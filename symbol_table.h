@@ -19,6 +19,7 @@
 
 #ifndef SYMBOL_TABLE_H
 #define SYMBOL_TABLE_H
+#include "common.h"
 #include "parser.h"
 #include <compare>
 #include <string>
@@ -26,10 +27,17 @@
 
 namespace wccff::symbol_table {
 
-struct initial
+struct int_initial
 {
-    int value;
+    int32_t value;
 };
+struct long_initial
+{
+    int64_t value;
+};
+
+using initial = std::variant<int_initial, long_initial>;
+
 struct no_initialiser
 {
 };
@@ -54,22 +62,42 @@ struct static_attributes
 };
 using identifier_attributes = std::variant<func_attributes, local_attributes, static_attributes>;
 
-struct func_type
-{
-    int param_num;
-    func_type() = default;
-    explicit func_type(size_t size)
-      : param_num(size) {};
-
-    bool operator==(const func_type &rhs) const = default;
-};
-struct int_type
-{
-    bool operator==(const int_type &rhs) const = default;
-};
-using type = std::variant<int_type, func_type>;
 struct symbol
 {
+    symbol() = default;
+    symbol(identifier_attributes attrs, parser::identifier name, type type)
+      : attrs(attrs)
+      , name(std::move(name))
+      , type(std::move(type))
+    {
+    }
+    symbol(const symbol &s)
+    {
+        attrs = s.attrs;
+        name = s.name;
+        type = copy_type(s.type);
+    }
+    symbol(symbol &&s) noexcept
+    {
+        attrs = s.attrs;
+        name = s.name;
+        type = std::move(s.type);
+    }
+    symbol &operator=(const symbol &s)
+    {
+        attrs = s.attrs;
+        name = s.name;
+        type = copy_type(s.type);
+        return *this;
+    }
+    symbol &operator=(symbol &&s) noexcept
+    {
+        attrs = s.attrs;
+        name = s.name;
+        type = copy_type(s.type);
+        return *this;
+    }
+
     identifier_attributes attrs;
     parser::identifier name;
     type type;
@@ -78,15 +106,15 @@ struct symbol
 class symbol_table
 {
   public:
-    void add(const parser::identifier &name, type type, identifier_attributes attrs)
+    void add(const parser::identifier &name, const type &type, identifier_attributes attrs)
     {
-        symbol s{ attrs, name, type };
+        symbol s{ attrs, name, copy_type(type) };
         m_table[name.name] = s;
     }
 
     std::optional<symbol> get(const parser::identifier &name) const
     {
-        auto it = m_table.find(name.name);
+        const auto it = m_table.find(name.name);
         if (it == m_table.end())
         {
             return std::nullopt;
@@ -99,6 +127,8 @@ class symbol_table
     std::unordered_map<std::string, symbol>::const_iterator cbegin() const { return m_table.cbegin(); }
     std::unordered_map<std::string, symbol>::const_iterator end() const { return m_table.end(); }
     std::unordered_map<std::string, symbol>::const_iterator cend() const { return m_table.cend(); }
+
+    parser::identifier current_processing_function;
 
   private:
     std::unordered_map<std::string, symbol> m_table;

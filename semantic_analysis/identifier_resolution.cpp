@@ -105,6 +105,18 @@ auto process_block_item(const parser::block_item &node, identifier_map &variable
       node);
 }
 
+auto process_cast_expression(const std::unique_ptr<parser::cast_expression> &node, identifier_map &variable_map)
+  -> std::expected<std::unique_ptr<parser::cast_expression>, semantic_error>
+{
+    auto exp = process_expression(node->exp, variable_map);
+    if (exp.has_value() == false)
+    {
+        return std::unexpected{ exp.error() };
+    }
+
+    return std::make_unique<parser::cast_expression>(copy_type(node->target), std::move(exp.value()));
+}
+
 auto process_compound_statement(const std::unique_ptr<parser::compound_statement> &node, identifier_map &variable_map)
   -> std::expected<std::unique_ptr<parser::compound_statement>, semantic_error>
 {
@@ -188,7 +200,7 @@ auto process_expression(const parser::expression &node, identifier_map &variable
             return process_assignment_node(n, variable_map);
         },
         [&](const std::unique_ptr<parser::cast_expression> &n) -> std::expected<parser::expression, semantic_error> {
-            throw std::logic_error("unexpected expression");
+            return process_cast_expression(n, variable_map);
         },
         [&](const std::unique_ptr<parser::conditional_node> &n) -> std::expected<parser::expression, semantic_error> {
             return process_conditional_node(n, variable_map);

@@ -6,3 +6,8 @@ int main(void) {
     int d = !(a)--;
     return d;
 }
+
+* Improve diagnostics.
+  This is quite bad after the parser state, as the location information is lost.
+  So, an error from the semantic analyses step will not show the location of the error.
+  Making fixing the error quite challenging.

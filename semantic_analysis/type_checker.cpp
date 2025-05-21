@@ -22,10 +22,25 @@
 #include "identifier_resolution.h"
 #include "labelled_statements.h"
 #include "tacky.h"
-
+#include <ranges>
 #include <visitor.h>
 
 namespace wccff::sema::type_checker {
+
+auto convert_constant(const parser::constant &c) -> symbol_table::initial_value
+{
+    if (std::holds_alternative<parser::int_constant>(c))
+    {
+        auto value = std::get<parser::int_constant>(c).value;
+        return symbol_table::int_initial{ value };
+    }
+    if (std::holds_alternative<parser::long_constant>(c))
+    {
+        auto value = std::get<parser::long_constant>(c).value;
+        return symbol_table::long_initial{ value };
+    }
+    throw std::runtime_error("Unexpected constant type");
+}
 
 auto process_assignment_node(const std::unique_ptr<parser::assignment_node> &node, symbol_table::symbol_table &table)
   -> std::expected<std::unique_ptr<parser::assignment_node>, semantic_error>
@@ -40,7 +55,13 @@ auto process_assignment_node(const std::unique_ptr<parser::assignment_node> &nod
     {
         return std::unexpected{ right.error() };
     }
-    return std::make_unique<parser::assignment_node>(node->op, std::move(left.value()), std::move(right.value()));
+
+    auto left_type = get_type(left.value());
+    auto converted_right = convert_to(right.value(), left_type);
+    return std::make_unique<parser::assignment_node>(node->op,
+                                                     std::move(left.value()),
+                                                     std::move(converted_right),
+                                                     std::move(left_type));
 }
 
 auto process_binary_node(const std::unique_ptr<parser::binary_node> &node, symbol_table::symbol_table &table)
@@ -57,7 +78,32 @@ auto process_binary_node(const std::unique_ptr<parser::binary_node> &node, symbo
     {
         return std::unexpected{ right.error() };
     }
-    return std::make_unique<parser::binary_node>(node->op, std::move(left.value()), std::move(right.value()));
+
+    auto common_type = wccff::parser::get_common_type(get_type(left.value()), get_type(right.value()));
+    auto converted_left = convert_to(left.value(), common_type);
+    auto converted_right = convert_to(right.value(), common_type);
+
+    if (std::holds_alternative<parser::plus_operator>(node->op) ||
+        std::holds_alternative<parser::subtract_operator>(node->op) ||
+        std::holds_alternative<parser::multiply_operator>(node->op) ||
+        std::holds_alternative<parser::divide_operator>(node->op) ||
+        std::holds_alternative<parser::remainder_operator>(node->op) ||
+        std::holds_alternative<parser::bitwise_and_operator>(node->op) ||
+        std::holds_alternative<parser::bitwise_or_operator>(node->op) ||
+        std::holds_alternative<parser::bitwise_xor_operator>(node->op) ||
+        std::holds_alternative<parser::left_shift_operator>(node->op) ||
+        std::holds_alternative<parser::right_shift_operator>(node->op))
+    {
+        return std::make_unique<parser::binary_node>(node->op,
+                                                     std::move(converted_left),
+                                                     std::move(converted_right),
+                                                     std::move(common_type));
+    }
+
+    return std::make_unique<parser::binary_node>(node->op,
+                                                 std::move(converted_left),
+                                                 std::move(converted_right),
+                                                 int_type{});
 }
 
 auto process_block(const parser::block &node, symbol_table::symbol_table &table)
@@ -93,6 +139,21 @@ auto process_block_item(const parser::block_item &node, symbol_table::symbol_tab
       node);
 }
 
+auto process_cast_expression(const std::unique_ptr<parser::cast_expression> &node, symbol_table::symbol_table &table)
+  -> std::expected<std::unique_ptr<parser::cast_expression>, semantic_error>
+{
+    using parser::copy_expression;
+    auto exp = process_expression(node->exp, table);
+    if (exp.has_value() == false)
+    {
+        return std::unexpected{ exp.error() };
+    }
+
+    return std::make_unique<parser::cast_expression>(copy_type(node->target),
+                                                     copy_expression(exp.value()),
+                                                     copy_type(node->target));
+}
+
 auto process_compound_statement(const std::unique_ptr<parser::compound_statement> &node,
                                 symbol_table::symbol_table &table)
   -> std::expected<std::unique_ptr<parser::compound_statement>, semantic_error>
@@ -114,6 +175,7 @@ auto process_conditional_node(const std::unique_ptr<parser::conditional_node> &n
     {
         return std::unexpected{ cond.error() };
     }
+
     auto e1 = process_expression(node->e1, table);
     if (e1.has_value() == false)
     {
@@ -126,9 +188,14 @@ auto process_conditional_node(const std::unique_ptr<parser::conditional_node> &n
         return std::unexpected{ e2.error() };
     }
 
+    auto common_type = parser::get_common_type(get_type(e1.value()), get_type(e2.value()));
+    auto converted_e1 = parser::convert_to(e1.value(), common_type);
+    auto converted_e2 = parser::convert_to(e2.value(), common_type);
+
     return std::make_unique<parser::conditional_node>(std::move(cond.value()),
-                                                      std::move(e1.value()),
-                                                      std::move(e2.value()));
+                                                      std::move(converted_e1),
+                                                      std::move(converted_e2),
+                                                      std::move(common_type));
 }
 
 auto process_declaration(const parser::declaration &node, symbol_table::symbol_table &table, bool inner_block)
@@ -175,7 +242,7 @@ auto process_expression(const parser::expression &node, symbol_table::symbol_tab
             return process_assignment_node(n, table);
         },
         [&](const std::unique_ptr<parser::cast_expression> &n) -> std::expected<parser::expression, semantic_error> {
-            throw std::runtime_error("Cast expression not implemented");
+            return process_cast_expression(n, table);
         },
         [&](const std::unique_ptr<parser::conditional_node> &n) -> std::expected<parser::expression, semantic_error> {
             return process_conditional_node(n, table);
@@ -257,69 +324,65 @@ auto process_for_statement(const std::unique_ptr<parser::for_statement> &node, s
 auto process_function_call(const std::unique_ptr<parser::function_call> &node, symbol_table::symbol_table &table)
   -> std::expected<std::unique_ptr<parser::function_call>, semantic_error>
 {
-    auto symbol = table.get(node->name)->type;
-    if (std::holds_alternative<symbol_table::func_type>(symbol) == false)
+    auto symbol = table.get(node->name);
+    if (std::holds_alternative<std::unique_ptr<fun_type>>(symbol->type) == false)
     {
         auto msg = fmt::format("Variable '{}' used as a function call", node->name.name);
         return std::unexpected{ semantic_error{ msg } };
     }
-    if (std::get<symbol_table::func_type>(symbol).param_num != node->arguments.size())
+    auto &params = std::get<std::unique_ptr<fun_type>>(symbol->type)->params;
+    if (params.size() != node->arguments.size() && std::holds_alternative<void_type>(params.front()) == false)
     {
         auto msg = fmt::format("Number of parameters mismatch", node->name.name);
         return std::unexpected{ semantic_error{ msg } };
     }
 
     std::vector<parser::expression> args;
-    for (const auto &e : node->arguments)
+    for (const auto &[e, t] : std::views::zip(node->arguments, params))
     {
         auto result = process_expression(e, table);
         if (result.has_value() == false)
         {
             return std::unexpected{ result.error() };
         }
-        args.push_back(std::move(result.value()));
+
+        args.push_back(parser::convert_to(result.value(), t));
     }
 
-    return std::make_unique<parser::function_call>(node->name, std::move(args));
+    return std::make_unique<parser::function_call>(node->name, std::move(args), copy_type(symbol->type));
 }
 
 auto process_function_declaration(const parser::function_declaration &node,
                                   symbol_table::symbol_table &table,
                                   bool inner_block) -> std::expected<parser::function_declaration, semantic_error>
 {
-    symbol_table::type t = symbol_table::func_type{ node.arguments.size() };
     bool has_body = node.body.has_value();
     bool is_defined = false;
     bool is_global = node.storage_class != parser::storage_class::static_storage;
-
     if (node.storage_class == parser::storage_class::static_storage && inner_block == true)
     {
         auto msg = fmt::format("Function declaration {} cannot be static in a inner scope", node.name.name);
         return std::unexpected{ semantic_error{ msg } };
     }
-
     if (auto s = table.get(node.name); s.has_value())
     {
-        if (s->type != t)
+        if (s->type != node.f_type)
         {
             auto msg = fmt::format("Incompatible function declaration for '{}'", node.name.name);
             return std::unexpected{ semantic_error{ msg } };
         }
-
         if (std::holds_alternative<symbol_table::func_attributes>(s->attrs) == false)
         {
             auto msg = fmt::format("Internal error: function {} doesn't have func_attributes", s->name.name);
             return std::unexpected{ semantic_error{ msg } };
         }
         auto attrs = std::get<symbol_table::func_attributes>(s->attrs);
-
         is_defined = attrs.is_defined;
         if (attrs.is_defined && has_body)
         {
             auto msg = fmt::format("Duplicate function declaration for '{}'", node.name.name);
             return std::unexpected{ semantic_error{ msg } };
         }
-
         if (attrs.is_global && node.storage_class == parser::storage_class::static_storage)
         {
             auto msg = fmt::format("Static function declaration follows non static declarations for {}", s->name.name);
@@ -329,22 +392,26 @@ auto process_function_declaration(const parser::function_declaration &node,
         is_global = attrs.is_global;
     }
     auto new_attrs = symbol_table::func_attributes{ is_defined || has_body, is_global };
-    table.add(node.name, t, new_attrs);
-
+    table.add(node.name, copy_type(node.f_type), new_attrs);
     std::optional<parser::block> block;
     if (node.body.has_value())
     {
+        // Start processing the body of the function.
+        // Set the name of the current function in the symbol table.
+        table.current_processing_function = node.name;
+
         if (inner_block)
         {
             auto msg = fmt::format("Inner function definition for '{}'", node.name.name);
             return std::unexpected{ semantic_error{ msg } };
         }
-        for (const auto &arg : node.arguments)
+
+        auto &params_type = std::get<std::unique_ptr<fun_type>>(node.f_type)->params;
+        for (const auto &[arg_name, arg_type] : std::views::zip(node.arguments, params_type))
         {
             auto attrs = symbol_table::local_attributes{};
-            table.add(arg, symbol_table::int_type{}, attrs);
+            table.add(arg_name, arg_type, attrs);
         }
-
         auto tmp = process_block(node.body.value(), table);
         if (tmp.has_value() == false)
         {
@@ -357,7 +424,7 @@ auto process_function_declaration(const parser::function_declaration &node,
     return parser::function_declaration{ node.name,
                                          node.arguments,
                                          std::move(block),
-                                         parser::copy_type(node.f_type),
+                                         copy_type(node.f_type),
                                          node.storage_class };
 }
 
@@ -454,7 +521,10 @@ auto process_return_node(const parser::return_node &node, symbol_table::symbol_t
         return std::unexpected{ exp.error() };
     }
 
-    return parser::return_node{ std::move(exp.value()) };
+    auto current_function = table.get(table.current_processing_function);
+    auto &ret_type = std::get<std::unique_ptr<fun_type>>(current_function->type);
+
+    return parser::return_node{ parser::convert_to(exp.value(), ret_type->return_type) };
 }
 
 auto process_statement(const parser::statement &node, symbol_table::symbol_table &table)
@@ -503,24 +573,48 @@ auto process_unary_node(const std::unique_ptr<parser::unary_node> &node, symbol_
         return std::unexpected{ exp.error() };
     }
 
-    return std::make_unique<parser::unary_node>(node->op, std::move(exp.value()));
+    if (std::holds_alternative<parser::negate_operator>(node->op) ||
+        std::holds_alternative<parser::bitwise_complement_operator>(node->op))
+    {
+        return std::make_unique<parser::unary_node>(node->op,
+                                                    std::move(exp.value()),
+                                                    copy_optional_type(get_type(exp.value())));
+    }
+    else
+    {
+        return std::make_unique<parser::unary_node>(node->op, std::move(exp.value()), int_type{});
+    }
 }
 
 auto process_var(const parser::var &node, symbol_table::symbol_table &table)
   -> std::expected<parser::var, semantic_error>
 {
-    if (std::holds_alternative<symbol_table::int_type>(table.get(node.name)->type) == false)
+    const auto s = table.get(node.name);
+    if (s.has_value() == false)
+    {
+        auto msg = fmt::format("Variable '{}' used before declaration", node.name.name);
+        return std::unexpected{ semantic_error{ msg } };
+    }
+    if (std::holds_alternative<std::unique_ptr<fun_type>>(s->type))
     {
         return std::unexpected<semantic_error>{ fmt::format("Function used as variable") };
     }
 
-    return parser::var{ node.name };
+    return parser::var{ node.name, copy_type(s->type) };
 }
 
 auto process_variable_declaration(const parser::variable_declaration &node,
                                   symbol_table::symbol_table &table,
                                   bool inner_block) -> std::expected<parser::variable_declaration, semantic_error>
 {
+    if (auto s = table.get(node.name); s.has_value())
+    {
+        if (node.var_type != s->type)
+        {
+            auto msg = fmt::format("Type mismatch for variable '{}'", node.name.name);
+            return std::unexpected<semantic_error>{ msg };
+        }
+    }
     return inner_block ? process_variable_declaration_local_scope(node, table)
                        : process_variable_declaration_file_scope(node, table);
 }
@@ -538,7 +632,7 @@ auto process_variable_declaration_file_scope(const parser::variable_declaration 
         if (std::holds_alternative<parser::constant>(node.init.value()))
         {
             auto int_node = std::get<parser::constant>(node.init.value());
-            init_value = symbol_table::initial{ std::get<parser::int_constant>(int_node).value };
+            init_value = convert_constant(int_node);
         }
         else
         {
@@ -561,7 +655,7 @@ auto process_variable_declaration_file_scope(const parser::variable_declaration 
 
     if (auto s = table.get(node.name); s.has_value())
     {
-        if (std::holds_alternative<symbol_table::int_type>(s->type) == false)
+        if (std::holds_alternative<std::unique_ptr<fun_type>>(s->type))
         {
             auto msg = fmt::format("Function redeclared as variable {}", node.name.name);
             return std::unexpected<semantic_error>{ msg };
@@ -605,7 +699,7 @@ auto process_variable_declaration_file_scope(const parser::variable_declaration 
     }
 
     symbol_table::static_attributes attrs{ init_value, global };
-    table.add(node.name, symbol_table::int_type{}, attrs);
+    table.add(node.name, copy_type(node.var_type), attrs);
     return parser::variable_declaration{ node.name,
                                          copy_init(node.init),
                                          copy_type(node.var_type),
@@ -629,7 +723,7 @@ auto process_variable_declaration_local_scope(const parser::variable_declaration
         }
         if (auto s = table.get(node.name); s.has_value())
         {
-            if (std::holds_alternative<symbol_table::int_type>(s->type) == false)
+            if (std::holds_alternative<std::unique_ptr<fun_type>>(s->type))
             {
                 auto msg = fmt::format("Function redeclared as variable {}", node.name.name);
                 return std::unexpected{ semantic_error{ msg } };
@@ -638,7 +732,7 @@ auto process_variable_declaration_local_scope(const parser::variable_declaration
         else
         {
             auto attrs = symbol_table::static_attributes{ symbol_table::no_initialiser{}, true };
-            table.add(node.name, symbol_table::int_type{}, attrs);
+            table.add(node.name, copy_type(node.var_type), attrs);
         }
     }
     else if (node.storage_class == parser::storage_class::static_storage)
@@ -646,12 +740,12 @@ auto process_variable_declaration_local_scope(const parser::variable_declaration
         symbol_table::initial_value init_value{};
         if (node.init.has_value() == false)
         {
-            init_value = symbol_table::initial{ 0 };
+            init_value = symbol_table::int_initial{ 0 };
         }
         else if (std::holds_alternative<parser::constant>(node.init.value()))
         {
             auto tmp = std::get<parser::constant>(node.init.value());
-            init_value = symbol_table::initial{ std::get<parser::int_constant>(tmp).value };
+            init_value = convert_constant(tmp);
         }
         else
         {
@@ -659,12 +753,12 @@ auto process_variable_declaration_local_scope(const parser::variable_declaration
             return std::unexpected{ semantic_error{ msg } };
         }
         auto attrs = symbol_table::static_attributes{ init_value, false };
-        table.add(node.name, symbol_table::int_type{}, attrs);
+        table.add(node.name, copy_type(node.var_type), attrs);
     }
     else
     {
         auto attrs = symbol_table::local_attributes{};
-        table.add(node.name, symbol_table::int_type{}, attrs);
+        table.add(node.name, copy_type(node.var_type), attrs);
         std::optional<parser::expression> init;
         if (node.init.has_value())
         {
@@ -674,8 +768,9 @@ auto process_variable_declaration_local_scope(const parser::variable_declaration
                 return std::unexpected{ tmp.error() };
             }
 
-            init = std::move(tmp.value());
+            init = parser::convert_to(tmp.value(), node.var_type);
         }
+
         return parser::variable_declaration{ node.name, std::move(init), copy_type(node.var_type), node.storage_class };
     }
     return parser::variable_declaration{ node.name,

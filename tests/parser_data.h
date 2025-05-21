@@ -24,8 +24,7 @@ namespace wccff::testing {
 
 constexpr wccff::parser::identifier get_identifier(std::string name = "foo");
 
-constexpr wccff::parser::param get_param(wccff::parser::identifier value = get_identifier(),
-                                         wccff::parser::type type = wccff::parser::void_type{});
+constexpr wccff::parser::param get_param(wccff::parser::identifier value = get_identifier(), type type = void_type{});
 
 constexpr wccff::parser::identifier get_identifier(std::string name)
 {
@@ -57,10 +56,9 @@ constexpr wccff::parser::block get_block()
     return { std::move(items) };
 }
 
-constexpr wccff::parser::type get_function_type(wccff::parser::type ret_type = wccff::parser::int_type{},
-                                                std::vector<wccff::parser::type> params = {})
+constexpr wccff::type get_function_type(wccff::type ret_type = wccff::int_type{}, std::vector<wccff::type> params = {})
 {
-    return std::make_unique<wccff::parser::fun_type>(std::move(params), std::move(ret_type));
+    return std::make_unique<wccff::fun_type>(std::move(params), std::move(ret_type));
 }
 
 constexpr std::unique_ptr<wccff::parser::unary_node> get_unary_node(
@@ -75,7 +73,7 @@ constexpr wccff::parser::var get_var(wccff::parser::identifier value = get_ident
     return wccff::parser::var{ std::move(value) };
 }
 
-constexpr wccff::parser::param get_param(wccff::parser::identifier value, wccff::parser::type type)
+constexpr wccff::parser::param get_param(wccff::parser::identifier value, wccff::type type)
 {
     return wccff::parser::param{ std::move(value), std::move(type) };
 }

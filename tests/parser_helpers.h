@@ -31,7 +31,7 @@ constexpr bool is_constant_expression_of(const wccff::parser::expression &exp, i
         return false;
     }
 
-    auto inner = std::get<wccff::parser::constant>(exp);
+    auto &inner = std::get<wccff::parser::constant>(exp);
     if (std::holds_alternative<Type>(inner) == false)
     {
         return false;

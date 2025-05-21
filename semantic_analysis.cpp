@@ -111,7 +111,7 @@ std::expected<std::tuple<parser::program, symbol_table::symbol_table>, semantic_
         return std::unexpected{ type_check_result.error() };
     }
 
-    auto labelled_result = labelled_statements::process_program(var_result.value());
+    auto labelled_result = labelled_statements::process_program(type_check_result.value());
     if (labelled_result.has_value() == false)
     {
         return std::unexpected{ labelled_result.error() };
