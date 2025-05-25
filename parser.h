@@ -259,18 +259,6 @@ struct specifier
     type t;
 };
 
-struct int_constant
-{
-    int32_t value;
-};
-
-struct long_constant
-{
-    int64_t value;
-};
-
-using constant = std::variant<int_constant, long_constant>;
-
 struct var
 {
     identifier name;

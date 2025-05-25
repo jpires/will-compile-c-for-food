@@ -41,7 +41,7 @@ TEST_CASE("Symbol Table", "[symbol_table]")
         REQUIRE(std::holds_alternative<symbol_table::no_initialiser>(new_attrs.init));
 
         // Replace symbol with an initial value
-        attrs.init = symbol_table::int_initial{ 42 };
+        attrs.init = int_initial{ 42 };
         table.add(parser::identifier{ "foo" }, int_type{}, attrs);
         auto s1 = table.get(parser::identifier{ "foo" });
         REQUIRE(s1.has_value());
@@ -50,10 +50,10 @@ TEST_CASE("Symbol Table", "[symbol_table]")
         REQUIRE(std::holds_alternative<symbol_table::static_attributes>(s1.value().attrs));
         auto new_attrs1 = std::get<symbol_table::static_attributes>(s1.value().attrs);
         REQUIRE(new_attrs1.is_global);
-        REQUIRE(std::holds_alternative<symbol_table::initial>(new_attrs1.init));
-        auto init_value = std::get<symbol_table::initial>(new_attrs1.init);
-        REQUIRE(std::holds_alternative<symbol_table::int_initial>(init_value));
-        REQUIRE(std::get<symbol_table::int_initial>(init_value).value == 42);
+        REQUIRE(std::holds_alternative<initial>(new_attrs1.init));
+        auto init_value = std::get<initial>(new_attrs1.init);
+        REQUIRE(std::holds_alternative<int_initial>(init_value));
+        REQUIRE(std::get<int_initial>(init_value).value == 42);
     }
 
     SECTION("func_attributes")

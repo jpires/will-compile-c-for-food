@@ -26,7 +26,7 @@
 
 namespace wccff::sema::type_checker {
 
-auto convert_constant(const parser::constant &c) -> symbol_table::initial_value;
+auto convert_constant(const constant &c) -> symbol_table::initial_value;
 
 auto process_assignment_node(const std::unique_ptr<parser::assignment_node> &node, symbol_table::symbol_table &table)
   -> std::expected<std::unique_ptr<parser::assignment_node>, semantic_error>;
@@ -50,8 +50,8 @@ auto process_compound_statement(const std::unique_ptr<parser::compound_statement
 auto process_conditional_node(const std::unique_ptr<parser::conditional_node> &node, symbol_table::symbol_table &table)
   -> std::expected<std::unique_ptr<parser::conditional_node>, semantic_error>;
 
-auto process_constant(const parser::constant &node, symbol_table::symbol_table &table)
-  -> std::expected<parser::constant, semantic_error>;
+auto process_constant(const constant &node, symbol_table::symbol_table &table)
+  -> std::expected<constant, semantic_error>;
 
 auto process_declaration(const parser::declaration &node, symbol_table::symbol_table &table, bool inner_block)
   -> std::expected<parser::declaration, semantic_error>;

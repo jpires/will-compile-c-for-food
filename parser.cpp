@@ -1351,10 +1351,10 @@ std::expected<constant, parser_error> parse_constant(tokens &tokens)
 
     if (token->type == lexer::token_type::int_constant && value <= std::numeric_limits<int32_t>::max())
     {
-        return wccff::parser::constant(int_constant{ static_cast<int32_t>(value) });
+        return wccff::constant(int_constant{ static_cast<int32_t>(value) });
     }
 
-    return wccff::parser::constant(long_constant{ value });
+    return wccff::constant(long_constant{ value });
 }
 
 std::expected<variable_declaration, parser_error> parse_variable_declaration(tokens &tokens, specifier specifieres)

@@ -26,12 +26,12 @@ namespace wccff::testing {
 template<typename Type>
 constexpr bool is_constant_expression_of(const wccff::parser::expression &exp, int64_t value)
 {
-    if (std::holds_alternative<wccff::parser::constant>(exp) == false)
+    if (std::holds_alternative<wccff::constant>(exp) == false)
     {
         return false;
     }
 
-    auto &inner = std::get<wccff::parser::constant>(exp);
+    auto &inner = std::get<wccff::constant>(exp);
     if (std::holds_alternative<Type>(inner) == false)
     {
         return false;

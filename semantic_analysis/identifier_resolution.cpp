@@ -217,7 +217,7 @@ auto process_expression(const parser::expression &node, identifier_map &variable
         [&](const parser::var &n) -> std::expected<parser::expression, semantic_error> {
             return process_var(n, variable_map);
         },
-        [&](const parser::constant &n) -> std::expected<parser::expression, semantic_error> { return n; },
+        [&](const constant &n) -> std::expected<parser::expression, semantic_error> { return n; },
       },
       node);
 }

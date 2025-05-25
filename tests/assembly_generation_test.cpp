@@ -7,8 +7,8 @@ TEST_CASE("Binary Operations", "[assembly_generation]")
 {
     SECTION("binary_and")
     {
-        wccff::tacky::constant src1{ 1 };
-        wccff::tacky::constant src2{ 2 };
+        wccff::int_constant src1{ 1 };
+        wccff::int_constant src2{ 2 };
         wccff::tacky::var dst{ "tacky-1" };
         wccff::tacky::binary_statement stmt{ wccff::tacky::binary_and_operator{}, src1, src2, dst };
 
@@ -32,8 +32,8 @@ TEST_CASE("Binary Operations", "[assembly_generation]")
 
     SECTION("binary_or")
     {
-        wccff::tacky::constant src1{ 1 };
-        wccff::tacky::constant src2{ 2 };
+        wccff::int_constant src1{ 1 };
+        wccff::int_constant src2{ 2 };
         wccff::tacky::var dst{ "tacky-1" };
         wccff::tacky::binary_statement stmt{ wccff::tacky::binary_or_operator{}, src1, src2, dst };
 
@@ -57,8 +57,8 @@ TEST_CASE("Binary Operations", "[assembly_generation]")
 
     SECTION("binary_xor")
     {
-        wccff::tacky::constant src1{ 1 };
-        wccff::tacky::constant src2{ 2 };
+        wccff::int_constant src1{ 1 };
+        wccff::int_constant src2{ 2 };
         wccff::tacky::var dst{ "tacky-1" };
         wccff::tacky::binary_statement stmt{ wccff::tacky::binary_xor_operator{}, src1, src2, dst };
 
@@ -82,8 +82,8 @@ TEST_CASE("Binary Operations", "[assembly_generation]")
 
     SECTION("left_shift")
     {
-        wccff::tacky::constant src1{ 1 };
-        wccff::tacky::constant src2{ 2 };
+        wccff::int_constant src1{ 1 };
+        wccff::int_constant src2{ 2 };
         wccff::tacky::var dst{ "tacky-1" };
         wccff::tacky::binary_statement stmt{ wccff::tacky::left_shift_operator{}, src1, src2, dst };
 
@@ -107,8 +107,8 @@ TEST_CASE("Binary Operations", "[assembly_generation]")
 
     SECTION("right_shift")
     {
-        wccff::tacky::constant src1{ 1 };
-        wccff::tacky::constant src2{ 2 };
+        wccff::int_constant src1{ 1 };
+        wccff::int_constant src2{ 2 };
         wccff::tacky::var dst{ "tacky-1" };
         wccff::tacky::binary_statement stmt{ wccff::tacky::right_shift_operator{}, src1, src2, dst };
 
@@ -133,8 +133,8 @@ TEST_CASE("Binary Operations", "[assembly_generation]")
     SECTION("equal_operator")
     {
         using namespace wccff;
-        tacky::constant src1{ 1 };
-        tacky::constant src2{ 2 };
+        int_constant src1{ 1 };
+        int_constant src2{ 2 };
         tacky::var dst{ "tacky-1" };
         tacky::binary_statement stmt{ tacky::equal_operator{}, src1, src2, dst };
         auto instructions = assembly_generation::process_statement(stmt);
@@ -166,7 +166,7 @@ TEST_CASE("Unary Operations", "[assembly_generation]")
     using namespace wccff;
     SECTION("not_operator")
     {
-        tacky::constant src1{ 1 };
+        int_constant src1{ 1 };
         tacky::var dst{ "tacky-1" };
         tacky::unary_statement stmt{ tacky::not_operator{}, src1, dst };
         auto instructions = assembly_generation::process_statement(stmt);

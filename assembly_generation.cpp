@@ -67,7 +67,7 @@ identifier process_identifier(const wccff::tacky::identifier &id)
 operand process_val(const wccff::tacky::val &v)
 {
     return std::visit(visitor{
-                        [](const tacky::constant &n) -> operand { return immediate{ n.value }; },
+                        [](const constant &n) -> operand { return immediate{ std::get<int_constant>(n).value }; },
                         [](const tacky::var &n) -> operand { return pseudo{ process_identifier(n.id) }; },
                       },
                       v);
@@ -266,18 +266,21 @@ std::vector<instruction> process_statement(const wccff::tacky::binary_statement 
 
 std::vector<instruction> process_statement(const tacky::instruction &i)
 {
-    return std::visit(visitor{
-                        [](const tacky::return_statement &n) { return process_statement(n); },
-                        [](const tacky::unary_statement &n) { return process_statement(n); },
-                        [](const tacky::binary_statement &n) { return process_statement(n); },
-                        [](const tacky::copy_statement &n) { return process_statement(n); },
-                        [](const tacky::jump_statement &n) { return process_statement(n); },
-                        [](const tacky::jump_if_zero_statement &n) { return process_statement(n); },
-                        [](const tacky::jump_if_not_zero_statement &n) { return process_statement(n); },
-                        [](const tacky::label_statement &n) { return process_statement(n); },
-                        [](const tacky::fun_call &n) -> std::vector<instruction> { return fun_call(n); },
-                      },
-                      i);
+    return std::visit(
+      visitor{
+        [](const tacky::return_statement &n) { return process_statement(n); },
+        [](const tacky::unary_statement &n) { return process_statement(n); },
+        [](const tacky::binary_statement &n) { return process_statement(n); },
+        [](const tacky::copy_statement &n) { return process_statement(n); },
+        [](const tacky::jump_statement &n) { return process_statement(n); },
+        [](const tacky::jump_if_zero_statement &n) { return process_statement(n); },
+        [](const tacky::jump_if_not_zero_statement &n) { return process_statement(n); },
+        [](const tacky::label_statement &n) { return process_statement(n); },
+        [](const tacky::fun_call &n) -> std::vector<instruction> { return fun_call(n); },
+        [](const tacky::sing_extend &n) -> std::vector<instruction> { throw std::logic_error("Not implemented"); },
+        [](const tacky::truncate &n) -> std::vector<instruction> { throw std::logic_error("Not implemented"); },
+      },
+      i);
 }
 
 std::vector<instruction> process_statement(const std::vector<tacky::instruction> &s)
@@ -385,7 +388,8 @@ top_level process_top_level(const wccff::tacky::top_level &f)
 
 static_variable process_static_variable(const wccff::tacky::static_variable &f)
 {
-    return { process_identifier(f.name), f.global, f.init };
+    auto init = std::get<wccff::int_initial>(f.init);
+    return { process_identifier(f.name), f.global, init.value };
 }
 
 program process(const wccff::tacky::program &program)

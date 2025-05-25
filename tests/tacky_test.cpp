@@ -1,9 +1,14 @@
 #include "../parser.h"
 #include "../tacky.h"
+#include "parser_data.h"
+#include <ApprovalTests.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("Tacky", "[tacky]")
 {
+    auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("tacky_results");
+
+    wccff::symbol_table::symbol_table table;
     SECTION("Identifier")
     {
         wccff::parser::identifier id{ "foo" };
@@ -14,297 +19,265 @@ TEST_CASE("Tacky", "[tacky]")
 
     SECTION("Constant")
     {
-        wccff::parser::int_constant c{ 42 };
+        wccff::int_constant c{ 42 };
 
-        auto result = wccff::tacky::process_int_constant(c);
-        REQUIRE(result.value == 42);
+        auto result = wccff::tacky::process_constant(c);
+        REQUIRE(std::holds_alternative<wccff::int_constant>(result));
+        REQUIRE(std::get<wccff::int_constant>(result).value == 42);
     }
 
-    SECTION("Constant")
+    SECTION("process_unary_operator")
     {
-        SECTION("Negate Operator")
-        {
-            wccff::parser::negate_operator c;
+        using namespace wccff;
+        using wccff::parser::bitwise_complement_operator;
+        using wccff::parser::negate_operator;
+        using wccff::tacky::process_unary_operator;
 
-            auto result = wccff::tacky::process_unary_operator(c);
-            REQUIRE(std::holds_alternative<wccff::tacky::negate_operator>(result));
-        }
-        SECTION("Bitwise Complement Operator")
-        {
-            wccff::parser::bitwise_complement_operator c;
-
-            auto result = wccff::tacky::process_unary_operator(c);
-            REQUIRE(std::holds_alternative<wccff::tacky::binary_complement_operator>(result));
-        }
+        REQUIRE(std::holds_alternative<tacky::binary_complement_operator>(
+          process_unary_operator(bitwise_complement_operator{})));
+        REQUIRE(std::holds_alternative<tacky::not_operator>(process_unary_operator(parser::logical_not_operator{})));
+        REQUIRE(std::holds_alternative<tacky::negate_operator>(process_unary_operator(negate_operator{})));
+        REQUIRE_THROWS(process_unary_operator(parser::postfix_decrement_operator{}));
+        REQUIRE_THROWS(process_unary_operator(parser::postfix_increment_operator{}));
+        REQUIRE_THROWS(process_unary_operator(parser::prefix_decrement_operator{}));
+        REQUIRE_THROWS(process_unary_operator(parser::prefix_increment_operator{}));
     }
-    SECTION("Unary Node")
+    SECTION("process_binary_operator")
     {
-        auto inner_expression = wccff::parser::int_constant{ 42 };
-        auto node = std::make_unique<wccff::parser::unary_node>(wccff::parser::negate_operator{}, inner_expression);
+        using namespace wccff;
+        using wccff::tacky::process_binary_operator;
+
+        REQUIRE(std::holds_alternative<tacky::plus_operator>(process_binary_operator(parser::plus_operator{})));
+        REQUIRE(std::holds_alternative<tacky::subtract_operator>(process_binary_operator(parser::subtract_operator{})));
+        REQUIRE(std::holds_alternative<tacky::multiply_operator>(process_binary_operator(parser::multiply_operator{})));
+        REQUIRE(std::holds_alternative<tacky::divide_operator>(process_binary_operator(parser::divide_operator{})));
+        REQUIRE(
+          std::holds_alternative<tacky::remainder_operator>(process_binary_operator(parser::remainder_operator{})));
+    }
+
+    SECTION("process_unary_node")
+    {
+        using wccff::parser::unary_node;
+        using wccff::tacky::process_unary_node;
 
         std::vector<wccff::tacky::instruction> instructions;
-        auto result = wccff::tacky::process_unary_node(node, instructions);
+        auto node = std::make_unique<unary_node>(wccff::parser::bitwise_complement_operator{},
+                                                 wccff::testing::get_int_constant(42),
+                                                 wccff::int_type{});
+        auto result = process_unary_node(node, instructions, table);
+        REQUIRE(std::holds_alternative<wccff::tacky::var>(result));
+        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-1");
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-1" }).has_value());
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-1" })->type == wccff::int_type{});
 
-        REQUIRE(instructions.size() == 1);
-        REQUIRE(std::holds_alternative<wccff::tacky::unary_statement>(instructions.at(0)));
-        auto instruction = std::get<wccff::tacky::unary_statement>(instructions.at(0));
-        REQUIRE(std::holds_alternative<wccff::tacky::negate_operator>(instruction.op));
-        REQUIRE(std::holds_alternative<wccff::tacky::constant>(instruction.src));
-        REQUIRE(std::get<wccff::tacky::constant>(instruction.src).value == 42);
-        REQUIRE(std::holds_alternative<wccff::tacky::var>(instruction.dst));
-        REQUIRE(std::get<wccff::tacky::var>(instruction.dst).id.name == "tacky-1");
-    }
-}
+        auto pretty_result = wccff::tacky::pretty_print(instructions);
+        pretty_result += "\n";
 
-TEST_CASE("process_binary_operator", "[tacky]")
-{
-    using wccff::tacky::process_binary_operator;
-    using namespace wccff;
+        instructions.clear();
+        node = std::make_unique<unary_node>(wccff::parser::logical_not_operator{},
+                                            wccff::testing::get_long_constant(42),
+                                            wccff::long_type{});
+        result = process_unary_node(node, instructions, table);
+        REQUIRE(std::holds_alternative<wccff::tacky::var>(result));
+        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-2");
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-2" }).has_value());
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-2" })->type == wccff::long_type{});
 
-    REQUIRE(std::holds_alternative<tacky::plus_operator>(process_binary_operator(parser::plus_operator{})));
-    REQUIRE(std::holds_alternative<tacky::subtract_operator>(process_binary_operator(parser::subtract_operator{})));
-    REQUIRE(std::holds_alternative<tacky::multiply_operator>(process_binary_operator(parser::multiply_operator{})));
-    REQUIRE(std::holds_alternative<tacky::divide_operator>(process_binary_operator(parser::divide_operator{})));
-    REQUIRE(std::holds_alternative<tacky::remainder_operator>(process_binary_operator(parser::remainder_operator{})));
-}
+        pretty_result += wccff::tacky::pretty_print(instructions);
+        pretty_result += "\n";
 
-TEST_CASE("process_binary_node", "[tacky]")
-{
-    using namespace wccff;
+        instructions.clear();
+        node = std::make_unique<unary_node>(wccff::parser::negate_operator{},
+                                            wccff::testing::get_var(),
+                                            wccff::long_type{});
+        result = process_unary_node(node, instructions, table);
+        REQUIRE(std::holds_alternative<wccff::tacky::var>(result));
+        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-3");
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-3" }).has_value());
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-3" })->type == wccff::long_type{});
 
-    SECTION("Plus Operator")
-    {
-        auto left = wccff::parser::int_constant{ 42 };
-        auto right = wccff::parser::int_constant{ 24 };
-        auto binary_expr = std::make_unique<parser::binary_node>(parser::plus_operator{}, left, right);
+        pretty_result += wccff::tacky::pretty_print(instructions);
+        pretty_result += "\n";
 
-        std::vector<wccff::tacky::instruction> instructions;
-        auto result = tacky::process_binary_node(binary_expr, instructions);
-
-        REQUIRE(instructions.size() == 1);
-        REQUIRE(std::holds_alternative<tacky::binary_statement>(instructions.at(0)));
-        auto inst = std::get<tacky::binary_statement>(instructions.at(0));
-
-        REQUIRE(std::holds_alternative<tacky::plus_operator>(inst.op));
-        REQUIRE(std::holds_alternative<tacky::constant>(inst.src1));
-        REQUIRE(std::get<tacky::constant>(inst.src1).value == 42);
-        REQUIRE(std::get<tacky::constant>(inst.src2).value == 24);
-        REQUIRE(std::holds_alternative<tacky::var>(inst.dst));
+        ApprovalTests::Approvals::verify(pretty_result);
     }
 
-    SECTION("Bitwise And Operator")
+    SECTION("process_binary_node")
     {
-        auto left = wccff::parser::int_constant{ 1 };
-        auto right = wccff::parser::int_constant{ 2 };
-        auto binary_expr = std::make_unique<parser::binary_node>(parser::bitwise_and_operator{}, left, right);
+        using wccff::parser::binary_node;
+        using wccff::tacky::process_binary_node;
+        using wccff::testing::get_int_constant;
+        using wccff::testing::get_long_constant;
 
         std::vector<wccff::tacky::instruction> instructions;
-        auto result = tacky::process_binary_node(binary_expr, instructions);
 
-        REQUIRE(instructions.size() == 1);
-        REQUIRE(std::holds_alternative<tacky::binary_statement>(instructions.at(0)));
-        auto inst = std::get<tacky::binary_statement>(instructions.at(0));
+        auto binary_expr = std::make_unique<binary_node>(wccff::parser::plus_operator{},
+                                                         get_int_constant(42),
+                                                         get_int_constant(24),
+                                                         wccff::int_type{});
 
-        REQUIRE(std::holds_alternative<tacky::binary_and_operator>(inst.op));
-        REQUIRE(std::holds_alternative<tacky::constant>(inst.src1));
-        REQUIRE(std::get<tacky::constant>(inst.src1).value == 1);
-        REQUIRE(std::get<tacky::constant>(inst.src2).value == 2);
-        REQUIRE(std::holds_alternative<tacky::var>(inst.dst));
-    }
+        auto result = process_binary_node(binary_expr, instructions, table);
+        REQUIRE(std::holds_alternative<wccff::tacky::var>(result));
+        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-4");
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-4" }).has_value());
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-4" })->type == wccff::int_type{});
+        auto pretty_result = wccff::tacky::pretty_print(instructions);
+        pretty_result += "\n";
 
-    SECTION("Bitwise Or Operator")
-    {
-        auto left = wccff::parser::int_constant{ 1 };
-        auto right = wccff::parser::int_constant{ 2 };
-        auto binary_expr = std::make_unique<parser::binary_node>(parser::bitwise_or_operator{}, left, right);
+        instructions.clear();
+        binary_expr = std::make_unique<binary_node>(wccff::parser::bitwise_and_operator{},
+                                                    get_int_constant(1),
+                                                    get_int_constant(2),
+                                                    wccff::int_type{});
 
-        std::vector<wccff::tacky::instruction> instructions;
-        auto result = tacky::process_binary_node(binary_expr, instructions);
+        result = process_binary_node(binary_expr, instructions, table);
+        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-5");
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-5" }).has_value());
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-5" })->type == wccff::int_type{});
 
-        REQUIRE(instructions.size() == 1);
-        REQUIRE(std::holds_alternative<tacky::binary_statement>(instructions.at(0)));
-        auto inst = std::get<tacky::binary_statement>(instructions.at(0));
+        pretty_result += wccff::tacky::pretty_print(instructions);
+        pretty_result += "\n";
 
-        REQUIRE(std::holds_alternative<tacky::binary_or_operator>(inst.op));
-        REQUIRE(std::holds_alternative<tacky::constant>(inst.src1));
-        REQUIRE(std::get<tacky::constant>(inst.src1).value == 1);
-        REQUIRE(std::get<tacky::constant>(inst.src2).value == 2);
-        REQUIRE(std::holds_alternative<tacky::var>(inst.dst));
-    }
+        instructions.clear();
+        binary_expr = std::make_unique<binary_node>(wccff::parser::bitwise_or_operator{},
+                                                    get_long_constant(3),
+                                                    get_int_constant(4),
+                                                    wccff::long_type{});
 
-    SECTION("Bitwise Xor Operator")
-    {
-        auto left = wccff::parser::int_constant{ 1 };
-        auto right = wccff::parser::int_constant{ 2 };
-        auto binary_expr = std::make_unique<parser::binary_node>(parser::bitwise_xor_operator{}, left, right);
+        result = process_binary_node(binary_expr, instructions, table);
+        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-6");
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-6" }).has_value());
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-6" })->type == wccff::long_type{});
 
-        std::vector<wccff::tacky::instruction> instructions;
-        auto result = tacky::process_binary_node(binary_expr, instructions);
+        pretty_result += wccff::tacky::pretty_print(instructions);
+        pretty_result += "\n";
 
-        REQUIRE(instructions.size() == 1);
-        REQUIRE(std::holds_alternative<tacky::binary_statement>(instructions.at(0)));
-        auto inst = std::get<tacky::binary_statement>(instructions.at(0));
+        instructions.clear();
+        binary_expr = std::make_unique<binary_node>(wccff::parser::bitwise_xor_operator{},
+                                                    get_int_constant(5),
+                                                    get_long_constant(6),
+                                                    wccff::long_type{});
 
-        REQUIRE(std::holds_alternative<tacky::binary_xor_operator>(inst.op));
-        REQUIRE(std::holds_alternative<tacky::constant>(inst.src1));
-        REQUIRE(std::get<tacky::constant>(inst.src1).value == 1);
-        REQUIRE(std::get<tacky::constant>(inst.src2).value == 2);
-        REQUIRE(std::holds_alternative<tacky::var>(inst.dst));
-    }
+        result = process_binary_node(binary_expr, instructions, table);
+        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-7");
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-7" }).has_value());
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-7" })->type == wccff::long_type{});
 
-    SECTION("Left Shift Operator")
-    {
-        auto left = wccff::parser::int_constant{ 1 };
-        auto right = wccff::parser::int_constant{ 2 };
-        auto binary_expr = std::make_unique<parser::binary_node>(parser::left_shift_operator{}, left, right);
+        pretty_result += wccff::tacky::pretty_print(instructions);
+        pretty_result += "\n";
 
-        std::vector<wccff::tacky::instruction> instructions;
-        auto result = tacky::process_binary_node(binary_expr, instructions);
+        instructions.clear();
+        binary_expr = std::make_unique<binary_node>(wccff::parser::left_shift_operator{},
+                                                    get_long_constant(7),
+                                                    get_long_constant(8),
+                                                    wccff::long_type{});
 
-        REQUIRE(instructions.size() == 1);
-        REQUIRE(std::holds_alternative<tacky::binary_statement>(instructions.at(0)));
-        auto inst = std::get<tacky::binary_statement>(instructions.at(0));
+        result = process_binary_node(binary_expr, instructions, table);
+        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-8");
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-8" }).has_value());
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-8" })->type == wccff::long_type{});
 
-        REQUIRE(std::holds_alternative<tacky::left_shift_operator>(inst.op));
-        REQUIRE(std::holds_alternative<tacky::constant>(inst.src1));
-        REQUIRE(std::get<tacky::constant>(inst.src1).value == 1);
-        REQUIRE(std::get<tacky::constant>(inst.src2).value == 2);
-        REQUIRE(std::holds_alternative<tacky::var>(inst.dst));
-    }
+        pretty_result += wccff::tacky::pretty_print(instructions);
+        pretty_result += "\n";
 
-    SECTION("Right Shift Operator")
-    {
-        auto left = wccff::parser::int_constant{ 1 };
-        auto right = wccff::parser::int_constant{ 2 };
-        auto binary_expr = std::make_unique<parser::binary_node>(parser::right_shift_operator{}, left, right);
+        instructions.clear();
+        binary_expr = std::make_unique<binary_node>(wccff::parser::right_shift_operator{},
+                                                    get_long_constant(7),
+                                                    get_long_constant(8),
+                                                    wccff::long_type{});
 
-        std::vector<wccff::tacky::instruction> instructions;
-        auto result = tacky::process_binary_node(binary_expr, instructions);
+        result = process_binary_node(binary_expr, instructions, table);
+        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-9");
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-9" }).has_value());
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-9" })->type == wccff::long_type{});
 
-        REQUIRE(instructions.size() == 1);
-        REQUIRE(std::holds_alternative<tacky::binary_statement>(instructions.at(0)));
-        auto inst = std::get<tacky::binary_statement>(instructions.at(0));
+        pretty_result += wccff::tacky::pretty_print(instructions);
+        pretty_result += "\n";
 
-        REQUIRE(std::holds_alternative<tacky::right_shift_operator>(inst.op));
-        REQUIRE(std::holds_alternative<tacky::constant>(inst.src1));
-        REQUIRE(std::get<tacky::constant>(inst.src1).value == 1);
-        REQUIRE(std::get<tacky::constant>(inst.src2).value == 2);
-        REQUIRE(std::holds_alternative<tacky::var>(inst.dst));
-    }
+        instructions.clear();
+        binary_expr = std::make_unique<binary_node>(wccff::parser::equals_operator{},
+                                                    get_long_constant(9),
+                                                    get_long_constant(10),
+                                                    wccff::long_type{});
 
-    SECTION("Equals Operator")
-    {
-        auto left = wccff::parser::int_constant{ 1 };
-        auto right = wccff::parser::int_constant{ 2 };
-        auto binary_expr = std::make_unique<parser::binary_node>(parser::equals_operator{}, left, right);
+        result = process_binary_node(binary_expr, instructions, table);
+        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-10");
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-10" }).has_value());
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-10" })->type == wccff::long_type{});
 
-        std::vector<wccff::tacky::instruction> instructions;
-        auto result = tacky::process_binary_node(binary_expr, instructions);
+        pretty_result += wccff::tacky::pretty_print(instructions);
+        pretty_result += "\n";
 
-        REQUIRE(instructions.size() == 1);
-        REQUIRE(std::holds_alternative<tacky::binary_statement>(instructions.at(0)));
-        auto inst = std::get<tacky::binary_statement>(instructions.at(0));
+        instructions.clear();
+        binary_expr = std::make_unique<binary_node>(wccff::parser::not_equals_operator{},
+                                                    get_long_constant(11),
+                                                    get_long_constant(12),
+                                                    wccff::long_type{});
 
-        REQUIRE(std::holds_alternative<tacky::equal_operator>(inst.op));
-        REQUIRE(std::holds_alternative<tacky::constant>(inst.src1));
-        REQUIRE(std::get<tacky::constant>(inst.src1).value == 1);
-        REQUIRE(std::get<tacky::constant>(inst.src2).value == 2);
-        REQUIRE(std::holds_alternative<tacky::var>(inst.dst));
-    }
+        result = process_binary_node(binary_expr, instructions, table);
+        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-11");
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-11" }).has_value());
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-11" })->type == wccff::long_type{});
 
-    SECTION("Not Equals Operator")
-    {
-        auto left = wccff::parser::int_constant{ 1 };
-        auto right = wccff::parser::int_constant{ 2 };
-        auto binary_expr = std::make_unique<parser::binary_node>(parser::not_equals_operator{}, left, right);
+        pretty_result += wccff::tacky::pretty_print(instructions);
+        pretty_result += "\n";
 
-        std::vector<wccff::tacky::instruction> instructions;
-        auto result = tacky::process_binary_node(binary_expr, instructions);
+        instructions.clear();
+        binary_expr = std::make_unique<binary_node>(wccff::parser::less_than_operator{},
+                                                    get_long_constant(13),
+                                                    get_long_constant(14),
+                                                    wccff::long_type{});
 
-        REQUIRE(instructions.size() == 1);
-        REQUIRE(std::holds_alternative<tacky::binary_statement>(instructions.at(0)));
-        auto inst = std::get<tacky::binary_statement>(instructions.at(0));
+        result = process_binary_node(binary_expr, instructions, table);
+        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-12");
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-12" }).has_value());
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-12" })->type == wccff::long_type{});
 
-        REQUIRE(std::holds_alternative<tacky::not_equal_operator>(inst.op));
-        REQUIRE(std::holds_alternative<tacky::constant>(inst.src1));
-        REQUIRE(std::get<tacky::constant>(inst.src1).value == 1);
-        REQUIRE(std::get<tacky::constant>(inst.src2).value == 2);
-        REQUIRE(std::holds_alternative<tacky::var>(inst.dst));
-    }
-    SECTION("Less Than Operator")
-    {
-        auto left = wccff::parser::int_constant{ 1 };
-        auto right = wccff::parser::int_constant{ 2 };
-        auto binary_expr = std::make_unique<parser::binary_node>(parser::less_than_operator{}, left, right);
+        pretty_result += wccff::tacky::pretty_print(instructions);
+        pretty_result += "\n";
 
-        std::vector<wccff::tacky::instruction> instructions;
-        auto result = tacky::process_binary_node(binary_expr, instructions);
+        instructions.clear();
+        binary_expr = std::make_unique<binary_node>(wccff::parser::less_than_or_equal_operator{},
+                                                    get_long_constant(15),
+                                                    get_long_constant(16),
+                                                    wccff::long_type{});
 
-        REQUIRE(instructions.size() == 1);
-        REQUIRE(std::holds_alternative<tacky::binary_statement>(instructions.at(0)));
-        auto inst = std::get<tacky::binary_statement>(instructions.at(0));
+        result = process_binary_node(binary_expr, instructions, table);
+        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-13");
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-13" }).has_value());
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-13" })->type == wccff::long_type{});
 
-        REQUIRE(std::holds_alternative<tacky::less_than_operator>(inst.op));
-        REQUIRE(std::holds_alternative<tacky::constant>(inst.src1));
-        REQUIRE(std::get<tacky::constant>(inst.src1).value == 1);
-        REQUIRE(std::get<tacky::constant>(inst.src2).value == 2);
-        REQUIRE(std::holds_alternative<tacky::var>(inst.dst));
-    }
-    SECTION("Less Than or Equal Operator")
-    {
-        auto left = wccff::parser::int_constant{ 1 };
-        auto right = wccff::parser::int_constant{ 2 };
-        auto binary_expr = std::make_unique<parser::binary_node>(parser::less_than_or_equal_operator{}, left, right);
+        pretty_result += wccff::tacky::pretty_print(instructions);
+        pretty_result += "\n";
 
-        std::vector<wccff::tacky::instruction> instructions;
-        auto result = tacky::process_binary_node(binary_expr, instructions);
+        instructions.clear();
+        binary_expr = std::make_unique<binary_node>(wccff::parser::greater_than_operator{},
+                                                    get_long_constant(17),
+                                                    get_long_constant(18),
+                                                    wccff::long_type{});
 
-        REQUIRE(instructions.size() == 1);
-        REQUIRE(std::holds_alternative<tacky::binary_statement>(instructions.at(0)));
-        auto inst = std::get<tacky::binary_statement>(instructions.at(0));
+        result = process_binary_node(binary_expr, instructions, table);
+        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-14");
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-14" }).has_value());
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-14" })->type == wccff::long_type{});
 
-        REQUIRE(std::holds_alternative<tacky::less_than_or_equal_operator>(inst.op));
-        REQUIRE(std::holds_alternative<tacky::constant>(inst.src1));
-        REQUIRE(std::get<tacky::constant>(inst.src1).value == 1);
-        REQUIRE(std::get<tacky::constant>(inst.src2).value == 2);
-        REQUIRE(std::holds_alternative<tacky::var>(inst.dst));
-    }
-    SECTION("Greater Than Operator")
-    {
-        auto left = wccff::parser::int_constant{ 1 };
-        auto right = wccff::parser::int_constant{ 2 };
-        auto binary_expr = std::make_unique<parser::binary_node>(parser::greater_than_operator{}, left, right);
+        pretty_result += wccff::tacky::pretty_print(instructions);
+        pretty_result += "\n";
 
-        std::vector<wccff::tacky::instruction> instructions;
-        auto result = tacky::process_binary_node(binary_expr, instructions);
+        instructions.clear();
+        binary_expr = std::make_unique<binary_node>(wccff::parser::greater_than_or_equal_operator{},
+                                                    get_long_constant(19),
+                                                    get_long_constant(20),
+                                                    wccff::long_type{});
 
-        REQUIRE(instructions.size() == 1);
-        REQUIRE(std::holds_alternative<tacky::binary_statement>(instructions.at(0)));
-        auto inst = std::get<tacky::binary_statement>(instructions.at(0));
+        result = process_binary_node(binary_expr, instructions, table);
+        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-15");
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-15" }).has_value());
+        REQUIRE(table.get(wccff::parser::identifier{ "tacky-15" })->type == wccff::long_type{});
 
-        REQUIRE(std::holds_alternative<tacky::greater_than_operator>(inst.op));
-        REQUIRE(std::holds_alternative<tacky::constant>(inst.src1));
-        REQUIRE(std::get<tacky::constant>(inst.src1).value == 1);
-        REQUIRE(std::get<tacky::constant>(inst.src2).value == 2);
-        REQUIRE(std::holds_alternative<tacky::var>(inst.dst));
-    }
-    SECTION("Greater Than or Equal Operator")
-    {
-        auto left = wccff::parser::int_constant{ 1 };
-        auto right = wccff::parser::int_constant{ 2 };
-        auto binary_expr = std::make_unique<parser::binary_node>(parser::greater_than_or_equal_operator{}, left, right);
+        pretty_result += wccff::tacky::pretty_print(instructions);
+        pretty_result += "\n";
 
-        std::vector<wccff::tacky::instruction> instructions;
-        auto result = tacky::process_binary_node(binary_expr, instructions);
-
-        REQUIRE(instructions.size() == 1);
-        REQUIRE(std::holds_alternative<tacky::binary_statement>(instructions.at(0)));
-        auto inst = std::get<tacky::binary_statement>(instructions.at(0));
-
-        REQUIRE(std::holds_alternative<tacky::greater_than_or_equal_operator>(inst.op));
-        REQUIRE(std::holds_alternative<tacky::constant>(inst.src1));
-        REQUIRE(std::get<tacky::constant>(inst.src1).value == 1);
-        REQUIRE(std::get<tacky::constant>(inst.src2).value == 2);
-        REQUIRE(std::holds_alternative<tacky::var>(inst.dst));
+        ApprovalTests::Approvals::verify(pretty_result);
     }
 }

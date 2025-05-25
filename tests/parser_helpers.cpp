@@ -26,12 +26,12 @@
 TEST_CASE("is_constant_expression_of")
 {
     auto int_const = wccff::testing::get_int_constant(55);
-    REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(int_const, 55));
-    REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::long_constant>(int_const, 55) == false);
-    REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(int_const, 43) == false);
+    REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(int_const, 55));
+    REQUIRE(wccff::testing::is_constant_expression_of<wccff::long_constant>(int_const, 55) == false);
+    REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(int_const, 43) == false);
 
     auto long_const = wccff::testing::get_long_constant(66);
-    REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::long_constant>(long_const, 66));
-    REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::int_constant>(long_const, 66) == false);
-    REQUIRE(wccff::testing::is_constant_expression_of<wccff::parser::long_constant>(long_const, 43) == false);
+    REQUIRE(wccff::testing::is_constant_expression_of<wccff::long_constant>(long_const, 66));
+    REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(long_const, 66) == false);
+    REQUIRE(wccff::testing::is_constant_expression_of<wccff::long_constant>(long_const, 43) == false);
 }

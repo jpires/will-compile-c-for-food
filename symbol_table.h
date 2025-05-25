@@ -27,17 +27,6 @@
 
 namespace wccff::symbol_table {
 
-struct int_initial
-{
-    int32_t value;
-};
-struct long_initial
-{
-    int64_t value;
-};
-
-using initial = std::variant<int_initial, long_initial>;
-
 struct no_initialiser
 {
 };

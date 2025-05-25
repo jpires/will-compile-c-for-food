@@ -47,4 +47,17 @@ std::optional<type> copy_optional_type(const std::optional<type> &n)
     }
     return std::nullopt;
 }
+
+initial get_default_initial(const type &t)
+{
+    return std::visit(
+      visitor{
+        [](const int_type) -> initial { return int_initial{ 0 }; },
+        [](const long_type) -> initial { return long_initial{ 0 }; },
+        [](const void_type) -> initial { throw std::runtime_error("void type has no default value"); },
+        [](const std::unique_ptr<fun_type> &) -> initial { throw std::runtime_error("fun type has no default value"); },
+      },
+      t);
+}
+
 } // namespace wccff

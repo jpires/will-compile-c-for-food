@@ -1,0 +1,7 @@
+Unary(Complement, IntConstant(42), Var(tacky-1))
+
+Unary(Not, LongConstant(42), Var(tacky-2))
+
+Unary(Negate, Var(foo), Var(tacky-3))
+
+

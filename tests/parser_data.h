@@ -31,14 +31,14 @@ constexpr wccff::parser::identifier get_identifier(std::string name)
     return wccff::parser::identifier{ std::move(name) };
 }
 
-constexpr wccff::parser::int_constant get_int_constant(int32_t value = 42)
+constexpr wccff::int_constant get_int_constant(int32_t value = 42)
 {
-    return wccff::parser::int_constant{ value };
+    return wccff::int_constant{ value };
 }
 
-constexpr wccff::parser::long_constant get_long_constant(int64_t value = 42)
+constexpr wccff::long_constant get_long_constant(int64_t value = 42)
 {
-    return wccff::parser::long_constant{ value };
+    return wccff::long_constant{ value };
 }
 
 constexpr std::unique_ptr<wccff::parser::binary_node> get_binary_node(
@@ -52,7 +52,7 @@ constexpr std::unique_ptr<wccff::parser::binary_node> get_binary_node(
 constexpr wccff::parser::block get_block()
 {
     std::vector<wccff::parser::block_item> items;
-    items.emplace_back(wccff::parser::return_node{ wccff::parser::int_constant{ 42 } });
+    items.emplace_back(wccff::parser::return_node{ wccff::int_constant{ 42 } });
     return { std::move(items) };
 }
 

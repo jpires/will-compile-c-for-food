@@ -21,6 +21,7 @@
 #define TYPES_H
 
 #include "visitor.h"
+#include <cstdint>
 #include <optional>
 #include <variant>
 #include <vector>
@@ -64,6 +65,31 @@ constexpr bool operator==(const type &lhs, const type &rhs)
 std::unique_ptr<fun_type> copy_fun_type(const std::unique_ptr<fun_type> &n);
 type copy_type(const type &n);
 std::optional<type> copy_optional_type(const std::optional<type> &n);
+
+struct int_initial
+{
+    int32_t value;
+};
+struct long_initial
+{
+    int64_t value;
+};
+
+using initial = std::variant<int_initial, long_initial>;
+
+initial get_default_initial(const type &t);
+
+struct int_constant
+{
+    int32_t value;
+};
+
+struct long_constant
+{
+    int64_t value;
+};
+
+using constant = std::variant<int_constant, long_constant>;
 
 } // namespace wccff
 

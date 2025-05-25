@@ -27,17 +27,17 @@
 
 namespace wccff::sema::type_checker {
 
-auto convert_constant(const parser::constant &c) -> symbol_table::initial_value
+auto convert_constant(const constant &c) -> symbol_table::initial_value
 {
-    if (std::holds_alternative<parser::int_constant>(c))
+    if (std::holds_alternative<int_constant>(c))
     {
-        auto value = std::get<parser::int_constant>(c).value;
-        return symbol_table::int_initial{ value };
+        auto value = std::get<int_constant>(c).value;
+        return int_initial{ value };
     }
-    if (std::holds_alternative<parser::long_constant>(c))
+    if (std::holds_alternative<long_constant>(c))
     {
-        auto value = std::get<parser::long_constant>(c).value;
-        return symbol_table::long_initial{ value };
+        auto value = std::get<long_constant>(c).value;
+        return long_initial{ value };
     }
     throw std::runtime_error("Unexpected constant type");
 }
@@ -259,7 +259,7 @@ auto process_expression(const parser::expression &node, symbol_table::symbol_tab
         [&](const parser::var &n) -> std::expected<parser::expression, semantic_error> {
             return process_var(n, table);
         },
-        [&](const parser::constant &n) -> std::expected<parser::expression, semantic_error> { return n; },
+        [&](const constant &n) -> std::expected<parser::expression, semantic_error> { return n; },
       },
       node);
 }
@@ -349,7 +349,9 @@ auto process_function_call(const std::unique_ptr<parser::function_call> &node, s
         args.push_back(parser::convert_to(result.value(), t));
     }
 
-    return std::make_unique<parser::function_call>(node->name, std::move(args), copy_type(symbol->type));
+    auto &return_type = std::get<std::unique_ptr<fun_type>>(symbol->type)->return_type;
+
+    return std::make_unique<parser::function_call>(node->name, std::move(args), copy_type(return_type));
 }
 
 auto process_function_declaration(const parser::function_declaration &node,
@@ -629,9 +631,9 @@ auto process_variable_declaration_file_scope(const parser::variable_declaration 
     symbol_table::initial_value init_value;
     if (node.init.has_value())
     {
-        if (std::holds_alternative<parser::constant>(node.init.value()))
+        if (std::holds_alternative<constant>(node.init.value()))
         {
-            auto int_node = std::get<parser::constant>(node.init.value());
+            auto int_node = std::get<constant>(node.init.value());
             init_value = convert_constant(int_node);
         }
         else
@@ -679,9 +681,9 @@ auto process_variable_declaration_file_scope(const parser::variable_declaration 
             return std::unexpected<semantic_error>{ msg };
         }
 
-        if (std::holds_alternative<symbol_table::initial>(attrs.init))
+        if (std::holds_alternative<initial>(attrs.init))
         {
-            if (std::holds_alternative<symbol_table::initial>(init_value))
+            if (std::holds_alternative<initial>(init_value))
             {
                 auto msg = fmt::format("Conflicting file scope variable '{}' definitions", node.name.name);
                 return std::unexpected<semantic_error>{ msg };
@@ -691,7 +693,7 @@ auto process_variable_declaration_file_scope(const parser::variable_declaration 
                 init_value = attrs.init;
             }
         }
-        else if (std::holds_alternative<symbol_table::initial>(init_value) == false &&
+        else if (std::holds_alternative<initial>(init_value) == false &&
                  std::holds_alternative<symbol_table::tentative>(attrs.init))
         {
             init_value = symbol_table::tentative{};
@@ -740,11 +742,11 @@ auto process_variable_declaration_local_scope(const parser::variable_declaration
         symbol_table::initial_value init_value{};
         if (node.init.has_value() == false)
         {
-            init_value = symbol_table::int_initial{ 0 };
+            init_value = int_initial{ 0 };
         }
-        else if (std::holds_alternative<parser::constant>(node.init.value()))
+        else if (std::holds_alternative<constant>(node.init.value()))
         {
-            auto tmp = std::get<parser::constant>(node.init.value());
+            auto tmp = std::get<constant>(node.init.value());
             init_value = convert_constant(tmp);
         }
         else
