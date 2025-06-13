@@ -45,31 +45,38 @@ std::string process_register(const assembly_generation::reg &node, operand_size 
                                    [](const assembly_generation::R8 &) { return "%r8d"; },
                                    [](const assembly_generation::R9 &) { return "%r9d"; },
                                    [](const assembly_generation::R10 &) { return "%r10d"; },
-                                   [](const assembly_generation::R11 &) { return "%r11d"; } },
+                                   [](const assembly_generation::R11 &) { return "%r11d"; },
+                                   [](const assembly_generation::SP &) { return "%esp"; } },
                           node);
     }
     else if (size == operand_size::eight_bytes)
     {
-        return std::visit(visitor{ [](const assembly_generation::ax &) { return "%rax"; },
-                                   [](const assembly_generation::cx &) { return "%rcx"; },
-                                   [](const assembly_generation::dx &) { return "%rdx"; },
-                                   [](const assembly_generation::di &) { return "%rdi"; },
-                                   [](const assembly_generation::si &) { return "%rsi"; },
-                                   [](const assembly_generation::R8 &) { return "%r8"; },
-                                   [](const assembly_generation::R9 &) { return "%r9"; },
-                                   [](const assembly_generation::R10 &) { return "%r10"; },
-                                   [](const assembly_generation::R11 &) { return "%r11"; } },
+        return std::visit(visitor{
+                            [](const assembly_generation::ax &) { return "%rax"; },
+                            [](const assembly_generation::cx &) { return "%rcx"; },
+                            [](const assembly_generation::dx &) { return "%rdx"; },
+                            [](const assembly_generation::di &) { return "%rdi"; },
+                            [](const assembly_generation::si &) { return "%rsi"; },
+                            [](const assembly_generation::R8 &) { return "%r8"; },
+                            [](const assembly_generation::R9 &) { return "%r9"; },
+                            [](const assembly_generation::R10 &) { return "%r10"; },
+                            [](const assembly_generation::R11 &) { return "%r11"; },
+                            [](const assembly_generation::SP &) { return "%rsp"; },
+                          },
                           node);
     }
-    return std::visit(visitor{ [](const assembly_generation::ax &) { return "%al"; },
-                               [](const assembly_generation::cx &) { return "%cl"; },
-                               [](const assembly_generation::dx &) { return "%dl"; },
-                               [](const assembly_generation::di &) { return "%di"; },
-                               [](const assembly_generation::si &) { return "%si"; },
-                               [](const assembly_generation::R8 &) { return "%r8b"; },
-                               [](const assembly_generation::R9 &) { return "%r9b"; },
-                               [](const assembly_generation::R10 &) { return "%r10b"; },
-                               [](const assembly_generation::R11 &) { return "%r11b"; } },
+    return std::visit(visitor{
+                        [](const assembly_generation::ax &) { return "%al"; },
+                        [](const assembly_generation::cx &) { return "%cl"; },
+                        [](const assembly_generation::dx &) { return "%dl"; },
+                        [](const assembly_generation::di &) { return "%di"; },
+                        [](const assembly_generation::si &) { return "%si"; },
+                        [](const assembly_generation::R8 &) { return "%r8b"; },
+                        [](const assembly_generation::R9 &) { return "%r9b"; },
+                        [](const assembly_generation::R10 &) { return "%r10b"; },
+                        [](const assembly_generation::R11 &) { return "%r11b"; },
+                        [](const assembly_generation::SP &) { return "%sp"; },
+                      },
                       node);
 }
 std::string process_pseudo(const assembly_generation::pseudo &node)
@@ -160,6 +167,29 @@ std::string process_binary(const assembly_generation::binary &node)
     {
     }
 
+    // ToDo: Remove me.
+    // There are two binary instructions that operate on a quadword.
+    // The add and sub RSP to manipulate the stack pointer.
+    if (std::holds_alternative<wccff::quad_word>(node.type))
+    {
+
+        if (std::holds_alternative<assembly_generation::add>(node.op))
+        {
+            return fmt::format("{} {}, {}",
+                               "addq",
+                               process_operand(node.src, op_size(node.op)),
+                               process_operand(node.dst, operand_size::eight_bytes));
+        }
+
+        if (std::holds_alternative<assembly_generation::sub>(node.op))
+        {
+            return fmt::format("{} {}, {}",
+                               "subq",
+                               process_operand(node.src, op_size(node.op)),
+                               process_operand(node.dst, operand_size::eight_bytes));
+        }
+    }
+
     return fmt::format("{} {}, {}",
                        process_binary_operator(node.op),
                        process_operand(node.src, op_size(node.op)),
@@ -195,14 +225,6 @@ std::string process_label(const assembly_generation::label &node)
 {
     return fmt::format("L{}:", process_identifier(node.name));
 }
-std::string process_allocate_stack(const assembly_generation::allocate_stack &node)
-{
-    return fmt::format("subq ${}, %rsp", node.size.value);
-}
-std::string process_deallocate_stack(const assembly_generation::deallocate_stack &node)
-{
-    return fmt::format("addq ${}, %rsp", node.size.value);
-}
 std::string process_push(const assembly_generation::push &node)
 {
     return fmt::format("pushq {}", process_operand(node.src, operand_size::eight_bytes));
@@ -217,6 +239,7 @@ std::string process_instruction(const assembly_generation::instruction &instruct
     return std::visit(
       visitor{
         [](const assembly_generation::mov_instruction &mov) { return process_mov_instruction(mov); },
+        [](const assembly_generation::movx &mov) -> std::string { throw std::runtime_error("Not implemented"); },
         [](const assembly_generation::unary &node) { return process_unary(node); },
         [](const assembly_generation::binary &node) { return process_binary(node); },
         [](const assembly_generation::cmp &node) { return process_cmp(node); },
@@ -226,8 +249,6 @@ std::string process_instruction(const assembly_generation::instruction &instruct
         [](const assembly_generation::jmpcc &node) { return process_jmpcc(node); },
         [](const assembly_generation::setcc &node) { return process_setcc(node); },
         [](const assembly_generation::label &node) { return process_label(node); },
-        [](const assembly_generation::allocate_stack &node) { return process_allocate_stack(node); },
-        [](const assembly_generation::deallocate_stack &node) -> std::string { return process_deallocate_stack(node); },
         [](const assembly_generation::push &node) -> std::string { return process_push(node); },
         [](const assembly_generation::call &node) -> std::string { return process_call(node); },
         [](const assembly_generation::ret_instruction &ret) { return process_ret_instruction(ret); },
@@ -252,13 +273,14 @@ std::string process_static_variable(const assembly_generation::static_variable &
 {
     auto function_name = process_identifier(f.name);
     auto globl = f.is_global ? fmt::format(".globl {}\n", function_name) : "";
-    if (f.init == 0)
+    auto init = std::get<int_initial>(f.init);
+    if (init.value == 0)
     {
         return fmt::format("{}\n.bss\n.balign 4\n{}:\n.zero 4\n", globl, function_name);
     }
     else
     {
-        return fmt::format("{}\n.data\n.balign 4\n{}:\n.long {}\n", globl, function_name, f.init);
+        return fmt::format("{}\n.data\n.balign 4\n{}:\n.long {}\n", globl, function_name, init.value);
     }
 }
 

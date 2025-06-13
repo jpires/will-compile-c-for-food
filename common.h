@@ -77,6 +77,8 @@ struct long_initial
 
 using initial = std::variant<int_initial, long_initial>;
 
+std::string pretty_print(const initial &i);
+
 initial get_default_initial(const type &t);
 
 struct int_constant
@@ -90,6 +92,15 @@ struct long_constant
 };
 
 using constant = std::variant<int_constant, long_constant>;
+
+struct long_word
+{
+};
+struct quad_word
+{
+};
+
+using assembly_type = std::variant<long_word, quad_word>;
 
 } // namespace wccff
 

@@ -1,0 +1,4 @@
+--src = large immediate--
+		Mov(type(quad_word), src(Imm(2147483648)), dst(R10d))
+		Push(R10d)
+

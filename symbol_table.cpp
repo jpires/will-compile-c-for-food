@@ -18,3 +18,41 @@
  */
 
 #include "symbol_table.h"
+namespace wccff::symbol_table {
+void backend_symbol_table::build(const symbol_table &table)
+{
+    for (const auto &entry : table)
+    {
+        const auto &type = entry.second.type;
+        auto s = std::visit(
+          visitor{
+            [](const func_attributes &a) -> asm_symbtab_entry { return fun_entry{ a.is_defined }; },
+            [&](const local_attributes &a) -> asm_symbtab_entry { return obj_entry{ get_assembly_type(type), false }; },
+            [&](const static_attributes &a) -> asm_symbtab_entry { return obj_entry{ get_assembly_type(type), true }; },
+          },
+          entry.second.attrs);
+
+        add(parser::identifier{ entry.first }, s);
+    }
+}
+assembly_type backend_symbol_table::get_assembly_type(const wccff::type &t)
+{
+    return std::visit(
+      visitor{
+        [](const int_type &) -> assembly_type { return long_word{}; },
+        [](const long_type &) -> assembly_type { return quad_word{}; },
+        [](const void_type &) -> assembly_type { throw std::logic_error("Not implemented"); },
+        [](const std::unique_ptr<fun_type> &) -> assembly_type { throw std::logic_error("Not implemented"); },
+      },
+      t);
+}
+
+int32_t backend_symbol_table::calculate_offset(const assembly_type &t)
+{
+    return std::visit(visitor{
+                        [](const long_word &) { return 4; },
+                        [&](const quad_word &) { return m_offset % 8 == 0 ? 8 : (8 + std::abs(m_offset) % 8); },
+                      },
+                      t);
+}
+} // namespace wccff::symbol_table

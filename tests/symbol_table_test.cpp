@@ -1,5 +1,6 @@
 #include "symbol_table.h"
 #include <catch2/catch_test_macros.hpp>
+#include <ctll/parser.hpp>
 #include <string_view>
 
 TEST_CASE("Symbol Table", "[symbol_table]")
@@ -89,5 +90,98 @@ TEST_CASE("Symbol Table", "[symbol_table]")
         auto new_attrs1 = std::get<symbol_table::func_attributes>(s1.value().attrs);
         REQUIRE(new_attrs1.is_global);
         REQUIRE(new_attrs1.is_defined);
+    }
+}
+
+TEST_CASE("Backend Symbol Table", "[symbol_table]")
+{
+    using namespace wccff;
+    wccff::symbol_table::symbol_table frontend_table;
+    wccff::symbol_table::backend_symbol_table backend_table;
+
+    SECTION("Local Attributes")
+    {
+        REQUIRE(frontend_table.size() == 0);
+        REQUIRE(backend_table.size() == 0);
+
+        frontend_table.add(parser::identifier{ "foo_int" }, int_type{}, symbol_table::local_attributes{});
+        frontend_table.add(parser::identifier{ "foo_long" }, long_type{}, symbol_table::local_attributes{});
+
+        backend_table.build(frontend_table);
+
+        REQUIRE(frontend_table.size() == 2);
+        REQUIRE(backend_table.size() == 2);
+
+        auto foo_int = backend_table.get(parser::identifier{ "foo_int" });
+        REQUIRE(foo_int.has_value());
+        REQUIRE(std::holds_alternative<symbol_table::obj_entry>(foo_int.value()));
+        auto foo_int_obj_entry = std::get<symbol_table::obj_entry>(foo_int.value());
+        REQUIRE(foo_int_obj_entry.is_static == false);
+        REQUIRE(std::holds_alternative<long_word>(foo_int_obj_entry.asm_type));
+
+        auto foo_long = backend_table.get(parser::identifier{ "foo_long" });
+        REQUIRE(foo_long.has_value());
+        REQUIRE(std::holds_alternative<symbol_table::obj_entry>(foo_long.value()));
+        auto foo_long_obj_entry = std::get<symbol_table::obj_entry>(foo_long.value());
+        REQUIRE(foo_long_obj_entry.is_static == false);
+        REQUIRE(std::holds_alternative<quad_word>(foo_long_obj_entry.asm_type));
+    }
+
+    SECTION("Static Attributes")
+    {
+        REQUIRE(frontend_table.size() == 0);
+        REQUIRE(backend_table.size() == 0);
+
+        frontend_table.add(parser::identifier{ "foo_int" }, int_type{}, symbol_table::static_attributes{});
+        frontend_table.add(parser::identifier{ "foo_long" }, long_type{}, symbol_table::static_attributes{});
+
+        backend_table.build(frontend_table);
+
+        REQUIRE(frontend_table.size() == 2);
+        REQUIRE(backend_table.size() == 2);
+
+        auto foo_int = backend_table.get(parser::identifier{ "foo_int" });
+        REQUIRE(foo_int.has_value());
+        REQUIRE(std::holds_alternative<symbol_table::obj_entry>(foo_int.value()));
+        auto foo_int_obj_entry = std::get<symbol_table::obj_entry>(foo_int.value());
+        REQUIRE(foo_int_obj_entry.is_static);
+        REQUIRE(std::holds_alternative<long_word>(foo_int_obj_entry.asm_type));
+
+        auto foo_long = backend_table.get(parser::identifier{ "foo_long" });
+        REQUIRE(foo_long.has_value());
+        REQUIRE(std::holds_alternative<symbol_table::obj_entry>(foo_long.value()));
+        auto foo_long_obj_entry = std::get<symbol_table::obj_entry>(foo_long.value());
+        REQUIRE(foo_long_obj_entry.is_static);
+        REQUIRE(std::holds_alternative<quad_word>(foo_long_obj_entry.asm_type));
+    }
+
+    SECTION("Func Attributes")
+    {
+        REQUIRE(frontend_table.size() == 0);
+        REQUIRE(backend_table.size() == 0);
+        auto f_type = type{ std::make_unique<fun_type>(std::vector<type>{}, long_type{}) };
+        frontend_table.add(parser::identifier{ "foo_defined" },
+                           f_type,
+                           symbol_table::func_attributes{ .is_defined = true });
+        frontend_table.add(parser::identifier{ "foo_not_defined" },
+                           f_type,
+                           symbol_table::func_attributes{ .is_defined = false });
+
+        backend_table.build(frontend_table);
+
+        REQUIRE(frontend_table.size() == 2);
+        REQUIRE(backend_table.size() == 2);
+
+        auto foo_defined = backend_table.get(parser::identifier{ "foo_defined" });
+        REQUIRE(foo_defined.has_value());
+        REQUIRE(std::holds_alternative<symbol_table::fun_entry>(foo_defined.value()));
+        auto foo_defined_fun_entry = std::get<symbol_table::fun_entry>(foo_defined.value());
+        REQUIRE(foo_defined_fun_entry.is_defined);
+
+        auto foo_not_defined = backend_table.get(parser::identifier{ "foo_not_defined" });
+        REQUIRE(foo_not_defined.has_value());
+        REQUIRE(std::holds_alternative<symbol_table::fun_entry>(foo_not_defined.value()));
+        auto foo_not_defined_fun_entry = std::get<symbol_table::fun_entry>(foo_not_defined.value());
+        REQUIRE(foo_not_defined_fun_entry.is_defined == false);
     }
 }

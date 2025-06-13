@@ -112,6 +112,8 @@ class symbol_table
         return it->second;
     };
 
+    std::size_t size() const { return m_table.size(); }
+
     std::unordered_map<std::string, symbol>::const_iterator begin() const { return m_table.begin(); }
     std::unordered_map<std::string, symbol>::const_iterator cbegin() const { return m_table.cbegin(); }
     std::unordered_map<std::string, symbol>::const_iterator end() const { return m_table.end(); }
@@ -121,6 +123,78 @@ class symbol_table
 
   private:
     std::unordered_map<std::string, symbol> m_table;
+};
+
+struct obj_entry
+{
+    assembly_type asm_type;
+    bool is_static;
+    std::optional<int32_t> offset;
+};
+
+struct fun_entry
+{
+    bool is_defined;
+};
+
+using asm_symbtab_entry = std::variant<obj_entry, fun_entry>;
+
+struct backend_symbol_table
+{
+    void add(const parser::identifier &name, const asm_symbtab_entry &entry) { m_table[name.name] = entry; }
+    void build(const symbol_table &table);
+
+    std::optional<asm_symbtab_entry> get(const parser::identifier &name) const
+    {
+        const auto it = m_table.find(name.name);
+        if (it == m_table.end())
+        {
+            return std::nullopt;
+        }
+
+        return it->second;
+    };
+
+    int32_t get_symbol_offset(const parser::identifier &name)
+    {
+        const auto it = m_table.find(name.name);
+        if (it == m_table.end())
+        {
+            throw std::runtime_error(fmt::format("Symbol {} not found in backend_symbol_table", name.name));
+        }
+
+        if (std::holds_alternative<fun_entry>(it->second))
+        {
+            throw std::runtime_error(fmt::format("Trying to get the offset of a function symbol"));
+        }
+        auto obj = std::get<obj_entry>(it->second);
+        if (obj.is_static)
+        {
+            throw std::runtime_error(fmt::format("Trying to get the offset of a static symbol"));
+        }
+
+        if (obj.offset.has_value())
+        {
+            return obj.offset.value();
+        }
+
+        m_offset -= calculate_offset(obj.asm_type);
+        obj.offset = m_offset;
+        m_table[name.name] = obj;
+        return m_offset;
+    }
+    int32_t get_current_offset() const { return m_offset; }
+
+    std::size_t size() const { return m_table.size(); }
+
+    void enter_function() { m_offset = 0; }
+
+  private:
+    assembly_type get_assembly_type(const wccff::type &t);
+    int32_t calculate_offset(const assembly_type &assembly);
+
+    std::unordered_map<std::string, asm_symbtab_entry> m_table;
+    int32_t m_offset{ 0 };
 };
 } // namespace wccff::symbol_table
 

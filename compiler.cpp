@@ -97,11 +97,11 @@ bool compile(const std::filesystem::path &source_filename,
         return true;
     }
 
+    auto frontend_table = std::get<symbol_table::symbol_table>(sema_result.value());
     //
     // TACKY
     //
-    auto tacky_result = tacky::process(std::get<parser::program>(sema_result.value()),
-                                       std::get<symbol_table::symbol_table>(sema_result.value()));
+    auto tacky_result = tacky::process(std::get<parser::program>(sema_result.value()), frontend_table);
     fmt::print("{}", pretty_print(tacky_result));
     if (stop == stop_phase::tacky)
     {
@@ -113,11 +113,14 @@ bool compile(const std::filesystem::path &source_filename,
     //
 
     fmt::print("\nStart Assembly Generation\n");
-    auto codegen_result = assembly_generation::process(tacky_result);
+    auto codegen_result = assembly_generation::process(tacky_result, frontend_table);
+
+    symbol_table::backend_symbol_table backend_table;
+    backend_table.build(frontend_table);
     fmt::print("{}\n", pretty_print(codegen_result));
     fmt::print("Stop Assembly Generation");
     fmt::print("\nReplace Pseudo Register\n");
-    replace_pseudo_registers(codegen_result, std::get<symbol_table::symbol_table>(sema_result.value()));
+    replace_pseudo_registers(codegen_result, backend_table);
     fmt::print("{}\n", pretty_print(codegen_result));
 
     fmt::print("Fixup instructions\n");

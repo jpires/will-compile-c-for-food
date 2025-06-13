@@ -1,0 +1,35 @@
+--src = data; dst = data; type = long_word--
+		Mov(type(long_word), src(Data(data_src)), dst(R10d))
+		Mov(type(long_word), src(R10d), dst(Data(data_dst)))
+
+--src = data; dst = stack; type = quad_word--
+		Mov(type(quad_word), src(Data(data_src)), dst(R10d))
+		Mov(type(quad_word), src(R10d), dst(Stack(Imm(16))))
+
+--src = stack; dst = data; type = long_word--
+		Mov(type(long_word), src(Stack(Imm(8))), dst(R10d))
+		Mov(type(long_word), src(R10d), dst(Data(data_dst)))
+
+--src = stack; dst = stack; type = quad_word--
+		Mov(type(quad_word), src(Stack(Imm(8))), dst(R10d))
+		Mov(type(quad_word), src(R10d), dst(Stack(Imm(16))))
+
+--src = large immediate; dst = stack; type = quad_word--
+		Mov(type(quad_word), src(Imm(2147483648)), dst(R10d))
+		Mov(type(quad_word), src(R10d), dst(Stack(Imm(16))))
+
+--src = large immediate; dst = data; type = quad_word--
+		Mov(type(quad_word), src(Imm(2147483648)), dst(R10d))
+		Mov(type(quad_word), src(R10d), dst(Data(data_dst)))
+
+--src = large immediate; dst = stack; type = long_word--
+		Mov(type(quad_word), src(Imm(2147483648)), dst(R10d))
+		Mov(type(long_word), src(R10d), dst(Stack(Imm(16))))
+
+--src = large immediate; dst = data; type = long_word--
+		Mov(type(quad_word), src(Imm(2147483648)), dst(R10d))
+		Mov(type(long_word), src(R10d), dst(Data(data_dst)))
+
+--src = large immediate; dst = reg; type = long_word--
+		Mov(type(long_word), src(Imm(-2147483648)), dst(cx))
+

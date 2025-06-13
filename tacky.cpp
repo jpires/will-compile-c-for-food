@@ -805,7 +805,7 @@ std::string pretty_print(const static_variable &top, int32_t ident)
                                   "StaticVar(name={}, global={}, init={})\n",
                                   top.name.name,
                                   top.global,
-                                  pretty_print(top.init));
+                                  wccff::pretty_print(top.init));
 }
 std::string pretty_print(const top_level &top, int32_t ident)
 {

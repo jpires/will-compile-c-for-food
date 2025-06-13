@@ -60,4 +60,13 @@ initial get_default_initial(const type &t)
       t);
 }
 
+std::string pretty_print(const initial &i)
+{
+    return std::visit(visitor{
+                        [](const int_initial &n) { return std::to_string(n.value); },
+                        [](const long_initial &n) { return std::to_string(n.value); },
+                      },
+                      i);
+}
+
 } // namespace wccff
