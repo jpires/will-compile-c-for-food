@@ -23,6 +23,15 @@
 
 namespace wccff::code_emission {
 
+operand_size get_operand_size(const assembly_type &t)
+{
+    return std::visit(visitor{
+                        [](const long_word &) { return operand_size::four_bytes; },
+                        [](const quad_word &) { return operand_size::eight_bytes; },
+                      },
+                      t);
+}
+
 std::string process_identifier(const assembly_generation::identifier &identifier)
 {
     return fmt::format("_{}", identifier.name);
@@ -105,7 +114,7 @@ std::string process_cond_code(assembly_generation::cond_code cond)
                       cond);
 }
 
-std::string process_operand(const assembly_generation::operand &operand, operand_size size = operand_size::four_bytes)
+std::string process_operand(const assembly_generation::operand &operand, operand_size size)
 {
     return std::visit(visitor{
                         [](const assembly_generation::immediate &immediate) { return process_immediate(immediate); },
@@ -117,96 +126,112 @@ std::string process_operand(const assembly_generation::operand &operand, operand
                       operand);
 }
 
+std::string_view process_assembly_type(const assembly_type &t)
+{
+    return std::visit(visitor{
+                        [](const long_word &) { return "l"; },
+                        [](const quad_word &) { return "q"; },
+                      },
+                      t);
+}
+
 std::string process_mov_instruction(const assembly_generation::mov_instruction &mov)
 {
-    return fmt::format("movl {}, {}", process_operand(mov.src), process_operand(mov.dst));
+    if (std::holds_alternative<wccff::quad_word>(mov.type))
+    {
+        return fmt::format("movq {}, {}",
+                           process_operand(mov.src, operand_size::eight_bytes),
+                           process_operand(mov.dst, operand_size::eight_bytes));
+    }
+
+    return fmt::format("movl {}, {}",
+                       process_operand(mov.src, operand_size::four_bytes),
+                       process_operand(mov.dst, operand_size::four_bytes));
 }
+
+std::string process_movx(const assembly_generation::movx &mov)
+{
+    return fmt::format("movslq {}, {}",
+                       process_operand(mov.src, operand_size::four_bytes),
+                       process_operand(mov.dst, operand_size::eight_bytes));
+}
+
 std::string process_ret_instruction(const assembly_generation::ret_instruction &)
 {
     return fmt::format("movq %rbp, %rsp\npopq %rbp\nret");
 }
 
-std::string process_binary_operator(const assembly_generation::binary_operator &node)
+std::string process_binary_operator(const assembly_generation::binary_operator &node, const assembly_type &t)
 {
-    return std::visit(visitor{
-                        [](const assembly_generation::add &) { return "addl"; },
-                        [](const assembly_generation::sub &) { return "subl"; },
-                        [](const assembly_generation::mul &) { return "imull"; },
-                        [](const assembly_generation::binary_and &) { return "andl"; },
-                        [](const assembly_generation::binary_or &) { return "orl"; },
-                        [](const assembly_generation::binary_xor &) { return "xorl"; },
-                        [](const assembly_generation::left_shift &) { return "sall"; },
-                        [](const assembly_generation::right_shift &) { return "sarl"; },
-                      },
-                      node);
+    auto sufix = process_assembly_type(t);
+
+    auto operand = std::visit(visitor{
+                                [](const assembly_generation::add &) { return "add"; },
+                                [](const assembly_generation::sub &) { return "sub"; },
+                                [](const assembly_generation::mul &) { return "imul"; },
+                                [](const assembly_generation::binary_and &) { return "and"; },
+                                [](const assembly_generation::binary_or &) { return "or"; },
+                                [](const assembly_generation::binary_xor &) { return "xor"; },
+                                [](const assembly_generation::left_shift &) { return "sal"; },
+                                [](const assembly_generation::right_shift &) { return "sar"; },
+                              },
+                              node);
+
+    return fmt::format("{}{}", operand, sufix);
 }
 
-std::string process_unary_operator(const assembly_generation::unary_operator &node)
+std::string process_unary_operator(const assembly_generation::unary_operator &node, const assembly_type &t)
 {
-    return std::visit(visitor{ [](const assembly_generation::neg_op &) { return "negl"; },
-                               [](const assembly_generation::not_op &) { return "notl"; } },
-                      node);
+    auto sufix = process_assembly_type(t);
+    auto operand = std::visit(visitor{ [](const assembly_generation::neg_op &) { return "neg"; },
+                                       [](const assembly_generation::not_op &) { return "not"; } },
+                              node);
+    return fmt::format("{}{}", operand, sufix);
 }
 std::string process_unary(const assembly_generation::unary &node)
 {
-    return fmt::format("{} {}", process_unary_operator(node.op), process_operand(node.dst), process_operand(node.dst));
+    return fmt::format("{} {}",
+                       process_unary_operator(node.op, node.type),
+                       process_operand(node.dst, get_operand_size(node.type)),
+                       process_operand(node.dst, get_operand_size(node.type)));
 }
 std::string process_binary(const assembly_generation::binary &node)
 {
-    auto op_size = [](const assembly_generation::binary_operator &op) {
-        if (std::holds_alternative<assembly_generation::left_shift>(op) ||
-            std::holds_alternative<assembly_generation::right_shift>(op))
-        {
-            return operand_size::one_byte;
-        }
-        return operand_size::four_bytes;
-    };
-
     if (std::holds_alternative<assembly_generation::left_shift>(node.op) ||
         std::holds_alternative<assembly_generation::right_shift>(node.op))
     {
-    }
-
-    // ToDo: Remove me.
-    // There are two binary instructions that operate on a quadword.
-    // The add and sub RSP to manipulate the stack pointer.
-    if (std::holds_alternative<wccff::quad_word>(node.type))
-    {
-
-        if (std::holds_alternative<assembly_generation::add>(node.op))
-        {
-            return fmt::format("{} {}, {}",
-                               "addq",
-                               process_operand(node.src, op_size(node.op)),
-                               process_operand(node.dst, operand_size::eight_bytes));
-        }
-
-        if (std::holds_alternative<assembly_generation::sub>(node.op))
-        {
-            return fmt::format("{} {}, {}",
-                               "subq",
-                               process_operand(node.src, op_size(node.op)),
-                               process_operand(node.dst, operand_size::eight_bytes));
-        }
+        return fmt::format("{} {}, {}",
+                           process_binary_operator(node.op, node.type),
+                           process_operand(node.src, operand_size::one_byte),
+                           process_operand(node.dst, get_operand_size(node.type)));
     }
 
     return fmt::format("{} {}, {}",
-                       process_binary_operator(node.op),
-                       process_operand(node.src, op_size(node.op)),
-                       process_operand(node.dst));
+                       process_binary_operator(node.op, node.type),
+                       process_operand(node.src, get_operand_size(node.type)),
+                       process_operand(node.dst, get_operand_size(node.type)));
 }
 
 std::string process_cmp(const assembly_generation::cmp &node)
 {
-    return fmt::format("cmpl {}, {}", process_operand(node.lhs), process_operand(node.rhs));
+    return fmt::format("cmp{} {}, {}",
+                       process_assembly_type(node.type),
+                       process_operand(node.lhs, get_operand_size(node.type)),
+                       process_operand(node.rhs, get_operand_size(node.type)));
 }
 
 std::string process_idiv(const assembly_generation::idiv &node)
 {
-    return fmt::format("idivl {}", process_operand(node.src));
+    return fmt::format("idiv{} {}",
+                       process_assembly_type(node.type),
+                       process_operand(node.src, get_operand_size(node.type)));
 }
 std::string process_cdq(const assembly_generation::cdq &node)
 {
+    if (std::holds_alternative<quad_word>(node.type))
+    {
+        return fmt::format("cqo");
+    }
     return fmt::format("cdq");
 }
 std::string process_jmp(const assembly_generation::jmp &node)
@@ -236,24 +261,23 @@ std::string process_call(const assembly_generation::call &node)
 
 std::string process_instruction(const assembly_generation::instruction &instruction)
 {
-    return std::visit(
-      visitor{
-        [](const assembly_generation::mov_instruction &mov) { return process_mov_instruction(mov); },
-        [](const assembly_generation::movx &mov) -> std::string { throw std::runtime_error("Not implemented"); },
-        [](const assembly_generation::unary &node) { return process_unary(node); },
-        [](const assembly_generation::binary &node) { return process_binary(node); },
-        [](const assembly_generation::cmp &node) { return process_cmp(node); },
-        [](const assembly_generation::idiv &node) { return process_idiv(node); },
-        [](const assembly_generation::cdq &node) { return process_cdq(node); },
-        [](const assembly_generation::jmp &node) { return process_jmp(node); },
-        [](const assembly_generation::jmpcc &node) { return process_jmpcc(node); },
-        [](const assembly_generation::setcc &node) { return process_setcc(node); },
-        [](const assembly_generation::label &node) { return process_label(node); },
-        [](const assembly_generation::push &node) -> std::string { return process_push(node); },
-        [](const assembly_generation::call &node) -> std::string { return process_call(node); },
-        [](const assembly_generation::ret_instruction &ret) { return process_ret_instruction(ret); },
-      },
-      instruction);
+    return std::visit(visitor{
+                        [](const assembly_generation::mov_instruction &mov) { return process_mov_instruction(mov); },
+                        [](const assembly_generation::movx &mov) { return process_movx(mov); },
+                        [](const assembly_generation::unary &node) { return process_unary(node); },
+                        [](const assembly_generation::binary &node) { return process_binary(node); },
+                        [](const assembly_generation::cmp &node) { return process_cmp(node); },
+                        [](const assembly_generation::idiv &node) { return process_idiv(node); },
+                        [](const assembly_generation::cdq &node) { return process_cdq(node); },
+                        [](const assembly_generation::jmp &node) { return process_jmp(node); },
+                        [](const assembly_generation::jmpcc &node) { return process_jmpcc(node); },
+                        [](const assembly_generation::setcc &node) { return process_setcc(node); },
+                        [](const assembly_generation::label &node) { return process_label(node); },
+                        [](const assembly_generation::push &node) -> std::string { return process_push(node); },
+                        [](const assembly_generation::call &node) -> std::string { return process_call(node); },
+                        [](const assembly_generation::ret_instruction &ret) { return process_ret_instruction(ret); },
+                      },
+                      instruction);
 }
 
 std::string process_function(const assembly_generation::function &f)
@@ -271,17 +295,37 @@ std::string process_function(const assembly_generation::function &f)
 
 std::string process_static_variable(const assembly_generation::static_variable &f)
 {
+    auto get_var_section = [](const wccff::initial &init) {
+        return std::visit(
+          visitor{
+            [](const auto &i) { return i.value == 0 ? ".bss" : ".data"; },
+          },
+          init);
+    };
+    auto get_init_value = [](const wccff::initial &init) {
+        return std::visit(visitor{ [](const int_initial &i) {
+                                      if (i.value == 0)
+                                      {
+                                          return fmt::format(".zero 4");
+                                      }
+                                      return fmt::format(".long {}", i.value);
+                                  },
+                                   [](const long_initial &i) {
+                                       if (i.value == 0)
+                                       {
+                                           return fmt::format(".zero 8");
+                                       }
+                                       return fmt::format(".quad {}", i.value);
+                                   } },
+                          init);
+    };
+
     auto function_name = process_identifier(f.name);
     auto globl = f.is_global ? fmt::format(".globl {}\n", function_name) : "";
-    auto init = std::get<int_initial>(f.init);
-    if (init.value == 0)
-    {
-        return fmt::format("{}\n.bss\n.balign 4\n{}:\n.zero 4\n", globl, function_name);
-    }
-    else
-    {
-        return fmt::format("{}\n.data\n.balign 4\n{}:\n.long {}\n", globl, function_name, init.value);
-    }
+    auto section = get_var_section(f.init);
+    auto init_value = get_init_value(f.init);
+
+    return fmt::format("{}\n{}\n.balign {}\n{}:\n{}\n", globl, section, f.alignment, function_name, init_value);
 }
 
 std::string process_top_level(const assembly_generation::top_level &t)
