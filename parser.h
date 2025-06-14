@@ -276,9 +276,8 @@ using expression = std::variant<constant,
 
 struct assignment_node
 {
-    assignment_node(binary_operator op_, expression lhs_, expression rhs_);
-    assignment_node(binary_operator op_, expression lhs_, expression rhs_, std::optional<type> type_);
-    binary_operator op;
+    assignment_node(expression lhs_, expression rhs_);
+    assignment_node(expression lhs_, expression rhs_, std::optional<type> type_);
     expression lhs;
     expression rhs;
     std::optional<type> type;

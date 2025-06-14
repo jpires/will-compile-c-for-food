@@ -33,18 +33,13 @@ static parser_error generate_unexpected_end_of_tokens(const tokens &tokens)
     return { msg };
 }
 
-assignment_node::assignment_node(binary_operator op_, expression lhs_, expression rhs_)
-  : op(op_)
-  , lhs(std::move(lhs_))
+assignment_node::assignment_node(expression lhs_, expression rhs_)
+  : lhs(std::move(lhs_))
   , rhs(std::move(rhs_))
 {
 }
-assignment_node::assignment_node(binary_operator op_,
-                                 expression lhs_,
-                                 expression rhs_,
-                                 std::optional<wccff::type> type_)
-  : op(op_)
-  , lhs(std::move(lhs_))
+assignment_node::assignment_node(expression lhs_, expression rhs_, std::optional<wccff::type> type_)
+  : lhs(std::move(lhs_))
   , rhs(std::move(rhs_))
   , type(std::move(type_))
 {
@@ -108,8 +103,7 @@ std::optional<parser_error> consume_tokens(tokens &tokens, const std::vector<lex
 
 std::unique_ptr<assignment_node> copy_assignment_node(const std::unique_ptr<assignment_node> &node)
 {
-    return std::make_unique<assignment_node>(node->op,
-                                             copy_expression(node->lhs),
+    return std::make_unique<assignment_node>(copy_expression(node->lhs),
                                              copy_expression(node->rhs),
                                              copy_optional_type(node->type));
 }
@@ -1153,6 +1147,36 @@ std::expected<expression, parser_error> parse_factor(tokens &tokens)
 
 std::expected<expression, parser_error> parse_expression(tokens &tokens, int32_t min_precedence)
 {
+    auto is_compound_assignment = [](const binary_operator &op) {
+        return std::visit(visitor{ [](const compound_plus_operator &) { return true; },
+                                   [](const compound_subtract_operator &) { return true; },
+                                   [](const compound_multiply_operator &) { return true; },
+                                   [](const compound_divide_operator &) { return true; },
+                                   [](const compound_remainder_operator &) { return true; },
+                                   [](const compound_bitwise_and_operator &) { return true; },
+                                   [](const compound_bitwise_or_operator &) { return true; },
+                                   [](const compound_bitwise_xor_operator &) { return true; },
+                                   [](const compound_left_shift_operator &) { return true; },
+                                   [](const compound_right_shift_operator &) { return true; },
+                                   [](const auto &) { return false; } },
+                          op);
+    };
+
+    auto compound_assignment_to_single = [](const binary_operator &op) {
+        return std::visit(
+          visitor{ [](const compound_plus_operator &) -> binary_operator { return plus_operator{}; },
+                   [](const compound_subtract_operator &) -> binary_operator { return subtract_operator{}; },
+                   [](const compound_multiply_operator &) -> binary_operator { return multiply_operator{}; },
+                   [](const compound_divide_operator &) -> binary_operator { return divide_operator{}; },
+                   [](const compound_remainder_operator &) -> binary_operator { return remainder_operator{}; },
+                   [](const compound_bitwise_and_operator &) -> binary_operator { return bitwise_and_operator{}; },
+                   [](const compound_bitwise_or_operator &) -> binary_operator { return bitwise_or_operator{}; },
+                   [](const compound_bitwise_xor_operator &) -> binary_operator { return bitwise_xor_operator{}; },
+                   [](const compound_left_shift_operator &) -> binary_operator { return left_shift_operator{}; },
+                   [](const compound_right_shift_operator &) -> binary_operator { return right_shift_operator{}; },
+                   [](const auto &) -> binary_operator { throw std::logic_error{ "Invalid Compound assignment" }; } },
+          op);
+    };
     auto is_right_associative = [](lexer::token_type type) {
         using enum lexer::token_type;
         return type == assignment_operator || type == compound_plus || type == compound_minus ||
@@ -1247,7 +1271,17 @@ std::expected<expression, parser_error> parse_expression(tokens &tokens, int32_t
                 return std::unexpected{ right.error() };
             }
 
-            left = std::make_unique<assignment_node>(op.value(), std::move(left.value()), std::move(right.value()));
+            if (is_compound_assignment(op.value()))
+            {
+                auto new_right = std::make_unique<binary_node>(compound_assignment_to_single(op.value()),
+                                                               copy_expression(left.value()),
+                                                               std::move(right.value()));
+                left = std::make_unique<assignment_node>(std::move(left.value()), std::move(new_right));
+            }
+            else
+            {
+                left = std::make_unique<assignment_node>(std::move(left.value()), std::move(right.value()));
+            }
         }
         else if (next_token.type == lexer::token_type::question_mark)
         {
@@ -1715,12 +1749,12 @@ std::string pretty_print(const std::optional<type> &node, int32_t ident)
 
 std::string pretty_print(const std::unique_ptr<assignment_node> &node, int32_t ident)
 {
-    auto prefix = wccff::format_indented(ident, "Assign({}", pretty_print(node->op, 0));
-    auto left = wccff::format_indented(0, "{}", pretty_print(node->lhs, ident + 7));
+    auto prefix = wccff::format_indented(ident, "Assign(");
+    auto left = wccff::format_indented(0, "{}", pretty_print(node->lhs));
     auto right = wccff::format_indented(0, "{}", pretty_print(node->rhs, ident + 7));
     auto sufix = wccff::format_indented(ident, ")");
 
-    return fmt::format("{}\n{}\n{}\n{}", prefix, left, right, sufix);
+    return fmt::format("{}{}\n{}\n{}", prefix, left, right, sufix);
 }
 
 std::string pretty_print(const std::unique_ptr<binary_node> &node, int32_t ident)

@@ -1,6 +1,8 @@
 LabeledStatement(label1
-                 Assign(Compound Plus
-                        Var(var1)
-                        IntConstant(42)
+                 Assign(Var(var1)
+                        Binary(Plus
+                               Var(var1)
+                               IntConstant(42)
+                        )
                  )
 )

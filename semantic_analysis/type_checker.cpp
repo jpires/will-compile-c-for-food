@@ -58,8 +58,7 @@ auto process_assignment_node(const std::unique_ptr<parser::assignment_node> &nod
 
     auto left_type = get_type(left.value());
     auto converted_right = convert_to(right.value(), left_type);
-    return std::make_unique<parser::assignment_node>(node->op,
-                                                     std::move(left.value()),
+    return std::make_unique<parser::assignment_node>(std::move(left.value()),
                                                      std::move(converted_right),
                                                      std::move(left_type));
 }

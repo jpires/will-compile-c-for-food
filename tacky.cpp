@@ -99,26 +99,12 @@ val process_assignment_node(const std::unique_ptr<parser::assignment_node> &node
                             std::vector<instruction> &instructions,
                             symbol_table::symbol_table &table)
 {
-    if (std::holds_alternative<parser::assignment_operator>(node->op))
-    {
-        auto right = process_expression(node->rhs, instructions, table);
-        // The previous pass ensures that the left side of an assignment is a var.
-        // If it's not, then terminate.
-        auto &left = std::get<parser::var>(node->lhs);
-        auto dst = var{ process_identifier(left.name) };
-        instructions.emplace_back(copy_statement{ right, dst });
-        return dst;
-    }
-
     auto right = process_expression(node->rhs, instructions, table);
     // The previous pass ensures that the left side of an assignment is a var.
     // If it's not, then terminate.
     auto &left = std::get<parser::var>(node->lhs);
     auto dst = var{ process_identifier(left.name) };
-    auto tmp = make_temporary_variable(get_type(node), table);
-    auto op = process_binary_operator(node->op);
-    instructions.emplace_back(binary_statement{ op, dst, right, tmp });
-    instructions.emplace_back(copy_statement{ tmp, dst });
+    instructions.emplace_back(copy_statement{ right, dst });
     return dst;
 }
 

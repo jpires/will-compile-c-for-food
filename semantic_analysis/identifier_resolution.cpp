@@ -40,7 +40,7 @@ auto process_assignment_node(const std::unique_ptr<parser::assignment_node> &nod
     {
         return std::unexpected{ right.error() };
     }
-    return std::make_unique<parser::assignment_node>(node->op, std::move(left.value()), std::move(right.value()));
+    return std::make_unique<parser::assignment_node>(std::move(left.value()), std::move(right.value()));
 }
 
 auto process_binary_node(const std::unique_ptr<parser::binary_node> &node, identifier_map &variable_map)

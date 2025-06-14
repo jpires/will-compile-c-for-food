@@ -1185,7 +1185,7 @@ TEST_CASE("parser_pretty_printers", "[parser]")
         auto value = int_constant{ 55 };
         auto variable = var{ "var_name" };
 
-        auto assignment = std::make_unique<assignment_node>(assignment_operator{}, value, std::move(variable));
+        auto assignment = std::make_unique<assignment_node>(value, std::move(variable));
 
         ApprovalTests::Approvals::verify(pretty_print(assignment));
     }
