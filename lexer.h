@@ -35,8 +35,8 @@ namespace wccff::lexer {
 
 struct file_location
 {
-    int32_t line{ 0 };
-    int32_t column{ 0 };
+    int32_t line{ 1 };
+    int32_t column{ 1 };
     bool operator==(const file_location &) const = default;
 };
 
@@ -129,7 +129,7 @@ struct token
     file_location loc;
 };
 
-std::expected<std::vector<token>, lexer_error> lexer(std::string_view input, file_location location = {}) noexcept;
+std::expected<std::vector<token>, lexer_error> lexer(std::string_view input) noexcept;
 
 std::expected<std::string, std::error_code> read_file(const std::filesystem::path &file_name);
 

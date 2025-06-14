@@ -58,50 +58,44 @@ TEST_CASE("Lexer", "[lexer]")
     {
         SECTION("Token at the begin of the input")
         {
-            file_location loc{ 0, 0 };
             std::string_view input{ "a" };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
-            REQUIRE(result.value().at(0).loc == loc);
+            REQUIRE(result.value().at(0).loc == file_location{ 1, 1 });
         }
         SECTION("With spaces at before the token")
         {
-            file_location loc{ 0, 3 };
             std::string_view input{ "   a" };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
-            REQUIRE(result.value().at(0).loc == loc);
+            REQUIRE(result.value().at(0).loc == file_location{ 1, 4 });
         }
         SECTION("With empty lines before the token")
         {
-            file_location loc{ 3, 0 };
             std::string_view input{ "\n\n\na" };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
-            REQUIRE(result.value().at(0).loc == loc);
+            REQUIRE(result.value().at(0).loc == file_location{ 4, 1 });
         }
         SECTION("With empty lines and spaces before the token")
         {
-            file_location loc{ 3, 4 };
             std::string_view input{ "\n\n\n    a" };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
-            REQUIRE(result.value().at(0).loc == loc);
+            REQUIRE(result.value().at(0).loc == file_location{ 4, 5 });
         }
         SECTION("Multiple tokens")
         {
-            file_location loc1{ 3, 4 };
-            file_location loc2{ 5, 2 };
             std::string_view input{ "\n\n\n    a\n\n  fo" };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 2);
-            REQUIRE(result.value().at(0).loc == loc1);
-            REQUIRE(result.value().at(1).loc == loc2);
+            REQUIRE(result.value().at(0).loc == file_location{ 4, 5 });
+            REQUIRE(result.value().at(1).loc == file_location{ 6, 3 });
         }
     }
 
