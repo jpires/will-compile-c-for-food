@@ -45,6 +45,8 @@ enum class token_type
     identifier,
     int_constant,
     long_constant,
+    unsigned_int_constant,
+    unsigned_long_constant,
     break_keyword,
     continue_keyword,
     do_keyword,
@@ -58,6 +60,8 @@ enum class token_type
     void_keyword,
     static_keyword,
     return_keyword,
+    signed_keyword,
+    unsigned_keyword,
     while_keyword,
     open_parenthesis,
     close_parenthesis,
@@ -118,7 +122,7 @@ struct lexer_error
 
 struct token
 {
-    token(token_type type_, std::string_view text_, file_location loc_)
+    constexpr token(token_type type_, std::string_view text_, file_location loc_)
       : type(type_)
       , text(text_)
       , loc(loc_)
@@ -151,8 +155,14 @@ struct fmt::formatter<wccff::lexer::token_type> : formatter<string_view>
             case token_type::int_constant:
                 str = "Int Constant";
                 break;
+            case token_type::unsigned_int_constant:
+                str = "Unsigned Int Constant";
+                break;
             case token_type::long_constant:
                 str = "Long Constant";
+                break;
+            case token_type::unsigned_long_constant:
+                str = "Unsigned Long Constant";
                 break;
             case token_type::break_keyword:
                 str = "Break Keyword";
@@ -190,8 +200,14 @@ struct fmt::formatter<wccff::lexer::token_type> : formatter<string_view>
             case token_type::return_keyword:
                 str = "Return Keyword";
                 break;
+            case token_type::signed_keyword:
+                str = "Signed Keyword";
+                break;
             case token_type::static_keyword:
                 str = "Static Keyword";
+                break;
+            case token_type::unsigned_keyword:
+                str = "Unsigned Keyword";
                 break;
             case token_type::while_keyword:
                 str = "While Keyword";

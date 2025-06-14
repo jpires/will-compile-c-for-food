@@ -290,6 +290,16 @@ TEST_CASE("Keywords", "[lexer]")
         REQUIRE(result.value().at(0).text == "return");
     }
 
+    SECTION("signed")
+    {
+        std::string_view input{ "signed" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::signed_keyword);
+        REQUIRE(result.value().at(0).text == "signed");
+    }
+
     SECTION("static")
     {
         std::string_view input{ "static" };
@@ -298,6 +308,16 @@ TEST_CASE("Keywords", "[lexer]")
         REQUIRE(result.value().size() == 1);
         REQUIRE(result.value().at(0).type == wccff::lexer::token_type::static_keyword);
         REQUIRE(result.value().at(0).text == "static");
+    }
+
+    SECTION("unsigned")
+    {
+        std::string_view input{ "unsigned" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::unsigned_keyword);
+        REQUIRE(result.value().at(0).text == "unsigned");
     }
 
     SECTION("while")
@@ -311,68 +331,272 @@ TEST_CASE("Keywords", "[lexer]")
     }
 }
 
-TEST_CASE("Int Constants", "[lexer]")
+TEST_CASE("Constants", "[lexer]")
 {
-    SECTION("One digit")
+    SECTION("int")
     {
-        std::string_view input{ "1" };
-        auto result = wccff::lexer::lexer(input);
-        REQUIRE(result.has_value());
-        REQUIRE(result.value().size() == 1);
-        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::int_constant);
-        REQUIRE(result.value().at(0).text == "1");
+        SECTION("One digit")
+        {
+            std::string_view input{ "1" };
+            auto result = wccff::lexer::lexer(input);
+            REQUIRE(result.has_value());
+            REQUIRE(result.value().size() == 1);
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::int_constant);
+            REQUIRE(result.value().at(0).text == "1");
+        }
+
+        SECTION("Four digits")
+        {
+            std::string_view input{ "1234" };
+            auto result = wccff::lexer::lexer(input);
+            REQUIRE(result.has_value());
+            REQUIRE(result.value().size() == 1);
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::int_constant);
+            REQUIRE(result.value().at(0).text == "1234");
+        }
     }
 
-    SECTION("Four digits")
+    SECTION("long")
     {
-        std::string_view input{ "1234" };
-        auto result = wccff::lexer::lexer(input);
-        REQUIRE(result.has_value());
-        REQUIRE(result.value().size() == 1);
-        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::int_constant);
-        REQUIRE(result.value().at(0).text == "1234");
-    }
-}
+        SECTION("One digit, lowercase")
+        {
+            std::string_view input{ "1l" };
+            auto result = wccff::lexer::lexer(input);
+            REQUIRE(result.has_value());
+            REQUIRE(result.value().size() == 1);
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::long_constant);
+            REQUIRE(result.value().at(0).text == "1l");
+        }
 
-TEST_CASE("Long Constants", "[lexer]")
-{
-    SECTION("One digit, lowercase")
-    {
-        std::string_view input{ "1l" };
-        auto result = wccff::lexer::lexer(input);
-        REQUIRE(result.has_value());
-        REQUIRE(result.value().size() == 1);
-        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::long_constant);
-        REQUIRE(result.value().at(0).text == "1l");
+        SECTION("One digit, uppercase")
+        {
+            std::string_view input{ "1L" };
+            auto result = wccff::lexer::lexer(input);
+            REQUIRE(result.has_value());
+            REQUIRE(result.value().size() == 1);
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::long_constant);
+            REQUIRE(result.value().at(0).text == "1L");
+        }
+
+        SECTION("Four digits, lowercase")
+        {
+            std::string_view input{ "1234l" };
+            auto result = wccff::lexer::lexer(input);
+            REQUIRE(result.has_value());
+            REQUIRE(result.value().size() == 1);
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::long_constant);
+            REQUIRE(result.value().at(0).text == "1234l");
+        }
+        SECTION("Four digits, uppercase")
+        {
+            std::string_view input{ "1234L" };
+            auto result = wccff::lexer::lexer(input);
+            REQUIRE(result.has_value());
+            REQUIRE(result.value().size() == 1);
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::long_constant);
+            REQUIRE(result.value().at(0).text == "1234L");
+        }
     }
 
-    SECTION("One digit, uppercase")
+    SECTION("unsigned int")
     {
-        std::string_view input{ "1L" };
-        auto result = wccff::lexer::lexer(input);
-        REQUIRE(result.has_value());
-        REQUIRE(result.value().size() == 1);
-        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::long_constant);
-        REQUIRE(result.value().at(0).text == "1L");
+        SECTION("One digit, lowercase")
+        {
+            std::string_view input{ "1u" };
+            auto result = wccff::lexer::lexer(input);
+            REQUIRE(result.has_value());
+            REQUIRE(result.value().size() == 1);
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::unsigned_int_constant);
+            REQUIRE(result.value().at(0).text == "1u");
+        }
+
+        SECTION("One digit, uppercase")
+        {
+            std::string_view input{ "1U" };
+            auto result = wccff::lexer::lexer(input);
+            REQUIRE(result.has_value());
+            REQUIRE(result.value().size() == 1);
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::unsigned_int_constant);
+            REQUIRE(result.value().at(0).text == "1U");
+        }
+
+        SECTION("Four digits, lowercase")
+        {
+            std::string_view input{ "1234u" };
+            auto result = wccff::lexer::lexer(input);
+            REQUIRE(result.has_value());
+            REQUIRE(result.value().size() == 1);
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::unsigned_int_constant);
+            REQUIRE(result.value().at(0).text == "1234u");
+        }
+        SECTION("Four digits, uppercase")
+        {
+            std::string_view input{ "1234U" };
+            auto result = wccff::lexer::lexer(input);
+            REQUIRE(result.has_value());
+            REQUIRE(result.value().size() == 1);
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::unsigned_int_constant);
+            REQUIRE(result.value().at(0).text == "1234U");
+        }
     }
 
-    SECTION("Four digits, lowercase")
+    SECTION("unsigned long")
     {
-        std::string_view input{ "1234l" };
-        auto result = wccff::lexer::lexer(input);
-        REQUIRE(result.has_value());
-        REQUIRE(result.value().size() == 1);
-        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::long_constant);
-        REQUIRE(result.value().at(0).text == "1234l");
-    }
-    SECTION("Four digits, uppercase")
-    {
-        std::string_view input{ "1234L" };
-        auto result = wccff::lexer::lexer(input);
-        REQUIRE(result.has_value());
-        REQUIRE(result.value().size() == 1);
-        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::long_constant);
-        REQUIRE(result.value().at(0).text == "1234L");
+        SECTION("One digit, ul")
+        {
+            std::string_view input{ "1ul" };
+            auto result = wccff::lexer::lexer(input);
+            REQUIRE(result.has_value());
+            REQUIRE(result.value().size() == 1);
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::unsigned_long_constant);
+            REQUIRE(result.value().at(0).text == "1ul");
+        }
+
+        SECTION("One digit, uL")
+        {
+            std::string_view input{ "1uL" };
+            auto result = wccff::lexer::lexer(input);
+            REQUIRE(result.has_value());
+            REQUIRE(result.value().size() == 1);
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::unsigned_long_constant);
+            REQUIRE(result.value().at(0).text == "1uL");
+        }
+
+        SECTION("One digit, Ul")
+        {
+            std::string_view input{ "1Ul" };
+            auto result = wccff::lexer::lexer(input);
+            REQUIRE(result.has_value());
+            REQUIRE(result.value().size() == 1);
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::unsigned_long_constant);
+            REQUIRE(result.value().at(0).text == "1Ul");
+        }
+
+        SECTION("One digit, UL")
+        {
+            std::string_view input{ "1UL" };
+            auto result = wccff::lexer::lexer(input);
+            REQUIRE(result.has_value());
+            REQUIRE(result.value().size() == 1);
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::unsigned_long_constant);
+            REQUIRE(result.value().at(0).text == "1UL");
+        }
+
+        SECTION("One digit, lu")
+        {
+            std::string_view input{ "1lu" };
+            auto result = wccff::lexer::lexer(input);
+            REQUIRE(result.has_value());
+            REQUIRE(result.value().size() == 1);
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::unsigned_long_constant);
+            REQUIRE(result.value().at(0).text == "1lu");
+        }
+
+        SECTION("One digit, Lu")
+        {
+            std::string_view input{ "1Lu" };
+            auto result = wccff::lexer::lexer(input);
+            REQUIRE(result.has_value());
+            REQUIRE(result.value().size() == 1);
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::unsigned_long_constant);
+            REQUIRE(result.value().at(0).text == "1Lu");
+        }
+
+        SECTION("One digit, lU")
+        {
+            std::string_view input{ "1lU" };
+            auto result = wccff::lexer::lexer(input);
+            REQUIRE(result.has_value());
+            REQUIRE(result.value().size() == 1);
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::unsigned_long_constant);
+            REQUIRE(result.value().at(0).text == "1lU");
+        }
+
+        SECTION("One digit, LU")
+        {
+            std::string_view input{ "1LU" };
+            auto result = wccff::lexer::lexer(input);
+            REQUIRE(result.has_value());
+            REQUIRE(result.value().size() == 1);
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::unsigned_long_constant);
+            REQUIRE(result.value().at(0).text == "1LU");
+        }
+
+        SECTION("Four digits, ul")
+        {
+            std::string_view input{ "1234ul" };
+            auto result = wccff::lexer::lexer(input);
+            REQUIRE(result.has_value());
+            REQUIRE(result.value().size() == 1);
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::unsigned_long_constant);
+            REQUIRE(result.value().at(0).text == "1234ul");
+        }
+        SECTION("Four digits, uL")
+        {
+            std::string_view input{ "1234uL" };
+            auto result = wccff::lexer::lexer(input);
+            REQUIRE(result.has_value());
+            REQUIRE(result.value().size() == 1);
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::unsigned_long_constant);
+            REQUIRE(result.value().at(0).text == "1234uL");
+        }
+        SECTION("Four digits, Ul")
+        {
+            std::string_view input{ "1234Ul" };
+            auto result = wccff::lexer::lexer(input);
+            REQUIRE(result.has_value());
+            REQUIRE(result.value().size() == 1);
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::unsigned_long_constant);
+            REQUIRE(result.value().at(0).text == "1234Ul");
+        }
+        SECTION("Four digits, UL")
+        {
+            std::string_view input{ "1234UL" };
+            auto result = wccff::lexer::lexer(input);
+            REQUIRE(result.has_value());
+            REQUIRE(result.value().size() == 1);
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::unsigned_long_constant);
+            REQUIRE(result.value().at(0).text == "1234UL");
+        }
+
+        SECTION("Four digits, lu")
+        {
+            std::string_view input{ "1234lu" };
+            auto result = wccff::lexer::lexer(input);
+            REQUIRE(result.has_value());
+            REQUIRE(result.value().size() == 1);
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::unsigned_long_constant);
+            REQUIRE(result.value().at(0).text == "1234lu");
+        }
+        SECTION("Four digits, Lu")
+        {
+            std::string_view input{ "1234Lu" };
+            auto result = wccff::lexer::lexer(input);
+            REQUIRE(result.has_value());
+            REQUIRE(result.value().size() == 1);
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::unsigned_long_constant);
+            REQUIRE(result.value().at(0).text == "1234Lu");
+        }
+
+        SECTION("Four digits, lU")
+        {
+            std::string_view input{ "1234lU" };
+            auto result = wccff::lexer::lexer(input);
+            REQUIRE(result.has_value());
+            REQUIRE(result.value().size() == 1);
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::unsigned_long_constant);
+            REQUIRE(result.value().at(0).text == "1234lU");
+        }
+
+        SECTION("Four digits, LU")
+        {
+            std::string_view input{ "1234LU" };
+            auto result = wccff::lexer::lexer(input);
+            REQUIRE(result.has_value());
+            REQUIRE(result.value().size() == 1);
+            REQUIRE(result.value().at(0).type == wccff::lexer::token_type::unsigned_long_constant);
+            REQUIRE(result.value().at(0).text == "1234LU");
+        }
     }
 }
 

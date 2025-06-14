@@ -29,7 +29,11 @@ namespace wccff::lexer {
 
 constexpr auto identifier_pattern{ R"(([a-zA-Z_]\w*\b))" };
 constexpr auto int_constant_pattern{ R"(([0-9]+\b))" };
+constexpr auto unsigned_int_constant_pattern{ R"(([0-9]+[uU]\b))" };
 constexpr auto long_constant_pattern{ R"(([0-9]+[lL]\b))" };
+// Use a non-capturing group so that we can catch all the possible variations of UL with ([lL][uU]|[uU][lL])
+// However, if it's a capturing group, it will mess with the way the matcher ids work.
+constexpr auto unsigned_long_constant_pattern{ R"(([0-9]+(?:[lL][uU]|[uU][lL]))\b)" };
 constexpr auto open_parenthesis_pattern{ R"((\())" };
 constexpr auto close_parenthesis_pattern{ R"((\)))" };
 constexpr auto open_brace_pattern{ R"((\{))" };
@@ -77,7 +81,9 @@ constexpr auto get_patters_constants_and_identifier()
     // clang-format off
     return std::array{
         identifier_pattern,
+        unsigned_long_constant_pattern,
         long_constant_pattern,
+        unsigned_int_constant_pattern,
         int_constant_pattern,
     };
     // clang-format on
@@ -293,9 +299,19 @@ std::optional<std::pair<token, std::size_t>> look_for_constant_and_identifier(st
                 token t(token_type::return_keyword, m, location);
                 return std::make_pair(t, m.size());
             }
+            else if (m == "signed")
+            {
+                token t(token_type::signed_keyword, m, location);
+                return std::make_pair(t, m.size());
+            }
             else if (m == "static")
             {
                 token t(token_type::static_keyword, m, location);
+                return std::make_pair(t, m.size());
+            }
+            else if (m == "unsigned")
+            {
+                token t(token_type::unsigned_keyword, m, location);
                 return std::make_pair(t, m.size());
             }
             else if (m == "while")
@@ -319,6 +335,16 @@ std::optional<std::pair<token, std::size_t>> look_for_constant_and_identifier(st
         if (ctre::get<get_pattern_constant_and_identifier_position(long_constant_pattern)>(m))
         {
             token t(token_type::long_constant, m, location);
+            return std::make_pair(t, m.size());
+        }
+        if (ctre::get<get_pattern_constant_and_identifier_position(unsigned_int_constant_pattern)>(m))
+        {
+            token t(token_type::unsigned_int_constant, m, location);
+            return std::make_pair(t, m.size());
+        }
+        if (ctre::get<get_pattern_constant_and_identifier_position(unsigned_long_constant_pattern)>(m))
+        {
+            token t(token_type::unsigned_long_constant, m, location);
             return std::make_pair(t, m.size());
         }
     }
