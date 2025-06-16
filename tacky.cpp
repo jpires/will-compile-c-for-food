@@ -839,6 +839,12 @@ std::string pretty_print(const initial &node, int32_t ident)
       visitor{
         [ident](const int_initial &val) { return wccff::format_indented(ident, "IntInitial({})", val.value); },
         [ident](const long_initial &val) { return wccff::format_indented(ident, "LongInitial({})", val.value); },
+        [ident](const unsigned_int_initial &val) {
+            return wccff::format_indented(ident, "UIntInitial({})", val.value);
+        },
+        [ident](const unsigned_long_initial &val) {
+            return wccff::format_indented(ident, "ULongInitial({})", val.value);
+        },
       },
       node);
 }

@@ -183,16 +183,6 @@ std::optional<parser_error> parse_semicolon(tokens &tokens)
     return std::nullopt;
 }
 
-type get_common_type(const type &t1, const type &t2)
-{
-    if (t1 == t2)
-    {
-        return copy_type(t1);
-    }
-
-    return long_type{};
-}
-
 type get_type(const constant &n)
 {
     return std::visit(visitor{

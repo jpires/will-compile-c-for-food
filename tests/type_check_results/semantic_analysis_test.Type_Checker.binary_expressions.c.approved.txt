@@ -335,15 +335,9 @@ FunctionDecl(f
                     )
              )
              Assign(Var(d1)
-                    Cast(
-                          Target(Int)
-                          Binary(Left Shift
-                                 Cast(
-                                       Target(Long)
-                                       Var(d1)
-                                 )
-                                 LongConstant(42)
-                          )
+                    Binary(Left Shift
+                           Var(d1)
+                           LongConstant(42)
                     )
              )
              Assign(Var(d1)
@@ -353,15 +347,9 @@ FunctionDecl(f
                     )
              )
              Assign(Var(d1)
-                    Cast(
-                          Target(Int)
-                          Binary(Right Shift
-                                 Cast(
-                                       Target(Long)
-                                       Var(d1)
-                                 )
-                                 LongConstant(42)
-                          )
+                    Binary(Right Shift
+                           Var(d1)
+                           LongConstant(42)
                     )
              )
              DeclVar(d2
@@ -492,10 +480,7 @@ FunctionDecl(f
              Assign(Var(d2)
                     Binary(Left Shift
                            Var(d2)
-                           Cast(
-                                 Target(Long)
-                                 IntConstant(4)
-                           )
+                           IntConstant(4)
                     )
              )
              Assign(Var(d2)
@@ -507,10 +492,7 @@ FunctionDecl(f
              Assign(Var(d2)
                     Binary(Right Shift
                            Var(d2)
-                           Cast(
-                                 Target(Long)
-                                 IntConstant(4)
-                           )
+                           IntConstant(4)
                     )
              )
              Assign(Var(d2)

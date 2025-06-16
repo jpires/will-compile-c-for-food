@@ -26,7 +26,7 @@
 
 namespace wccff::sema::type_checker {
 
-auto convert_constant(const constant &c) -> symbol_table::initial_value;
+auto convert_constant(const constant &c, const type &t) -> symbol_table::initial_value;
 
 auto process_assignment_node(const std::unique_ptr<parser::assignment_node> &node, symbol_table::symbol_table &table)
   -> std::expected<std::unique_ptr<parser::assignment_node>, semantic_error>;

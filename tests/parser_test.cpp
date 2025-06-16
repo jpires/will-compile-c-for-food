@@ -1801,21 +1801,6 @@ TEST_CASE("parser_pretty_printers", "[parser]")
     }
 }
 
-TEST_CASE("parser_miscs", "[parser]")
-{
-    SECTION("get_common_type")
-    {
-        using wccff::int_type;
-        using wccff::long_type;
-        using wccff::parser::get_common_type;
-
-        REQUIRE(std::holds_alternative<int_type>(get_common_type(int_type{}, int_type{})));
-        REQUIRE(std::holds_alternative<long_type>(get_common_type(long_type{}, int_type{})));
-        REQUIRE(std::holds_alternative<long_type>(get_common_type(int_type{}, long_type{})));
-        REQUIRE(std::holds_alternative<long_type>(get_common_type(long_type{}, long_type{})));
-    }
-}
-
 TEST_CASE("parse_type", "[parser]")
 {
     using wccff::parser::parse_type;

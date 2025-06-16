@@ -316,7 +316,8 @@ std::string process_static_variable(const assembly_generation::static_variable &
                                            return fmt::format(".zero 8");
                                        }
                                        return fmt::format(".quad {}", i.value);
-                                   } },
+                                   },
+                                   [](const auto &) -> std::string { throw std::runtime_error("Not implemented"); } },
                           init);
     };
 

@@ -1,6 +1,101 @@
-DeclVar(foo
+DeclVar(i1
         Storage(static)
         Type(Int)
         NO_INIT
+)
+DeclVar(i2
+        Storage(static)
+        Type(Int)
+        IntConstant(0)
+)
+DeclVar(i3
+        Storage(static)
+        Type(Int)
+        IntConstant(44)
+)
+DeclVar(ui1
+        Storage(static)
+        Type(UInt)
+        NO_INIT
+)
+DeclVar(ui2
+        Storage(static)
+        Type(UInt)
+        IntConstant(0)
+)
+DeclVar(ui3
+        Storage(static)
+        Type(UInt)
+        IntConstant(44)
+)
+DeclVar(ui4
+        Storage(static)
+        Type(UInt)
+        UIntConstant(55)
+)
+DeclVar(ui5
+        Storage(static)
+        Type(UInt)
+        UIntConstant(66)
+)
+DeclVar(l1
+        Storage(static)
+        Type(Long)
+        NO_INIT
+)
+DeclVar(l2
+        Storage(static)
+        Type(Long)
+        IntConstant(0)
+)
+DeclVar(l3
+        Storage(static)
+        Type(Long)
+        IntConstant(44)
+)
+DeclVar(l4
+        Storage(static)
+        Type(Long)
+        LongConstant(55)
+)
+DeclVar(l5
+        Storage(static)
+        Type(Long)
+        LongConstant(66)
+)
+DeclVar(ul1
+        Storage(static)
+        Type(Long)
+        NO_INIT
+)
+DeclVar(ul2
+        Storage(static)
+        Type(Long)
+        IntConstant(0)
+)
+DeclVar(ul3
+        Storage(static)
+        Type(Long)
+        IntConstant(44)
+)
+DeclVar(ul4
+        Storage(static)
+        Type(Long)
+        ULongConstant(55)
+)
+DeclVar(ul6
+        Storage(static)
+        Type(Long)
+        ULongConstant(66)
+)
+DeclVar(ul7
+        Storage(static)
+        Type(Long)
+        ULongConstant(77)
+)
+DeclVar(ul8
+        Storage(static)
+        Type(Long)
+        ULongConstant(88)
 )
 

@@ -74,6 +74,11 @@ constexpr bool operator==(const type &lhs, const type &rhs)
 std::unique_ptr<fun_type> copy_fun_type(const std::unique_ptr<fun_type> &n);
 type copy_type(const type &n);
 std::optional<type> copy_optional_type(const std::optional<type> &n);
+type get_common_type(const type &t1, const type &t2);
+
+int32_t get_type_size(const type &t);
+
+bool is_signed_type(const type &t);
 
 struct int_initial
 {
@@ -83,8 +88,16 @@ struct long_initial
 {
     int64_t value;
 };
+struct unsigned_int_initial
+{
+    uint32_t value;
+};
+struct unsigned_long_initial
+{
+    uint64_t value;
+};
 
-using initial = std::variant<int_initial, long_initial>;
+using initial = std::variant<int_initial, long_initial, unsigned_int_initial, unsigned_long_initial>;
 
 std::string pretty_print(const initial &i);
 

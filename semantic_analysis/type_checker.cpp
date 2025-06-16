@@ -27,19 +27,28 @@
 
 namespace wccff::sema::type_checker {
 
-auto convert_constant(const constant &c) -> symbol_table::initial_value
+auto convert_constant(const constant &c, const type &t) -> symbol_table::initial_value
 {
-    if (std::holds_alternative<int_constant>(c))
-    {
-        auto value = std::get<int_constant>(c).value;
-        return int_initial{ value };
-    }
-    if (std::holds_alternative<long_constant>(c))
-    {
-        auto value = std::get<long_constant>(c).value;
-        return long_initial{ value };
-    }
-    throw std::runtime_error("Unexpected constant type");
+    auto get_value = [](const constant &con) {
+        return std::visit(visitor{ [](const auto &n) { return static_cast<int64_t>(n.value); } }, con);
+    };
+
+    int64_t value = get_value(c);
+    return std::visit(
+      visitor{
+        [value](const int_type &n) -> symbol_table::initial_value {
+            return int_initial{ static_cast<int32_t>(value) };
+        },
+        [value](const long_type &n) -> symbol_table::initial_value { return long_initial{ value }; },
+        [value](const unsigned_int_type &n) -> symbol_table::initial_value {
+            return unsigned_int_initial{ static_cast<uint32_t>(value) };
+        },
+        [value](const unsigned_long_type &n) -> symbol_table::initial_value {
+            return unsigned_long_initial{ static_cast<uint64_t>(value) };
+        },
+        [](const auto &) -> symbol_table::initial_value { throw std::logic_error("Undefined operator"); },
+      },
+      t);
 }
 
 auto process_assignment_node(const std::unique_ptr<parser::assignment_node> &node, symbol_table::symbol_table &table)
@@ -78,7 +87,7 @@ auto process_binary_node(const std::unique_ptr<parser::binary_node> &node, symbo
         return std::unexpected{ right.error() };
     }
 
-    auto common_type = wccff::parser::get_common_type(get_type(left.value()), get_type(right.value()));
+    auto common_type = wccff::get_common_type(get_type(left.value()), get_type(right.value()));
     auto converted_left = convert_to(left.value(), common_type);
     auto converted_right = convert_to(right.value(), common_type);
 
@@ -89,14 +98,24 @@ auto process_binary_node(const std::unique_ptr<parser::binary_node> &node, symbo
         std::holds_alternative<parser::remainder_operator>(node->op) ||
         std::holds_alternative<parser::bitwise_and_operator>(node->op) ||
         std::holds_alternative<parser::bitwise_or_operator>(node->op) ||
-        std::holds_alternative<parser::bitwise_xor_operator>(node->op) ||
-        std::holds_alternative<parser::left_shift_operator>(node->op) ||
-        std::holds_alternative<parser::right_shift_operator>(node->op))
+        std::holds_alternative<parser::bitwise_xor_operator>(node->op))
     {
         return std::make_unique<parser::binary_node>(node->op,
                                                      std::move(converted_left),
                                                      std::move(converted_right),
                                                      std::move(common_type));
+    }
+
+    // The result of the shift operators is equals to the type of the left side.
+    // It needs to be treated different than the other binary operator and relational operators
+    // 6.5.7 Bitwise shift operators
+    if (std::holds_alternative<parser::left_shift_operator>(node->op) ||
+        std::holds_alternative<parser::right_shift_operator>(node->op))
+    {
+        return std::make_unique<parser::binary_node>(node->op,
+                                                     parser::copy_expression(left.value()),
+                                                     parser::copy_expression(right.value()),
+                                                     get_type(left.value()));
     }
 
     return std::make_unique<parser::binary_node>(node->op,
@@ -187,7 +206,7 @@ auto process_conditional_node(const std::unique_ptr<parser::conditional_node> &n
         return std::unexpected{ e2.error() };
     }
 
-    auto common_type = parser::get_common_type(get_type(e1.value()), get_type(e2.value()));
+    auto common_type = get_common_type(get_type(e1.value()), get_type(e2.value()));
     auto converted_e1 = parser::convert_to(e1.value(), common_type);
     auto converted_e2 = parser::convert_to(e2.value(), common_type);
 
@@ -633,7 +652,7 @@ auto process_variable_declaration_file_scope(const parser::variable_declaration 
         if (std::holds_alternative<constant>(node.init.value()))
         {
             auto int_node = std::get<constant>(node.init.value());
-            init_value = convert_constant(int_node);
+            init_value = convert_constant(int_node, node.var_type);
         }
         else
         {
@@ -746,7 +765,7 @@ auto process_variable_declaration_local_scope(const parser::variable_declaration
         else if (std::holds_alternative<constant>(node.init.value()))
         {
             auto tmp = std::get<constant>(node.init.value());
-            init_value = convert_constant(tmp);
+            init_value = convert_constant(tmp, node.var_type);
         }
         else
         {

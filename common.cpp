@@ -50,6 +50,56 @@ std::optional<type> copy_optional_type(const std::optional<type> &n)
     return std::nullopt;
 }
 
+type get_common_type(const type &t1, const type &t2)
+{
+    // 6.3.1.8 Usual arithmetic conversions
+    if (t1 == t2)
+    {
+        return copy_type(t1);
+    }
+
+    if (get_type_size(t1) == get_type_size(t2))
+    {
+        if (is_signed_type(t1))
+        {
+            return copy_type(t2);
+        }
+        return copy_type(t1);
+    }
+
+    if (get_type_size(t1) > get_type_size(t2))
+    {
+        return copy_type(t1);
+    }
+    return copy_type(t2);
+}
+
+int32_t get_type_size(const type &t)
+{
+    return std::visit(
+      visitor{
+        [](const int_type &) { return 4; },
+        [](const long_type &) { return 8; },
+        [](const unsigned_int_type &) { return 4; },
+        [](const unsigned_long_type &) { return 8; },
+        [](const auto &) -> int32_t { throw std::runtime_error("Trying to get size of non-integral type"); },
+      },
+      t);
+}
+
+bool is_signed_type(const type &t)
+{
+    return std::visit(
+      visitor{
+        [](const int_type &) { return true; },
+        [](const long_type &) { return true; },
+        [](const unsigned_int_type &) { return false; },
+        [](const unsigned_long_type &) { return false; },
+        [](const auto &) -> bool { throw std::runtime_error("Trying to get signess of non-integral type"); },
+      },
+      t);
+}
+
 initial get_default_initial(const type &t)
 {
     return std::visit(
@@ -69,6 +119,8 @@ std::string pretty_print(const initial &i)
     return std::visit(visitor{
                         [](const int_initial &n) { return std::to_string(n.value); },
                         [](const long_initial &n) { return std::to_string(n.value); },
+                        [](const unsigned_int_initial &n) { return std::to_string(n.value); },
+                        [](const unsigned_long_initial &n) { return std::to_string(n.value); },
                       },
                       i);
 }

@@ -463,8 +463,6 @@ expression copy_expression(const expression &expression);
 std::unique_ptr<function_call> copy_function_call(const std::unique_ptr<function_call> &n);
 std::unique_ptr<unary_node> copy_unary_node(const std::unique_ptr<unary_node> &node);
 
-type get_common_type(const type &t1, const type &t2);
-
 type get_type(const constant &n);
 type get_type(const expression &n);
 type get_type(const std::unique_ptr<assignment_node> &n);

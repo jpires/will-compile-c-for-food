@@ -4,6 +4,7 @@ add_executable(unit_tests
         main.cpp
 
         assembly_generation_test.cpp
+        common_test.cpp
         lexer_test.cpp
         parser_data.cpp
         parser_helpers.cpp
