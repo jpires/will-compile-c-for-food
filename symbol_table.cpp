@@ -37,14 +37,12 @@ void backend_symbol_table::build(const symbol_table &table)
 }
 assembly_type backend_symbol_table::get_assembly_type(const wccff::type &t)
 {
-    return std::visit(
-      visitor{
-        [](const int_type &) -> assembly_type { return long_word{}; },
-        [](const long_type &) -> assembly_type { return quad_word{}; },
-        [](const void_type &) -> assembly_type { throw std::logic_error("Not implemented"); },
-        [](const std::unique_ptr<fun_type> &) -> assembly_type { throw std::logic_error("Not implemented"); },
-      },
-      t);
+    return std::visit(visitor{
+                        [](const int_type &) -> assembly_type { return long_word{}; },
+                        [](const long_type &) -> assembly_type { return quad_word{}; },
+                        [](const auto &) -> assembly_type { throw std::logic_error("Not implemented"); },
+                      },
+                      t);
 }
 
 int32_t backend_symbol_table::calculate_offset(const assembly_type &t)

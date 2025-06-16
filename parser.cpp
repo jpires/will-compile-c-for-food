@@ -20,6 +20,7 @@
 #include "parser.h"
 #include "utils.h"
 #include "visitor.h"
+#include <algorithm>
 #include <charconv>
 #include <fmt/core.h>
 #include <ranges>
@@ -197,6 +198,8 @@ type get_type(const constant &n)
     return std::visit(visitor{
                         [](const int_constant &) -> type { return int_type{}; },
                         [](const long_constant &) -> type { return long_type{}; },
+                        [](const unsigned_int_constant &) -> type { return unsigned_int_type{}; },
+                        [](const unsigned_long_constant &) -> type { return unsigned_long_type{}; },
                       },
                       n);
 }
@@ -275,7 +278,7 @@ std::expected<block_item, parser_error> parse_block_item(tokens &tokens)
     using enum lexer::token_type;
     auto next_token = tokens.peek();
     if (next_token.type == int_keyword || next_token.type == long_keyword || next_token.type == extern_keyword ||
-        next_token.type == static_keyword)
+        next_token.type == static_keyword || next_token.type == signed_keyword || next_token.type == unsigned_keyword)
     {
         return parse_declaration(tokens);
     }
@@ -519,6 +522,10 @@ std::expected<std::unique_ptr<if_node>, parser_error> parse_if_node(tokens &toke
     }
 
     auto condition = parse_expression(tokens);
+    if (condition.has_value() == false)
+    {
+        return std::unexpected{ condition.error() };
+    }
 
     auto close_parens = tokens.get_next_token();
     if (close_parens.has_value() == false)
@@ -745,28 +752,29 @@ std::expected<specifier, parser_error> parse_specifier(tokens &tokens)
     std::vector<lexer::token> type;
     while (true)
     {
-        if (tokens.peek().type == lexer::token_type::int_keyword ||
-            tokens.peek().type == lexer::token_type::long_keyword)
+        auto token = tokens.peek();
+        if (token.type == lexer::token_type::int_keyword || token.type == lexer::token_type::long_keyword ||
+            token.type == lexer::token_type::unsigned_keyword || token.type == lexer::token_type::signed_keyword)
         {
             type.push_back(tokens.get_next_token_safe());
         }
-        else if (tokens.peek().type == lexer::token_type::static_keyword)
+        else if (token.type == lexer::token_type::static_keyword)
         {
             consume_tokens(tokens, { lexer::token_type::static_keyword });
             storage.emplace_back(storage_class::static_storage);
         }
-        else if (tokens.peek().type == lexer::token_type::extern_keyword)
+        else if (token.type == lexer::token_type::extern_keyword)
         {
             consume_tokens(tokens, { lexer::token_type::extern_keyword });
             storage.emplace_back(storage_class::extern_storage);
         }
-        else if (tokens.peek().type == lexer::token_type::identifier)
+        else if (token.type == lexer::token_type::identifier)
         {
             break;
         }
         else
         {
-            auto msg = fmt::format("Unexpected token: Expected an identifier but found {}", tokens.peek().type);
+            auto msg = fmt::format("Unexpected token: Expected an identifier but found {}", token.type);
             return std::unexpected{ parser_error{ msg } };
         }
     }
@@ -881,53 +889,83 @@ std::expected<statement, parser_error> parse_statement(tokens &tokens)
     return statement{ std::move(e.value()) };
 }
 
-std::expected<type, parser_error> parse_type(std::vector<lexer::token> &tokens)
+std::expected<type, parser_error> parse_type(const std::vector<lexer::token> &tokens)
 {
+    auto contains = [](const std::vector<lexer::token> &tokens, lexer::token_type type) {
+        return std::ranges::find(tokens, type, &lexer::token::type) != tokens.end();
+    };
+
+    auto has_duplicates = [](const std::vector<lexer::token> &t) {
+        auto local_tokens = t;
+        std::ranges::sort(local_tokens, [](lexer::token &l, lexer::token &r) { return l.type < r.type; });
+
+        return std::ranges::adjacent_find(local_tokens, [](lexer::token &l, lexer::token &r) {
+                   return l.type == r.type;
+               }) != local_tokens.end();
+    };
+    auto generate_error_msg = [](const std::vector<lexer::token> &tokens) {
+        std::string comb;
+        for (const auto &t : tokens)
+        {
+            comb = fmt::format("{} {}", comb, t.type);
+        }
+        return fmt::format("Unexpected type specifier combination found '{}'", comb);
+    };
+
     if (tokens.empty())
     {
         auto msg = fmt::format("Missing type specifier");
         return std::unexpected{ parser_error{ msg } };
     }
+
+    if (has_duplicates(tokens) ||
+        (contains(tokens, lexer::token_type::signed_keyword) && contains(tokens, lexer::token_type::unsigned_keyword)))
+    {
+        return std::unexpected{ parser_error{ generate_error_msg(tokens) } };
+    }
+
     if (tokens.size() == 1)
     {
-        if (tokens.front().type == lexer::token_type::int_keyword)
+        if (tokens.front().type == lexer::token_type::int_keyword ||
+            tokens.front().type == lexer::token_type::signed_keyword)
         {
             return int_type{};
         }
-        else if (tokens.front().type == lexer::token_type::long_keyword)
+        if (tokens.front().type == lexer::token_type::long_keyword)
         {
             return long_type{};
         }
-        else
+        if (tokens.front().type == lexer::token_type::unsigned_keyword)
         {
-            auto msg = fmt::format("Unexpected type specifier, expected 'int' or 'long' but found '{}'",
-                                   tokens.front().type);
-            return std::unexpected{ parser_error{ msg } };
+            return unsigned_int_type{};
         }
-    }
-    if (tokens.size() == 2)
-    {
-        if (tokens[0].type == lexer::token_type::int_keyword && tokens[1].type == lexer::token_type::long_keyword ||
-            tokens[0].type == lexer::token_type::long_keyword && tokens[1].type == lexer::token_type::int_keyword)
-        {
-            return long_type{};
-        }
+
+        auto msg = fmt::format("Unexpected type specifier, expected 'int' or 'long' but found '{}'",
+                               tokens.front().type);
+        return std::unexpected{ parser_error{ msg } };
     }
 
-    std::string comb;
-    for (const auto &t : tokens)
+    if (contains(tokens, lexer::token_type::unsigned_keyword) && contains(tokens, lexer::token_type::long_keyword))
     {
-        comb = fmt::format("{} {}", comb, t.type);
+        return unsigned_long_type{};
     }
-    auto msg = fmt::format("Unexpected type specifier combination found '{}'", comb);
-    return std::unexpected{ parser_error{ msg } };
+    if (contains(tokens, lexer::token_type::unsigned_keyword))
+    {
+        return unsigned_int_type{};
+    }
+    if (contains(tokens, lexer::token_type::long_keyword))
+    {
+        return long_type{};
+    }
+
+    return int_type{};
 }
 
 std::expected<type, parser_error> parse_type_specifier(tokens &tokens, lexer::token_type stop_token)
 {
     auto is_type = [](lexer::token_type t) {
         using enum lexer::token_type;
-        return t == int_keyword || t == long_keyword;
+        return t == int_keyword || t == long_keyword || t == signed_keyword || t == unsigned_keyword;
     };
 
     std::vector<lexer::token> type_specifier;
@@ -1093,6 +1131,8 @@ std::expected<expression, parser_error> parse_factor(tokens &tokens)
         }
         case lexer::token_type::int_constant:
         case lexer::token_type::long_constant:
+        case lexer::token_type::unsigned_int_constant:
+        case lexer::token_type::unsigned_long_constant:
         {
             auto e = parse_constant(tokens);
             if (e.has_value() == false)
@@ -1118,7 +1158,9 @@ std::expected<expression, parser_error> parse_factor(tokens &tokens)
         case lexer::token_type::open_parenthesis:
         {
             if (tokens.peek(1).type == lexer::token_type::int_keyword ||
-                tokens.peek(1).type == lexer::token_type::long_keyword)
+                tokens.peek(1).type == lexer::token_type::long_keyword ||
+                tokens.peek(1).type == lexer::token_type::signed_keyword ||
+                tokens.peek(1).type == lexer::token_type::unsigned_keyword)
             {
                 return parse_cast_expression(tokens);
             }
@@ -1359,36 +1401,67 @@ std::expected<constant, parser_error> parse_constant(tokens &tokens)
         return std::unexpected{ generate_unexpected_end_of_tokens(tokens) };
     }
 
-    if (token->type != lexer::token_type::int_constant && token->type != lexer::token_type::long_constant)
+    if (token->type == lexer::token_type::int_constant || token->type == lexer::token_type::long_constant)
     {
-        auto msg = fmt::format("Parse failure at: {}. Expected Constant but found {}", token->loc, token->type);
-        return std::unexpected{ parser_error{ msg } };
-    }
-
-    int64_t value = 0;
-    if (auto [ptr, ec] = std::from_chars(token->text.data(), token->text.data() + token->text.size(), value, 10);
-        ec != std::errc{})
-    {
-        if (ec == std::errc::result_out_of_range)
+        int64_t value = 0;
+        if (auto [ptr, ec] = std::from_chars(token->text.data(), token->text.data() + token->text.size(), value, 10);
+            ec != std::errc{})
         {
-            auto msg = fmt::format("Parse failure at: {}. Constant {} doesn't fit in int or long",
-                                   token->loc,
-                                   token->text);
+            if (ec == std::errc::result_out_of_range)
+            {
+                auto msg = fmt::format("Parse failure at: {}. Constant {} doesn't fit in int or long",
+                                       token->loc,
+                                       token->text);
+                return std::unexpected{ parser_error{ msg } };
+            }
+
+            auto msg = fmt::format(
+              "Internal Error at {}. Expect constant {}, but failed to parse it as decimal constant",
+              token->loc,
+              token->text);
             return std::unexpected{ parser_error{ msg } };
         }
 
-        auto msg = fmt::format("Internal Error at {}. Expect constant {}, but failed to parse it as decimal constant",
-                               token->loc,
-                               token->text);
-        return std::unexpected{ parser_error{ msg } };
+        if (token->type == lexer::token_type::int_constant && value <= std::numeric_limits<int32_t>::max())
+        {
+            return wccff::constant(int_constant{ static_cast<int32_t>(value) });
+        }
+
+        return wccff::constant(long_constant{ value });
     }
 
-    if (token->type == lexer::token_type::int_constant && value <= std::numeric_limits<int32_t>::max())
+    if (token->type == lexer::token_type::unsigned_int_constant ||
+        token->type == lexer::token_type::unsigned_long_constant)
     {
-        return wccff::constant(int_constant{ static_cast<int32_t>(value) });
+        uint64_t value = 0;
+        if (auto [ptr, ec] = std::from_chars(token->text.data(), token->text.data() + token->text.size(), value, 10);
+            ec != std::errc{})
+        {
+            if (ec == std::errc::result_out_of_range)
+            {
+                auto msg = fmt::format("Parse failure at: {}. Constant {} doesn't fit in int or long",
+                                       token->loc,
+                                       token->text);
+                return std::unexpected{ parser_error{ msg } };
+            }
+
+            auto msg = fmt::format(
+              "Internal Error at {}. Expect constant {}, but failed to parse it as decimal constant",
+              token->loc,
+              token->text);
+            return std::unexpected{ parser_error{ msg } };
+        }
+
+        if (token->type == lexer::token_type::unsigned_int_constant && value <= std::numeric_limits<uint32_t>::max())
+        {
+            return wccff::constant(unsigned_int_constant{ static_cast<uint32_t>(value) });
+        }
+
+        return wccff::constant(unsigned_long_constant{ value });
     }
 
-    return wccff::constant(long_constant{ value });
+    auto msg = fmt::format("Parse failure at: {}. Expected Constant but found {}", token->loc, token->type);
+    return std::unexpected{ parser_error{ msg } };
 }
 
 std::expected<variable_declaration, parser_error> parse_variable_declaration(tokens &tokens, specifier specifieres)
@@ -1571,6 +1644,8 @@ std::string pretty_print(const constant &node, int32_t ident)
     return std::visit(visitor{
                         [ident](const int_constant &n) { return pretty_print(n, ident); },
                         [ident](const long_constant &n) { return pretty_print(n, ident); },
+                        [ident](const unsigned_int_constant &n) { return pretty_print(n, ident); },
+                        [ident](const unsigned_long_constant &n) { return pretty_print(n, ident); },
                       },
                       node);
 }
@@ -1899,6 +1974,8 @@ std::string pretty_print(const type &node, int32_t ident)
                         [ident](const int_type) { return wccff::format_indented(ident, "Int"); },
                         [ident](const long_type) { return wccff::format_indented(ident, "Long"); },
                         [ident](const std::unique_ptr<fun_type> &node) { return pretty_print(node, ident); },
+                        [ident](const unsigned_int_type) { return wccff::format_indented(ident, "UInt"); },
+                        [ident](const unsigned_long_type) { return wccff::format_indented(ident, "ULong"); },
                         [ident](const void_type) { return wccff::format_indented(ident, "Void"); },
                       },
                       node);
@@ -1916,6 +1993,16 @@ std::string pretty_print(const unary_operator &node, int32_t ident)
         [ident](const prefix_increment_operator &) { return wccff::format_indented(ident, "Prefix Increment"); },
       },
       node);
+}
+
+std::string pretty_print(const unsigned_int_constant &node, int32_t ident)
+{
+    return wccff::format_indented(ident, "UIntConstant({})", node.value);
+}
+
+std::string pretty_print(const unsigned_long_constant &node, int32_t ident)
+{
+    return wccff::format_indented(ident, "ULongConstant({})", node.value);
 }
 
 std::string pretty_print(const var &node, int32_t ident)

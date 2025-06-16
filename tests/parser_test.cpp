@@ -601,6 +601,102 @@ TEST_CASE("Parse Constants", "[parser]")
             REQUIRE(std::get<wccff::long_constant>(r.value()).value == 2'147'483'648);
         }
     }
+
+    SECTION("Unsigned Int")
+    {
+        SECTION("Small int")
+        {
+            wccff::lexer::file_location location{ 1, 3 };
+            std::vector<wccff::lexer::token> tokens_vector;
+            tokens_vector.emplace_back(wccff::lexer::token_type::unsigned_int_constant, "123u", location);
+
+            wccff::parser::tokens tokens{ tokens_vector };
+
+            auto r = wccff::parser::parse_constant(tokens);
+
+            REQUIRE(r.has_value());
+            REQUIRE(std::holds_alternative<wccff::unsigned_int_constant>(r.value()));
+            REQUIRE(std::get<wccff::unsigned_int_constant>(r.value()).value == 123);
+        }
+
+        SECTION("max uint32 value")
+        {
+            wccff::lexer::file_location location{ 1, 3 };
+            std::vector<wccff::lexer::token> tokens_vector;
+            tokens_vector.emplace_back(wccff::lexer::token_type::unsigned_int_constant, "4294967295u", location);
+
+            wccff::parser::tokens tokens{ tokens_vector };
+
+            auto r = wccff::parser::parse_constant(tokens);
+
+            REQUIRE(r.has_value());
+            REQUIRE(std::holds_alternative<wccff::unsigned_int_constant>(r.value()));
+            REQUIRE(std::get<wccff::unsigned_int_constant>(r.value()).value == 4'294'967'295);
+        }
+
+        SECTION("Bigger than max uint32 value")
+        {
+            wccff::lexer::file_location location{ 1, 3 };
+            std::vector<wccff::lexer::token> tokens_vector;
+            tokens_vector.emplace_back(wccff::lexer::token_type::unsigned_int_constant, "4294967296u", location);
+
+            wccff::parser::tokens tokens{ tokens_vector };
+
+            auto r = wccff::parser::parse_constant(tokens);
+
+            REQUIRE(r.has_value());
+            REQUIRE(std::holds_alternative<wccff::unsigned_long_constant>(r.value()));
+            REQUIRE(std::get<wccff::unsigned_long_constant>(r.value()).value == 4'294'967'296);
+        }
+    }
+
+    SECTION("Unsigned Long")
+    {
+        SECTION("Small long")
+        {
+            wccff::lexer::file_location location{ 1, 3 };
+            std::vector<wccff::lexer::token> tokens_vector;
+            tokens_vector.emplace_back(wccff::lexer::token_type::unsigned_long_constant, "123ul", location);
+
+            wccff::parser::tokens tokens{ tokens_vector };
+
+            auto r = wccff::parser::parse_constant(tokens);
+
+            REQUIRE(r.has_value());
+            REQUIRE(std::holds_alternative<wccff::unsigned_long_constant>(r.value()));
+            REQUIRE(std::get<wccff::unsigned_long_constant>(r.value()).value == 123);
+        }
+
+        SECTION("max uint32 value")
+        {
+            wccff::lexer::file_location location{ 1, 3 };
+            std::vector<wccff::lexer::token> tokens_vector;
+            tokens_vector.emplace_back(wccff::lexer::token_type::unsigned_long_constant, "4294967295ul", location);
+
+            wccff::parser::tokens tokens{ tokens_vector };
+
+            auto r = wccff::parser::parse_constant(tokens);
+
+            REQUIRE(r.has_value());
+            REQUIRE(std::holds_alternative<wccff::unsigned_long_constant>(r.value()));
+            REQUIRE(std::get<wccff::unsigned_long_constant>(r.value()).value == 4'294'967'295);
+        }
+
+        SECTION("Bigger than max uint32 value")
+        {
+            wccff::lexer::file_location location{ 1, 3 };
+            std::vector<wccff::lexer::token> tokens_vector;
+            tokens_vector.emplace_back(wccff::lexer::token_type::unsigned_long_constant, "4294967296ul", location);
+
+            wccff::parser::tokens tokens{ tokens_vector };
+
+            auto r = wccff::parser::parse_constant(tokens);
+
+            REQUIRE(r.has_value());
+            REQUIRE(std::holds_alternative<wccff::unsigned_long_constant>(r.value()));
+            REQUIRE(std::get<wccff::unsigned_long_constant>(r.value()).value == 4'294'967'296);
+        }
+    }
 }
 
 TEST_CASE("Parse Statements", "[parser]")
@@ -1717,5 +1813,60 @@ TEST_CASE("parser_miscs", "[parser]")
         REQUIRE(std::holds_alternative<long_type>(get_common_type(long_type{}, int_type{})));
         REQUIRE(std::holds_alternative<long_type>(get_common_type(int_type{}, long_type{})));
         REQUIRE(std::holds_alternative<long_type>(get_common_type(long_type{}, long_type{})));
+    }
+}
+
+TEST_CASE("parse_type", "[parser]")
+{
+    using wccff::parser::parse_type;
+    using enum wccff::lexer::token_type;
+    using wccff::lexer::token;
+
+    constexpr auto int_token = token{ int_keyword, "int", {} };
+    constexpr auto long_token = token{ long_keyword, "long", {} };
+    constexpr auto signed_token = token{ signed_keyword, "signed", {} };
+    constexpr auto unsigned_token = token{ unsigned_keyword, "unsigned", {} };
+
+    SECTION("Invalid")
+    {
+        REQUIRE(parse_type({}).has_value() == false);
+        REQUIRE(parse_type({ int_token, int_token }).has_value() == false);
+        REQUIRE(parse_type({ long_token, long_token }).has_value() == false);
+        REQUIRE(parse_type({ int_token, signed_token, unsigned_token }).has_value() == false);
+        REQUIRE(parse_type({ long_token, signed_token, unsigned_token }).has_value() == false);
+    }
+
+    SECTION("Valid")
+    {
+        REQUIRE(parse_type({ int_token }).value() == wccff::int_type{});
+        REQUIRE(parse_type({ signed_token }).value() == wccff::int_type{});
+        REQUIRE(parse_type({ signed_token, int_token }).value() == wccff::int_type{});
+        REQUIRE(parse_type({ int_token, signed_token }).value() == wccff::int_type{});
+
+        REQUIRE(parse_type({ long_token }).value() == wccff::long_type{});
+        REQUIRE(parse_type({ long_token, signed_token }).value() == wccff::long_type{});
+        REQUIRE(parse_type({ signed_token, long_token }).value() == wccff::long_type{});
+        REQUIRE(parse_type({ long_token, int_token }).value() == wccff::long_type{});
+        REQUIRE(parse_type({ int_token, long_token }).value() == wccff::long_type{});
+        REQUIRE(parse_type({ signed_token, int_token, long_token }).value() == wccff::long_type{});
+        REQUIRE(parse_type({ signed_token, long_token, int_token }).value() == wccff::long_type{});
+        REQUIRE(parse_type({ int_token, signed_token, long_token }).value() == wccff::long_type{});
+        REQUIRE(parse_type({ int_token, long_token, signed_token }).value() == wccff::long_type{});
+        REQUIRE(parse_type({ long_token, int_token, signed_token }).value() == wccff::long_type{});
+        REQUIRE(parse_type({ long_token, signed_token, int_token }).value() == wccff::long_type{});
+
+        auto f = parse_type({ unsigned_token });
+        REQUIRE(f.value() == wccff::unsigned_int_type{});
+        REQUIRE(parse_type({ unsigned_token, int_token }).value() == wccff::unsigned_int_type{});
+        REQUIRE(parse_type({ int_token, unsigned_token }).value() == wccff::unsigned_int_type{});
+
+        REQUIRE(parse_type({ unsigned_token, long_token }).value() == wccff::unsigned_long_type{});
+        REQUIRE(parse_type({ long_token, unsigned_token }).value() == wccff::unsigned_long_type{});
+        REQUIRE(parse_type({ unsigned_token, int_token, long_token }).value() == wccff::unsigned_long_type{});
+        REQUIRE(parse_type({ unsigned_token, long_token, int_token }).value() == wccff::unsigned_long_type{});
+        REQUIRE(parse_type({ int_token, unsigned_token, long_token }).value() == wccff::unsigned_long_type{});
+        REQUIRE(parse_type({ int_token, long_token, unsigned_token }).value() == wccff::unsigned_long_type{});
+        REQUIRE(parse_type({ long_token, int_token, unsigned_token }).value() == wccff::unsigned_long_type{});
+        REQUIRE(parse_type({ long_token, unsigned_token, int_token }).value() == wccff::unsigned_long_type{});
     }
 }

@@ -35,6 +35,8 @@ type copy_type(const type &n)
                         [](const int_type) -> type { return int_type{}; },
                         [](const long_type) -> type { return long_type{}; },
                         [](const std::unique_ptr<fun_type> &n) -> type { return copy_fun_type(n); },
+                        [](const unsigned_int_type) -> type { return unsigned_int_type{}; },
+                        [](const unsigned_long_type) -> type { return unsigned_long_type{}; },
                         [](const void_type) -> type { return void_type{}; },
                       },
                       n);
@@ -54,6 +56,8 @@ initial get_default_initial(const type &t)
       visitor{
         [](const int_type) -> initial { return int_initial{ 0 }; },
         [](const long_type) -> initial { return long_initial{ 0 }; },
+        [](const unsigned_int_type) -> initial { return long_initial{ 0 }; },
+        [](const unsigned_long_type) -> initial { return long_initial{ 0 }; },
         [](const void_type) -> initial { throw std::runtime_error("void type has no default value"); },
         [](const std::unique_ptr<fun_type> &) -> initial { throw std::runtime_error("fun type has no default value"); },
       },

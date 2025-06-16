@@ -35,11 +35,18 @@ struct fun_type;
 struct long_type
 {
 };
+struct unsigned_int_type
+{
+};
+struct unsigned_long_type
+{
+};
 struct void_type
 {
 };
 
-using type = std::variant<int_type, long_type, std::unique_ptr<fun_type>, void_type>;
+using type =
+  std::variant<int_type, long_type, std::unique_ptr<fun_type>, unsigned_int_type, unsigned_long_type, void_type>;
 
 struct fun_type
 {
@@ -55,6 +62,8 @@ constexpr bool operator==(const type &lhs, const type &rhs)
                         [](const std::unique_ptr<fun_type> &l, const std::unique_ptr<fun_type> &r) { return *l == *r; },
                         [](const int_type &, const int_type &) { return true; },
                         [](const long_type &, const long_type &) { return true; },
+                        [](const unsigned_int_type &, const unsigned_int_type &) { return true; },
+                        [](const unsigned_long_type &, const unsigned_long_type &) { return true; },
                         [](const void_type &, const void_type &) { return true; },
                         [](const auto &, const auto &) { return false; },
                       },
@@ -91,7 +100,17 @@ struct long_constant
     int64_t value;
 };
 
-using constant = std::variant<int_constant, long_constant>;
+struct unsigned_int_constant
+{
+    uint32_t value;
+};
+
+struct unsigned_long_constant
+{
+    uint64_t value;
+};
+
+using constant = std::variant<int_constant, long_constant, unsigned_int_constant, unsigned_long_constant>;
 
 struct long_word
 {

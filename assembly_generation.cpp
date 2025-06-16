@@ -33,9 +33,9 @@ identifier process_identifier(const wccff::tacky::identifier &id)
 operand process_constant(const constant &n)
 {
     return std::visit(visitor{
-                        [](const int_constant &c) { return immediate{ c.value }; },
-                        [](const long_constant &c) { return immediate{ c.value }; },
-                        [](const auto &) { throw std::runtime_error("INTERNAL ERROR"); },
+                        [](const int_constant &c) -> operand { return immediate{ c.value }; },
+                        [](const long_constant &c) -> operand { return immediate{ c.value }; },
+                        [](const auto &) -> operand { throw std::runtime_error("INTERNAL ERROR"); },
                       },
                       n);
 }
@@ -54,6 +54,7 @@ assembly_type get_assembly_type(const wccff::constant &v)
     return std::visit(visitor{
                         [](const int_constant &) -> assembly_type { return long_word{}; },
                         [](const long_constant &) -> assembly_type { return quad_word{}; },
+                        [](const auto &) -> assembly_type { throw std::runtime_error("Not Implemented"); },
                       },
                       v);
 }
@@ -77,6 +78,8 @@ assembly_type get_assembly_type(const tacky::var &v, const wccff::symbol_table::
       visitor{
         [](const wccff::int_type &) -> assembly_type { return long_word{}; },
         [](const wccff::long_type &) -> assembly_type { return quad_word{}; },
+        [](const wccff::unsigned_int_type &) -> assembly_type { throw std::logic_error("Not implemented"); },
+        [](const wccff::unsigned_long_type &) -> assembly_type { throw std::logic_error("Not implemented"); },
         [](const wccff::void_type &) -> assembly_type { throw std::logic_error("Not implemented"); },
         [](const std::unique_ptr<fun_type> &) -> assembly_type { throw std::logic_error("Not implemented"); },
       },

@@ -496,7 +496,7 @@ std::expected<std::vector<param>, parser_error> parse_params_list(tokens &tokens
 std::optional<parser_error> parse_semicolon(tokens &tokens);
 std::expected<specifier, parser_error> parse_specifier(tokens &tokens);
 std::expected<statement, parser_error> parse_statement(tokens &tokens);
-std::expected<type, parser_error> parse_type(std::vector<lexer::token> &tokens);
+std::expected<type, parser_error> parse_type(const std::vector<lexer::token> &tokens);
 std::expected<type, parser_error> parse_type_specifier(tokens &token, lexer::token_type stop_token);
 std::expected<std::unique_ptr<unary_node>, parser_error> parse_unary_node(tokens &tokens);
 std::expected<variable_declaration, parser_error> parse_variable_declaration(tokens &tokens, specifier specifieres);
@@ -540,6 +540,8 @@ std::string pretty_print(const std::unique_ptr<unary_node> &node, int32_t ident 
 std::string pretty_print(const std::unique_ptr<while_statement> &node, int32_t ident = 0);
 std::string pretty_print(const type &node, int32_t ident = 0);
 std::string pretty_print(const unary_operator &node, int32_t ident = 0);
+std::string pretty_print(const unsigned_int_constant &node, int32_t ident = 0);
+std::string pretty_print(const unsigned_long_constant &node, int32_t ident = 0);
 std::string pretty_print(const var &node, int32_t ident = 0);
 std::string pretty_print(const variable_declaration &node, int32_t ident = 0);
 

@@ -142,6 +142,7 @@ constant process_constant(const constant &node)
     return std::visit(visitor{
                         [](const int_constant &c) -> constant { return c; },
                         [](const long_constant &c) -> constant { return c; },
+                        [](const auto &) -> constant { throw std::runtime_error{ "Not Implemented" }; },
                       },
                       node);
 }
@@ -763,6 +764,7 @@ std::string pretty_print(const constant &val, int32_t ident)
       visitor{
         [ident](const int_constant &val) { return wccff::format_indented(ident, "IntConstant({})", val.value); },
         [ident](const long_constant &val) { return wccff::format_indented(ident, "LongConstant({})", val.value); },
+        [](const auto &) -> std::string { throw std::runtime_error("Not implemented"); },
       },
       val);
 }
