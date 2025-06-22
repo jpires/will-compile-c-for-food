@@ -23,10 +23,13 @@
 #include "visitor.h"
 #include <cstdint>
 #include <optional>
+#include <source_location>
 #include <variant>
 #include <vector>
 
 namespace wccff {
+
+std::string get_not_implemented_message(std::source_location loc = std::source_location::current());
 
 struct int_type
 {

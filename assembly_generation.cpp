@@ -291,20 +291,22 @@ std::vector<instruction> process_statement(const wccff::tacky::binary_statement 
 
 std::vector<instruction> process_statement(const tacky::instruction &i, const wccff::symbol_table::symbol_table &t)
 {
-    return std::visit(visitor{
-                        [&t](const tacky::return_statement &n) { return process_statement(n, t); },
-                        [&t](const tacky::unary_statement &n) { return process_statement(n, t); },
-                        [&t](const tacky::binary_statement &n) { return process_statement(n, t); },
-                        [&t](const tacky::copy_statement &n) { return process_statement(n, t); },
-                        [](const tacky::jump_statement &n) { return process_statement(n); },
-                        [&t](const tacky::jump_if_zero_statement &n) { return process_statement(n, t); },
-                        [&t](const tacky::jump_if_not_zero_statement &n) { return process_statement(n, t); },
-                        [](const tacky::label_statement &n) { return process_statement(n); },
-                        [&t](const tacky::fun_call &n) -> std::vector<instruction> { return fun_call(n, t); },
-                        [](const tacky::sing_extend &n) -> std::vector<instruction> { return process_statement(n); },
-                        [](const tacky::truncate &n) -> std::vector<instruction> { return process_statement(n); },
-                      },
-                      i);
+    return std::visit(
+      visitor{
+        [&t](const tacky::return_statement &n) { return process_statement(n, t); },
+        [&t](const tacky::unary_statement &n) { return process_statement(n, t); },
+        [&t](const tacky::binary_statement &n) { return process_statement(n, t); },
+        [&t](const tacky::copy_statement &n) { return process_statement(n, t); },
+        [](const tacky::jump_statement &n) { return process_statement(n); },
+        [&t](const tacky::jump_if_zero_statement &n) { return process_statement(n, t); },
+        [&t](const tacky::jump_if_not_zero_statement &n) { return process_statement(n, t); },
+        [](const tacky::label_statement &n) { return process_statement(n); },
+        [&t](const tacky::fun_call &n) -> std::vector<instruction> { return fun_call(n, t); },
+        [](const tacky::sing_extend &n) -> std::vector<instruction> { return process_statement(n); },
+        [](const tacky::truncate &n) -> std::vector<instruction> { return process_statement(n); },
+        [](const tacky::zero_extend &n) -> std::vector<instruction> { throw std::runtime_error("Not implemented"); },
+      },
+      i);
 }
 
 std::vector<instruction> process_statement(const std::vector<tacky::instruction> &s,

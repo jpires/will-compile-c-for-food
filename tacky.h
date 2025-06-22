@@ -270,6 +270,12 @@ struct truncate
     val dst;
 };
 
+struct zero_extend
+{
+    val src;
+    val dst;
+};
+
 using instruction = std::variant<return_statement,
                                  unary_statement,
                                  binary_statement,
@@ -280,7 +286,8 @@ using instruction = std::variant<return_statement,
                                  label_statement,
                                  fun_call,
                                  sing_extend,
-                                 truncate>;
+                                 truncate,
+                                 zero_extend>;
 
 struct function_definition
 {
@@ -428,6 +435,7 @@ std::string pretty_print(const unary_statement &instruction, int32_t ident = 0);
 std::string pretty_print(const unary_operator &val, int32_t ident = 0);
 std::string pretty_print(const var &val, int32_t ident = 0);
 std::string pretty_print(const val &val, int32_t ident = 0);
+std::string pretty_print(const zero_extend &node, int32_t ident = 0);
 
 } // namespace wccff::tacky
 #endif // TACKY_H

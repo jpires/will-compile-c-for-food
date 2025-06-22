@@ -18,8 +18,15 @@
  */
 
 #include "common.h"
+#include <fmt/format.h>
 
 namespace wccff {
+
+std::string get_not_implemented_message(std::source_location loc)
+{
+    return fmt::format("{}: Not implemented", loc.function_name());
+}
+
 std::unique_ptr<fun_type> copy_fun_type(const std::unique_ptr<fun_type> &n)
 {
     std::vector<type> new_params;

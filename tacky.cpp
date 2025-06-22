@@ -142,6 +142,8 @@ constant process_constant(const constant &node)
     return std::visit(visitor{
                         [](const int_constant &c) -> constant { return c; },
                         [](const long_constant &c) -> constant { return c; },
+                        [](const unsigned_int_constant &c) -> constant { return c; },
+                        [](const unsigned_long_constant &c) -> constant { return c; },
                         [](const auto &) -> constant { throw std::runtime_error{ "Not Implemented" }; },
                       },
                       node);
@@ -468,14 +470,22 @@ val process_cast_expression(const std::unique_ptr<parser::cast_expression> &node
         return src;
     }
 
-    auto dst = make_temporary_variable(get_type(node), table);
-    if (node->target == long_type{})
+    auto dst = make_temporary_variable(node->target, table);
+    if (get_type_size(node->target) == get_type_size(get_type(node->exp)))
+    {
+        instructions.emplace_back(copy_statement{ src, dst });
+    }
+    else if (get_type_size(node->target) < get_type_size(get_type(node->exp)))
+    {
+        instructions.emplace_back(truncate{ src, dst });
+    }
+    else if (is_signed_type(get_type(node->exp)))
     {
         instructions.emplace_back(sing_extend{ src, dst });
     }
     else
     {
-        instructions.emplace_back(truncate{ src, dst });
+        instructions.emplace_back(zero_extend{ src, dst });
     }
 
     return dst;
@@ -764,6 +774,12 @@ std::string pretty_print(const constant &val, int32_t ident)
       visitor{
         [ident](const int_constant &val) { return wccff::format_indented(ident, "IntConstant({})", val.value); },
         [ident](const long_constant &val) { return wccff::format_indented(ident, "LongConstant({})", val.value); },
+        [ident](const unsigned_int_constant &val) {
+            return wccff::format_indented(ident, "UIntConstant({})", val.value);
+        },
+        [ident](const unsigned_long_constant &val) {
+            return wccff::format_indented(ident, "ULongConstant({})", val.value);
+        },
         [](const auto &) -> std::string { throw std::runtime_error("Not implemented"); },
       },
       val);
@@ -878,7 +894,23 @@ std::string pretty_print(const label_statement &i, int32_t ident)
 
 std::string pretty_print(const instruction &instruction, int32_t ident)
 {
-    return std::visit(visitor{ [ident](const auto &n) { return pretty_print(n, ident); } }, instruction);
+    return std::visit(
+      visitor{
+        [ident](const return_statement &n) { return pretty_print(n, ident); },
+        [ident](const unary_statement &n) { return pretty_print(n, ident); },
+        [ident](const binary_statement &n) { return pretty_print(n, ident); },
+        [ident](const copy_statement &n) { return pretty_print(n, ident); },
+        [ident](const jump_statement &n) { return pretty_print(n, ident); },
+        [ident](const jump_if_zero_statement &n) { return pretty_print(n, ident); },
+        [ident](const jump_if_not_zero_statement &n) { return pretty_print(n, ident); },
+        [ident](const label_statement &n) { return pretty_print(n, ident); },
+        [ident](const fun_call &n) { return pretty_print(n, ident); },
+        [ident](const sing_extend &n) { return pretty_print(n, ident); },
+        [ident](const truncate &n) { return pretty_print(n, ident); },
+        [ident](const zero_extend &n) { return pretty_print(n, ident); },
+        [](const auto &) -> std::string { throw std::logic_error(wccff::get_not_implemented_message()); },
+      },
+      instruction);
 }
 
 std::string pretty_print(const std::vector<instruction> &instructions, int32_t ident)
@@ -909,5 +941,13 @@ std::string pretty_print(const program &p, int ident)
         output += pretty_print(f, ident);
     }
     return output;
+}
+
+std::string pretty_print(const zero_extend &node, int32_t ident)
+{
+    return wccff::format_indented(ident,
+                                  "ZeroExtend(src={}, dst={})\n",
+                                  pretty_print(node.src, 0),
+                                  pretty_print(node.dst, 0));
 }
 } // namespace wccff::tacky
