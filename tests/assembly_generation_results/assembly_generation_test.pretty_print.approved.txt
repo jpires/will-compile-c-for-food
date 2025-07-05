@@ -76,6 +76,12 @@ L
 LE
 --data--
 Data(data_name)
+--div--
+Div(type(long_word))
+Div(type(quad_word))
+Div(type(quad_word))
+Div(type(quad_word))
+Div(type(quad_word))
 --function--
 Function(name(identifier_name), is_global(true), stack_size(16)
 	insts:
@@ -90,11 +96,11 @@ Function(name(identifier_name), is_global(false), stack_size(56)
 --identifier--
 identifier_name
 --idiv--
-iDiv(type(long_word)
-iDiv(type(quad_word)
-iDiv(type(quad_word)
-iDiv(type(quad_word)
-iDiv(type(quad_word)
+iDiv(type(long_word))
+iDiv(type(quad_word))
+iDiv(type(quad_word))
+iDiv(type(quad_word))
+iDiv(type(quad_word))
 --immediate--
 Imm(666)
 Imm(-555)
@@ -130,6 +136,32 @@ Mov(type(quad_word), src(Data(data_src)), dst(R10d))
 Mov(type(long_word), src(Data(data_src)), dst(Pseudo(dst)))
 Mov(type(long_word), src(Data(data_src)), dst(Stack(Imm(-32))))
 Mov(type(long_word), src(Data(data_src)), dst(Data(data_dst)))
+--mov_zero_extend-
+MovZeroExtend(src(Imm(42)), dst(Imm(55)))
+MovZeroExtend(src(Imm(42)), dst(R10d))
+MovZeroExtend(src(Imm(42)), dst(Pseudo(pseu_dst)))
+MovZeroExtend(src(Imm(42)), dst(Stack(Imm(-32))))
+MovZeroExtend(src(Imm(42)), dst(Data(data_dst)))
+MovZeroExtend(src(R10d), dst(Imm(55)))
+MovZeroExtend(src(R10d), dst(R10d))
+MovZeroExtend(src(R10d), dst(Pseudo(pseu_dst)))
+MovZeroExtend(src(R10d), dst(Stack(Imm(-32))))
+MovZeroExtend(src(R10d), dst(Data(data_dst)))
+MovZeroExtend(src(Pseudo(src)), dst(Imm(55)))
+MovZeroExtend(src(Pseudo(src)), dst(R10d))
+MovZeroExtend(src(Pseudo(src)), dst(Pseudo(pseu_dst)))
+MovZeroExtend(src(Pseudo(src)), dst(Stack(Imm(-32))))
+MovZeroExtend(src(Pseudo(src)), dst(Data(data_dst)))
+MovZeroExtend(src(Stack(Imm(-40))), dst(Imm(55)))
+MovZeroExtend(src(Stack(Imm(-40))), dst(R10d))
+MovZeroExtend(src(Stack(Imm(-40))), dst(Pseudo(pseu_dst)))
+MovZeroExtend(src(Stack(Imm(-40))), dst(Stack(Imm(-32))))
+MovZeroExtend(src(Stack(Imm(-40))), dst(Data(data_dst)))
+MovZeroExtend(src(Data(data_src)), dst(Imm(55)))
+MovZeroExtend(src(Data(data_src)), dst(R10d))
+MovZeroExtend(src(Data(data_src)), dst(Pseudo(dst)))
+MovZeroExtend(src(Data(data_src)), dst(Stack(Imm(-32))))
+MovZeroExtend(src(Data(data_src)), dst(Data(data_dst)))
 --movx-
 Movx(src(Imm(42)), dst(Imm(55)))
 Movx(src(Imm(42)), dst(R10d))
@@ -196,6 +228,10 @@ SetCC(cond(G), dst(Pseudo(pseudo_name)))
 SetCC(cond(GE), dst(Stack(Imm(42))))
 SetCC(cond(L), dst(Data(data_name)))
 SetCC(cond(LE), dst(Data(data_name)))
+SetCC(cond(A), dst(Pseudo(pseudo_name)))
+SetCC(cond(AE), dst(Stack(Imm(42))))
+SetCC(cond(B), dst(Data(data_name)))
+SetCC(cond(BE), dst(Data(data_name)))
 --stack--
 Stack(Imm(16))
 --static_variable--

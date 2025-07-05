@@ -123,8 +123,35 @@ struct left_shift
 struct right_shift
 {
 };
-using binary_operator = std::variant<add, sub, mul, binary_and, binary_or, binary_xor, left_shift, right_shift>;
+struct left_shift_aritmetic
+{
+};
+struct right_shift_aritmetic
+{
+};
+using binary_operator = std::variant<add,
+                                     sub,
+                                     mul,
+                                     binary_and,
+                                     binary_or,
+                                     binary_xor,
+                                     left_shift,
+                                     right_shift,
+                                     left_shift_aritmetic,
+                                     right_shift_aritmetic>;
 
+struct A
+{
+};
+struct AE
+{
+};
+struct B
+{
+};
+struct BE
+{
+};
 struct E
 {
 };
@@ -143,7 +170,7 @@ struct L
 struct LE
 {
 };
-using cond_code = std::variant<E, NE, G, GE, L, LE>;
+using cond_code = std::variant<E, NE, G, GE, L, LE, A, AE, B, BE>;
 
 struct unary
 {
@@ -166,6 +193,11 @@ struct cmp
     assembly_type type;
 };
 
+struct div
+{
+    operand src;
+    assembly_type type;
+};
 struct idiv
 {
     operand src;
@@ -207,6 +239,12 @@ struct movx
     operand dst;
 };
 
+struct mov_zero_extend
+{
+    operand src;
+    operand dst;
+};
+
 struct ret_instruction
 {
 };
@@ -219,8 +257,22 @@ struct call
 {
     identifier fun_name;
 };
-using instruction = std::
-  variant<mov_instruction, movx, unary, binary, cmp, idiv, cdq, jmp, jmpcc, setcc, label, push, call, ret_instruction>;
+using instruction = std::variant<mov_instruction,
+                                 movx,
+                                 mov_zero_extend,
+                                 unary,
+                                 binary,
+                                 cmp,
+                                 idiv,
+                                 div,
+                                 cdq,
+                                 jmp,
+                                 jmpcc,
+                                 setcc,
+                                 label,
+                                 push,
+                                 call,
+                                 ret_instruction>;
 
 struct function
 {
@@ -248,6 +300,10 @@ assembly_type get_assembly_type(const wccff::constant &v);
 assembly_type get_assembly_type(const tacky::val &v, const wccff::symbol_table::symbol_table &table);
 assembly_type get_assembly_type(const tacky::var &v, const wccff::symbol_table::symbol_table &table);
 
+type get_type(const wccff::constant &v);
+type get_type(const tacky::val &v, const wccff::symbol_table::symbol_table &table);
+type get_type(const tacky::var &v, const wccff::symbol_table::symbol_table &table);
+
 bool is_larger_immediate(const operand &op);
 bool is_memory_operand(const operand &o);
 
@@ -264,6 +320,7 @@ std::vector<instruction> process_statement(const std::vector<tacky::instruction>
                                            const wccff::symbol_table::symbol_table &t);
 std::vector<instruction> process_statement(const tacky::sing_extend &i);
 std::vector<instruction> process_statement(const tacky::truncate &i);
+std::vector<instruction> process_statement(const tacky::zero_extend &i);
 std::vector<instruction> fun_call(const tacky::fun_call &i, const wccff::symbol_table::symbol_table &t);
 
 function process_function(const wccff::tacky::function_definition &f, const symbol_table::symbol_table &t);
@@ -278,6 +335,7 @@ std::optional<std::vector<instruction>> fixing_up_instructions_binary(const bina
 
 std::optional<std::vector<instruction>> fixing_up_instructions11(const cmp &n);
 std::optional<std::vector<instruction>> fixing_up_instructions11(const mov_instruction &n);
+std::optional<std::vector<instruction>> fixing_up_instructions11(const mov_zero_extend &n);
 std::optional<std::vector<instruction>> fixing_up_instructions11(const movx &n);
 std::optional<std::vector<instruction>> fixing_up_instructions11(const push &n);
 
@@ -293,6 +351,7 @@ std::string pretty_print(const cdq &node);
 std::string pretty_print(const cmp &node);
 std::string pretty_print(const cond_code &node);
 std::string pretty_print(const data &node);
+std::string pretty_print(const div &node);
 std::string pretty_print(const function &node);
 std::string pretty_print(const identifier &node);
 std::string pretty_print(const idiv &node);
@@ -302,6 +361,7 @@ std::string pretty_print(const jmp &node);
 std::string pretty_print(const jmpcc &node);
 std::string pretty_print(const label &node);
 std::string pretty_print(const mov_instruction &node);
+std::string pretty_print(const mov_zero_extend &node);
 std::string pretty_print(const movx &node);
 std::string pretty_print(const operand &node);
 std::string pretty_print(const program &program);

@@ -583,6 +583,87 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
         ApprovalTests::Approvals::verify(result);
     }
 
+    SECTION("mov_zero_extend")
+    {
+        using wccff::assembly_generation::fixing_up_instructions11;
+        using wccff::assembly_generation::mov_zero_extend;
+
+        std::string result;
+        result += "--src = immediate; dst = reg--\n";
+        mov_zero_extend b1{ .src = immediate{ 42 }, .dst = cx{} };
+        auto b1_result = fixing_up_instructions11(b1);
+        REQUIRE(b1_result.has_value());
+        result += pretty_print(b1_result.value());
+
+        result += "\n--src = reg; dst = reg--\n";
+        mov_zero_extend b2{ .src = ax{}, .dst = cx{} };
+        auto b2_result = fixing_up_instructions11(b2);
+        REQUIRE(b2_result.has_value());
+        result += pretty_print(b2_result.value());
+
+        result += "\n--src = pseudo; dst = reg--\n";
+        mov_zero_extend b3{ .src = stack{ 8 }, .dst = cx{} };
+        auto b3_result = fixing_up_instructions11(b3);
+        REQUIRE(b3_result.has_value());
+        result += pretty_print(b3_result.value());
+
+        result += "\n--src = data; dst = reg--\n";
+        mov_zero_extend b4{ .src = data{ "data_src" }, .dst = cx{} };
+        auto b4_result = fixing_up_instructions11(b4);
+        REQUIRE(b4_result.has_value());
+        result += pretty_print(b4_result.value());
+
+        result += "\n--src = immediate; dst = data--\n";
+        mov_zero_extend b5{ .src = immediate{ 42 }, .dst = data{ "data_dst" } };
+        auto b5_result = fixing_up_instructions11(b5);
+        REQUIRE(b5_result.has_value());
+        result += pretty_print(b5_result.value());
+
+        result += "\n--src = immediate; dst = stack--\n";
+        mov_zero_extend b6{ .src = immediate{ 42 }, .dst = stack{ 16 } };
+        auto b6_result = fixing_up_instructions11(b6);
+        REQUIRE(b6_result.has_value());
+        result += pretty_print(b6_result.value());
+
+        result += "\n--src = reg; dst = data--\n";
+        mov_zero_extend b7{ .src = ax{}, .dst = data{ "data_dst" } };
+        auto b7_result = fixing_up_instructions11(b7);
+        REQUIRE(b7_result.has_value());
+        result += pretty_print(b7_result.value());
+
+        result += "\n--src = reg; dst = stack--\n";
+        mov_zero_extend b8{ .src = ax{}, .dst = stack{ 16 } };
+        auto b8_result = fixing_up_instructions11(b8);
+        REQUIRE(b8_result.has_value());
+        result += pretty_print(b8_result.value());
+
+        result += "\n--src = stack; dst = data--\n";
+        mov_zero_extend b9{ .src = stack{ 8 }, .dst = data{ "data_dst" } };
+        auto b9_result = fixing_up_instructions11(b9);
+        REQUIRE(b9_result.has_value());
+        result += pretty_print(b9_result.value());
+
+        result += "\n--src = stack; dst = stack--\n";
+        mov_zero_extend b10{ .src = stack{ 8 }, .dst = stack{ 16 } };
+        auto b10_result = fixing_up_instructions11(b10);
+        REQUIRE(b10_result.has_value());
+        result += pretty_print(b10_result.value());
+
+        result += "\n--src = data; dst = stack--\n";
+        mov_zero_extend b11{ .src = data{ "data_src" }, .dst = stack{ 16 } };
+        auto b11_result = fixing_up_instructions11(b11);
+        REQUIRE(b11_result.has_value());
+        result += pretty_print(b11_result.value());
+
+        result += "\n--src = data; dst = data--\n";
+        mov_zero_extend b12{ .src = data{ "data_src" }, .dst = data{ "data_dst" } };
+        auto b12_result = fixing_up_instructions11(b12);
+        REQUIRE(b12_result.has_value());
+        result += pretty_print(b12_result.value());
+
+        ApprovalTests::Approvals::verify(result);
+    }
+
     SECTION("movx")
     {
         using wccff::assembly_generation::fixing_up_instructions11;
@@ -731,6 +812,10 @@ TEST_CASE("pretty_print", "[assembly_generation]")
 {
     using wccff::long_word;
     using wccff::quad_word;
+    using wccff::assembly_generation::A;
+    using wccff::assembly_generation::AE;
+    using wccff::assembly_generation::B;
+    using wccff::assembly_generation::BE;
     using wccff::assembly_generation::binary;
     using wccff::assembly_generation::call;
     using wccff::assembly_generation::cmp;
@@ -744,6 +829,7 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     using wccff::assembly_generation::L;
     using wccff::assembly_generation::LE;
     using wccff::assembly_generation::mov_instruction;
+    using wccff::assembly_generation::mov_zero_extend;
     using wccff::assembly_generation::movx;
     using wccff::assembly_generation::NE;
     using wccff::assembly_generation::neg_op;
@@ -1000,6 +1086,19 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += pretty_print(data{ "data_name" });
     result += '\n';
 
+    // div
+    result += "--div--\n";
+    result += pretty_print(wccff::assembly_generation::div{ .src = immediate{ 42 }, .type = long_word{} });
+    result += '\n';
+    result += pretty_print(wccff::assembly_generation::div{ .src = R11{}, .type = quad_word{} });
+    result += '\n';
+    result += pretty_print(wccff::assembly_generation::div{ .src = pseudo{ "bar" }, .type = quad_word{} });
+    result += '\n';
+    result += pretty_print(wccff::assembly_generation::div{ .src = stack{ 50 }, .type = quad_word{} });
+    result += '\n';
+    result += pretty_print(wccff::assembly_generation::div{ .src = data{ "bar" }, .type = quad_word{} });
+    result += '\n';
+
     // function
     auto generate_func_body = []() -> std::vector<wccff::assembly_generation::instruction> {
         std::vector<wccff::assembly_generation::instruction> result;
@@ -1113,6 +1212,63 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(
       mov_instruction{ .src = data{ "data_src" }, .dst = data{ "data_dst" }, .type = long_word{} });
+    result += '\n';
+
+    // mov_zero_extend
+    result += "--mov_zero_extend-\n";
+    result += pretty_print(mov_zero_extend{ .src = immediate{ 42 }, .dst = immediate{ 55 } });
+    result += '\n';
+    result += pretty_print(mov_zero_extend{ .src = immediate{ 42 }, .dst = R10{} });
+    result += '\n';
+    result += pretty_print(mov_zero_extend{ .src = immediate{ 42 }, .dst = pseudo{ "pseu_dst" } });
+    result += '\n';
+    result += pretty_print(mov_zero_extend{ .src = immediate{ 42 }, .dst = stack{ -32 } });
+    result += '\n';
+    result += pretty_print(mov_zero_extend{ .src = immediate{ 42 }, .dst = data{ "data_dst" } });
+    result += '\n';
+
+    result += pretty_print(mov_zero_extend{ .src = R10{}, .dst = immediate{ 55 } });
+    result += '\n';
+    result += pretty_print(mov_zero_extend{ .src = R10{}, .dst = R10{} });
+    result += '\n';
+    result += pretty_print(mov_zero_extend{ .src = R10{}, .dst = pseudo{ "pseu_dst" } });
+    result += '\n';
+    result += pretty_print(mov_zero_extend{ .src = R10{}, .dst = stack{ -32 } });
+    result += '\n';
+    result += pretty_print(mov_zero_extend{ .src = R10{}, .dst = data{ "data_dst" } });
+    result += '\n';
+
+    result += pretty_print(mov_zero_extend{ .src = pseudo{ "src" }, .dst = immediate{ 55 } });
+    result += '\n';
+    result += pretty_print(mov_zero_extend{ .src = pseudo{ "src" }, .dst = R10{} });
+    result += '\n';
+    result += pretty_print(mov_zero_extend{ .src = pseudo{ "src" }, .dst = pseudo{ "pseu_dst" } });
+    result += '\n';
+    result += pretty_print(mov_zero_extend{ .src = pseudo{ "src" }, .dst = stack{ -32 } });
+    result += '\n';
+    result += pretty_print(mov_zero_extend{ .src = pseudo{ "src" }, .dst = data{ "data_dst" } });
+    result += '\n';
+
+    result += pretty_print(mov_zero_extend{ .src = stack{ -40 }, .dst = immediate{ 55 } });
+    result += '\n';
+    result += pretty_print(mov_zero_extend{ .src = stack{ -40 }, .dst = R10{} });
+    result += '\n';
+    result += pretty_print(mov_zero_extend{ .src = stack{ -40 }, .dst = pseudo{ "pseu_dst" } });
+    result += '\n';
+    result += pretty_print(mov_zero_extend{ .src = stack{ -40 }, .dst = stack{ -32 } });
+    result += '\n';
+    result += pretty_print(mov_zero_extend{ .src = stack{ -40 }, .dst = data{ "data_dst" } });
+    result += '\n';
+
+    result += pretty_print(mov_zero_extend{ .src = data{ "data_src" }, .dst = immediate{ 55 } });
+    result += '\n';
+    result += pretty_print(mov_zero_extend{ .src = data{ "data_src" }, .dst = R10{} });
+    result += '\n';
+    result += pretty_print(mov_zero_extend{ .src = data{ "data_src" }, .dst = pseudo{ "dst" } });
+    result += '\n';
+    result += pretty_print(mov_zero_extend{ .src = data{ "data_src" }, .dst = stack{ -32 } });
+    result += '\n';
+    result += pretty_print(mov_zero_extend{ .src = data{ "data_src" }, .dst = data{ "data_dst" } });
     result += '\n';
 
     // movx
@@ -1257,6 +1413,14 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += pretty_print(wccff::assembly_generation::setcc{ .cond = L{}, .dst = data{ "data_name" } });
     result += '\n';
     result += pretty_print(wccff::assembly_generation::setcc{ .cond = LE{}, .dst = data{ "data_name" } });
+    result += '\n';
+    result += pretty_print(wccff::assembly_generation::setcc{ .cond = A{}, .dst = pseudo{ "pseudo_name" } });
+    result += '\n';
+    result += pretty_print(wccff::assembly_generation::setcc{ .cond = AE{}, .dst = stack{ 42 } });
+    result += '\n';
+    result += pretty_print(wccff::assembly_generation::setcc{ .cond = B{}, .dst = data{ "data_name" } });
+    result += '\n';
+    result += pretty_print(wccff::assembly_generation::setcc{ .cond = BE{}, .dst = data{ "data_name" } });
     result += '\n';
 
     // stack

@@ -104,12 +104,13 @@ std::string process_data(const assembly_generation::data &node)
 std::string process_cond_code(assembly_generation::cond_code cond)
 {
     return std::visit(visitor{
-                        [](const assembly_generation::E &) { return "e"; },
-                        [](const assembly_generation::NE &) { return "ne"; },
-                        [](const assembly_generation::L &) { return "l"; },
-                        [](const assembly_generation::LE &) { return "le"; },
-                        [](const assembly_generation::G &) { return "g"; },
-                        [](const assembly_generation::GE &) { return "ge"; },
+                        [](const assembly_generation::E &) -> std::string { return "e"; },
+                        [](const assembly_generation::NE &) -> std::string { return "ne"; },
+                        [](const assembly_generation::L &) -> std::string { return "l"; },
+                        [](const assembly_generation::LE &) -> std::string { return "le"; },
+                        [](const assembly_generation::G &) -> std::string { return "g"; },
+                        [](const assembly_generation::GE &) -> std::string { return "ge"; },
+                        [](const auto &) -> std::string { throw std::runtime_error("Not Implemented"); },
                       },
                       cond);
 }
@@ -276,6 +277,7 @@ std::string process_instruction(const assembly_generation::instruction &instruct
                         [](const assembly_generation::push &node) -> std::string { return process_push(node); },
                         [](const assembly_generation::call &node) -> std::string { return process_call(node); },
                         [](const assembly_generation::ret_instruction &ret) { return process_ret_instruction(ret); },
+                        [](const auto &) -> std::string { throw std::runtime_error("Not Implemented"); },
                       },
                       instruction);
 }

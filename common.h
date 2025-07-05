@@ -22,6 +22,7 @@
 
 #include "visitor.h"
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <source_location>
 #include <variant>
