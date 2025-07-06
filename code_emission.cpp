@@ -110,7 +110,10 @@ std::string process_cond_code(assembly_generation::cond_code cond)
                         [](const assembly_generation::LE &) -> std::string { return "le"; },
                         [](const assembly_generation::G &) -> std::string { return "g"; },
                         [](const assembly_generation::GE &) -> std::string { return "ge"; },
-                        [](const auto &) -> std::string { throw std::runtime_error("Not Implemented"); },
+                        [](const assembly_generation::A &) -> std::string { return "a"; },
+                        [](const assembly_generation::AE &) -> std::string { return "ae"; },
+                        [](const assembly_generation::B &) -> std::string { return "b"; },
+                        [](const assembly_generation::BE &) -> std::string { return "be"; },
                       },
                       cond);
 }
@@ -175,6 +178,8 @@ std::string process_binary_operator(const assembly_generation::binary_operator &
                                 [](const assembly_generation::binary_xor &) { return "xor"; },
                                 [](const assembly_generation::left_shift &) { return "sal"; },
                                 [](const assembly_generation::right_shift &) { return "sar"; },
+                                [](const assembly_generation::left_shift_aritmetic &) { return "shl"; },
+                                [](const assembly_generation::right_shift_aritmetic &) { return "shr"; },
                               },
                               node);
 
@@ -199,7 +204,9 @@ std::string process_unary(const assembly_generation::unary &node)
 std::string process_binary(const assembly_generation::binary &node)
 {
     if (std::holds_alternative<assembly_generation::left_shift>(node.op) ||
-        std::holds_alternative<assembly_generation::right_shift>(node.op))
+        std::holds_alternative<assembly_generation::right_shift>(node.op) ||
+        std::holds_alternative<assembly_generation::left_shift_aritmetic>(node.op) ||
+        std::holds_alternative<assembly_generation::right_shift_aritmetic>(node.op))
     {
         return fmt::format("{} {}, {}",
                            process_binary_operator(node.op, node.type),
@@ -219,6 +226,13 @@ std::string process_cmp(const assembly_generation::cmp &node)
                        process_assembly_type(node.type),
                        process_operand(node.lhs, get_operand_size(node.type)),
                        process_operand(node.rhs, get_operand_size(node.type)));
+}
+
+std::string process_div(const assembly_generation::div &node)
+{
+    return fmt::format("div{} {}",
+                       process_assembly_type(node.type),
+                       process_operand(node.src, get_operand_size(node.type)));
 }
 
 std::string process_idiv(const assembly_generation::idiv &node)
@@ -268,6 +282,7 @@ std::string process_instruction(const assembly_generation::instruction &instruct
                         [](const assembly_generation::unary &node) { return process_unary(node); },
                         [](const assembly_generation::binary &node) { return process_binary(node); },
                         [](const assembly_generation::cmp &node) { return process_cmp(node); },
+                        [](const assembly_generation::div &node) { return process_div(node); },
                         [](const assembly_generation::idiv &node) { return process_idiv(node); },
                         [](const assembly_generation::cdq &node) { return process_cdq(node); },
                         [](const assembly_generation::jmp &node) { return process_jmp(node); },
@@ -319,16 +334,30 @@ std::string process_static_variable(const assembly_generation::static_variable &
                                        }
                                        return fmt::format(".quad {}", i.value);
                                    },
+                                   [](const unsigned_int_initial &i) {
+                                       if (i.value == 0)
+                                       {
+                                           return fmt::format(".zero 4");
+                                       }
+                                       return fmt::format(".long {}", i.value);
+                                   },
+                                   [](const unsigned_long_initial &i) {
+                                       if (i.value == 0)
+                                       {
+                                           return fmt::format(".zero 8");
+                                       }
+                                       return fmt::format(".quad {}", i.value);
+                                   },
                                    [](const auto &) -> std::string { throw std::runtime_error("Not implemented"); } },
                           init);
     };
 
     auto function_name = process_identifier(f.name);
-    auto globl = f.is_global ? fmt::format(".globl {}\n", function_name) : "";
+    auto globl = f.is_global ? fmt::format(".globl {}", function_name) : "";
     auto section = get_var_section(f.init);
     auto init_value = get_init_value(f.init);
 
-    return fmt::format("{}\n{}\n.balign {}\n{}:\n{}\n", globl, section, f.alignment, function_name, init_value);
+    return fmt::format("\t{}\n\t{}\n\t.balign {}\n{}:\n\t{}\n", globl, section, f.alignment, function_name, init_value);
 }
 
 std::string process_top_level(const assembly_generation::top_level &t)
