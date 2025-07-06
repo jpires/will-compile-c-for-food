@@ -103,7 +103,7 @@ TEST_CASE("Lexer", "[lexer]")
     {
         SECTION("Separated with spaces")
         {
-            std::string_view input{ "a 11" };
+            std::string_view input{ "a 11 " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 2);
@@ -115,7 +115,7 @@ TEST_CASE("Lexer", "[lexer]")
 
         SECTION("Separated by newlines")
         {
-            std::string_view input{ "a\n\n11" };
+            std::string_view input{ "a\n\n11 " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 2);
@@ -166,7 +166,7 @@ TEST_CASE("Identifiers", "[lexer]")
 
         SECTION("Five chars long and two digits")
         {
-            std::string_view input{ "abcde45" };
+            std::string_view input{ "abcde45 " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
@@ -337,17 +337,16 @@ TEST_CASE("Constants", "[lexer]")
     {
         SECTION("One digit")
         {
-            std::string_view input{ "1" };
+            std::string_view input{ "1 " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
             REQUIRE(result.value().at(0).type == wccff::lexer::token_type::int_constant);
             REQUIRE(result.value().at(0).text == "1");
         }
-
         SECTION("Four digits")
         {
-            std::string_view input{ "1234" };
+            std::string_view input{ "1234 " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
@@ -360,7 +359,7 @@ TEST_CASE("Constants", "[lexer]")
     {
         SECTION("One digit, lowercase")
         {
-            std::string_view input{ "1l" };
+            std::string_view input{ "1l " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
@@ -370,7 +369,7 @@ TEST_CASE("Constants", "[lexer]")
 
         SECTION("One digit, uppercase")
         {
-            std::string_view input{ "1L" };
+            std::string_view input{ "1L " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
@@ -380,7 +379,7 @@ TEST_CASE("Constants", "[lexer]")
 
         SECTION("Four digits, lowercase")
         {
-            std::string_view input{ "1234l" };
+            std::string_view input{ "1234l " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
@@ -389,7 +388,7 @@ TEST_CASE("Constants", "[lexer]")
         }
         SECTION("Four digits, uppercase")
         {
-            std::string_view input{ "1234L" };
+            std::string_view input{ "1234L " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
@@ -402,7 +401,7 @@ TEST_CASE("Constants", "[lexer]")
     {
         SECTION("One digit, lowercase")
         {
-            std::string_view input{ "1u" };
+            std::string_view input{ "1u " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
@@ -412,7 +411,7 @@ TEST_CASE("Constants", "[lexer]")
 
         SECTION("One digit, uppercase")
         {
-            std::string_view input{ "1U" };
+            std::string_view input{ "1U " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
@@ -422,7 +421,7 @@ TEST_CASE("Constants", "[lexer]")
 
         SECTION("Four digits, lowercase")
         {
-            std::string_view input{ "1234u" };
+            std::string_view input{ "1234u " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
@@ -431,7 +430,7 @@ TEST_CASE("Constants", "[lexer]")
         }
         SECTION("Four digits, uppercase")
         {
-            std::string_view input{ "1234U" };
+            std::string_view input{ "1234U " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
@@ -444,7 +443,7 @@ TEST_CASE("Constants", "[lexer]")
     {
         SECTION("One digit, ul")
         {
-            std::string_view input{ "1ul" };
+            std::string_view input{ "1ul " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
@@ -454,7 +453,7 @@ TEST_CASE("Constants", "[lexer]")
 
         SECTION("One digit, uL")
         {
-            std::string_view input{ "1uL" };
+            std::string_view input{ "1uL " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
@@ -464,7 +463,7 @@ TEST_CASE("Constants", "[lexer]")
 
         SECTION("One digit, Ul")
         {
-            std::string_view input{ "1Ul" };
+            std::string_view input{ "1Ul " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
@@ -474,7 +473,7 @@ TEST_CASE("Constants", "[lexer]")
 
         SECTION("One digit, UL")
         {
-            std::string_view input{ "1UL" };
+            std::string_view input{ "1UL " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
@@ -484,7 +483,7 @@ TEST_CASE("Constants", "[lexer]")
 
         SECTION("One digit, lu")
         {
-            std::string_view input{ "1lu" };
+            std::string_view input{ "1lu " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
@@ -494,7 +493,7 @@ TEST_CASE("Constants", "[lexer]")
 
         SECTION("One digit, Lu")
         {
-            std::string_view input{ "1Lu" };
+            std::string_view input{ "1Lu " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
@@ -504,7 +503,7 @@ TEST_CASE("Constants", "[lexer]")
 
         SECTION("One digit, lU")
         {
-            std::string_view input{ "1lU" };
+            std::string_view input{ "1lU " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
@@ -514,7 +513,7 @@ TEST_CASE("Constants", "[lexer]")
 
         SECTION("One digit, LU")
         {
-            std::string_view input{ "1LU" };
+            std::string_view input{ "1LU " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
@@ -524,7 +523,7 @@ TEST_CASE("Constants", "[lexer]")
 
         SECTION("Four digits, ul")
         {
-            std::string_view input{ "1234ul" };
+            std::string_view input{ "1234ul " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
@@ -533,7 +532,7 @@ TEST_CASE("Constants", "[lexer]")
         }
         SECTION("Four digits, uL")
         {
-            std::string_view input{ "1234uL" };
+            std::string_view input{ "1234uL " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
@@ -542,7 +541,7 @@ TEST_CASE("Constants", "[lexer]")
         }
         SECTION("Four digits, Ul")
         {
-            std::string_view input{ "1234Ul" };
+            std::string_view input{ "1234Ul " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
@@ -551,7 +550,7 @@ TEST_CASE("Constants", "[lexer]")
         }
         SECTION("Four digits, UL")
         {
-            std::string_view input{ "1234UL" };
+            std::string_view input{ "1234UL " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
@@ -561,7 +560,7 @@ TEST_CASE("Constants", "[lexer]")
 
         SECTION("Four digits, lu")
         {
-            std::string_view input{ "1234lu" };
+            std::string_view input{ "1234lu " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
@@ -570,7 +569,7 @@ TEST_CASE("Constants", "[lexer]")
         }
         SECTION("Four digits, Lu")
         {
-            std::string_view input{ "1234Lu" };
+            std::string_view input{ "1234Lu " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
@@ -580,7 +579,7 @@ TEST_CASE("Constants", "[lexer]")
 
         SECTION("Four digits, lU")
         {
-            std::string_view input{ "1234lU" };
+            std::string_view input{ "1234lU " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
@@ -590,7 +589,7 @@ TEST_CASE("Constants", "[lexer]")
 
         SECTION("Four digits, LU")
         {
-            std::string_view input{ "1234LU" };
+            std::string_view input{ "1234LU " };
             auto result = wccff::lexer::lexer(input);
             REQUIRE(result.has_value());
             REQUIRE(result.value().size() == 1);
