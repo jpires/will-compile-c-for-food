@@ -29,6 +29,9 @@
 namespace wccff::lexer {
 
 constexpr char identifier_pattern[]{ R"((?<identifier>[a-zA-Z_]\w*\b))" };
+constexpr char floating_point_constant_pattern[]{
+    R"((?<float_const>([0-9]*\.[0-9]+|[0-9]+\.?)[Ee][+\-]?[0-9]+|[0-9]*\.[0-9]+|[0-9]+\.)[^\w.])"
+};
 constexpr char int_constant_pattern[]{ R"((?<int_const>[0-9]+)[^\w.])" };
 constexpr char unsigned_int_constant_pattern[]{ R"((?<uint_const>[0-9]+[uU])[^\w.])" };
 constexpr char long_constant_pattern[]{ R"((?<long_const>[0-9]+[lL])[^\w.])" };
@@ -79,6 +82,7 @@ constexpr auto get_patters_constants_and_identifier()
 {
     // clang-format off
     return std::array{
+        floating_point_constant_pattern,
         unsigned_long_constant_pattern,
         long_constant_pattern,
         unsigned_int_constant_pattern,
@@ -243,14 +247,23 @@ consteval std::ptrdiff_t get_pattern_position(const char *p)
 constexpr token_type get_token_type(std::string_view text)
 {
     const static std::unordered_map<std::string_view, token_type> patterns = {
-        { "break", token_type::break_keyword },   { "continue", token_type::continue_keyword },
-        { "do", token_type::do_keyword },         { "else", token_type::else_keyword },
-        { "extern", token_type::extern_keyword }, { "for", token_type::for_keyword },
-        { "goto", token_type::goto_keyword },     { "if", token_type::if_keyword },
-        { "int", token_type::int_keyword },       { "long", token_type::long_keyword },
-        { "return", token_type::return_keyword }, { "signed", token_type::signed_keyword },
-        { "static", token_type::static_keyword }, { "unsigned", token_type::unsigned_keyword },
-        { "void", token_type::void_keyword },     { "while", token_type::while_keyword },
+        { "break", token_type::break_keyword },
+        { "continue", token_type::continue_keyword },
+        { "do", token_type::do_keyword },
+        { "double", token_type::double_keyword },
+        { "else", token_type::else_keyword },
+        { "extern", token_type::extern_keyword },
+        { "for", token_type::for_keyword },
+        { "goto", token_type::goto_keyword },
+        { "if", token_type::if_keyword },
+        { "int", token_type::int_keyword },
+        { "long", token_type::long_keyword },
+        { "return", token_type::return_keyword },
+        { "signed", token_type::signed_keyword },
+        { "static", token_type::static_keyword },
+        { "unsigned", token_type::unsigned_keyword },
+        { "void", token_type::void_keyword },
+        { "while", token_type::while_keyword },
     };
 
     const auto &ret = patterns.find(text);
@@ -281,6 +294,13 @@ std::optional<std::pair<token, std::size_t>> look_for_constant_and_identifier(st
 
     if (auto m = ctre::starts_with<create_regex_constant_and_identifier_pattern()>(input); m)
     {
+        if (auto f = m.get<"float_const">(); f)
+        {
+            std::string_view name{ f };
+            token t(token_type::floating_porint_constant, name, location);
+            return std::make_pair(t, name.size());
+        }
+
         if (auto f = m.get<"int_const">(); f)
         {
             std::string_view name{ f };

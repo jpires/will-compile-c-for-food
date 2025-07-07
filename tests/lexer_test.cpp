@@ -205,6 +205,15 @@ TEST_CASE("Keywords", "[lexer]")
         REQUIRE(result.value().at(0).type == wccff::lexer::token_type::do_keyword);
         REQUIRE(result.value().at(0).text == "do");
     }
+    SECTION("double")
+    {
+        std::string_view input{ "double" };
+        auto result = wccff::lexer::lexer(input);
+        REQUIRE(result.has_value());
+        REQUIRE(result.value().size() == 1);
+        REQUIRE(result.value().at(0).type == wccff::lexer::token_type::double_keyword);
+        REQUIRE(result.value().at(0).text == "double");
+    }
 
     SECTION("else")
     {
@@ -333,6 +342,163 @@ TEST_CASE("Keywords", "[lexer]")
 
 TEST_CASE("Constants", "[lexer]")
 {
+
+    SECTION("double")
+    {
+        auto build_token = [](std::string_view text) {
+            return wccff::lexer::token{ wccff::lexer::token_type::floating_porint_constant, text, {} };
+        };
+
+        auto r1 = wccff::lexer::lexer("1. ");
+        REQUIRE(r1.has_value());
+        REQUIRE(r1.value().size() == 1);
+        REQUIRE(r1.value().at(0) == build_token("1."));
+
+        auto r2 = wccff::lexer::lexer("12. ");
+        REQUIRE(r2.has_value());
+        REQUIRE(r2.value().size() == 1);
+        REQUIRE(r2.value().at(0) == build_token("12."));
+
+        auto r3 = wccff::lexer::lexer("1.1 ");
+        REQUIRE(r3.has_value());
+        REQUIRE(r3.value().size() == 1);
+        REQUIRE(r3.value().at(0) == build_token("1.1"));
+
+        auto r4 = wccff::lexer::lexer("12.12 ");
+        REQUIRE(r4.has_value());
+        REQUIRE(r4.value().size() == 1);
+        REQUIRE(r4.value().at(0) == build_token("12.12"));
+
+        auto r5 = wccff::lexer::lexer("1.e1 ");
+        REQUIRE(r5.has_value());
+        REQUIRE(r5.value().size() == 1);
+        REQUIRE(r5.value().at(0) == build_token("1.e1"));
+
+        auto r6 = wccff::lexer::lexer("1.e-1 ");
+        REQUIRE(r6.has_value());
+        REQUIRE(r6.value().size() == 1);
+        REQUIRE(r6.value().at(0) == build_token("1.e-1"));
+
+        auto r7 = wccff::lexer::lexer("1.e+1 ");
+        REQUIRE(r7.has_value());
+        REQUIRE(r7.value().size() == 1);
+        REQUIRE(r7.value().at(0) == build_token("1.e+1"));
+
+        auto r8 = wccff::lexer::lexer("12.e12 ");
+        REQUIRE(r8.has_value());
+        REQUIRE(r8.value().size() == 1);
+        REQUIRE(r8.value().at(0) == build_token("12.e12"));
+
+        auto r9 = wccff::lexer::lexer("12.e-12 ");
+        REQUIRE(r9.has_value());
+        REQUIRE(r9.value().size() == 1);
+        REQUIRE(r9.value().at(0) == build_token("12.e-12"));
+
+        auto r10 = wccff::lexer::lexer("12.e+12 ");
+        REQUIRE(r10.has_value());
+        REQUIRE(r10.value().size() == 1);
+        REQUIRE(r10.value().at(0) == build_token("12.e+12"));
+
+        auto r11 = wccff::lexer::lexer("1.E1 ");
+        REQUIRE(r11.has_value());
+        REQUIRE(r11.value().size() == 1);
+        REQUIRE(r11.value().at(0) == build_token("1.E1"));
+
+        auto r12 = wccff::lexer::lexer("1.E-1 ");
+        REQUIRE(r12.has_value());
+        REQUIRE(r12.value().size() == 1);
+        REQUIRE(r12.value().at(0) == build_token("1.E-1"));
+
+        auto r13 = wccff::lexer::lexer("1.E+1 ");
+        REQUIRE(r13.has_value());
+        REQUIRE(r13.value().size() == 1);
+        REQUIRE(r13.value().at(0) == build_token("1.E+1"));
+
+        auto r14 = wccff::lexer::lexer("12.E12 ");
+        REQUIRE(r14.has_value());
+        REQUIRE(r14.value().size() == 1);
+        REQUIRE(r14.value().at(0) == build_token("12.E12"));
+
+        auto r15 = wccff::lexer::lexer("12.E-12 ");
+        REQUIRE(r15.has_value());
+        REQUIRE(r15.value().size() == 1);
+        REQUIRE(r15.value().at(0) == build_token("12.E-12"));
+
+        auto r16 = wccff::lexer::lexer("12.E+12 ");
+        REQUIRE(r16.has_value());
+        REQUIRE(r16.value().size() == 1);
+        REQUIRE(r16.value().at(0) == build_token("12.E+12"));
+
+        auto r17 = wccff::lexer::lexer(".1 ");
+        REQUIRE(r17.has_value());
+        REQUIRE(r17.value().size() == 1);
+        REQUIRE(r17.value().at(0) == build_token(".1"));
+
+        auto r18 = wccff::lexer::lexer(".12 ");
+        REQUIRE(r18.has_value());
+        REQUIRE(r18.value().size() == 1);
+        REQUIRE(r18.value().at(0) == build_token(".12"));
+
+        auto r19 = wccff::lexer::lexer(".1e1 ");
+        REQUIRE(r19.has_value());
+        REQUIRE(r19.value().size() == 1);
+        REQUIRE(r19.value().at(0) == build_token(".1e1"));
+
+        auto r20 = wccff::lexer::lexer(".1e-1 ");
+        REQUIRE(r20.has_value());
+        REQUIRE(r20.value().size() == 1);
+        REQUIRE(r20.value().at(0) == build_token(".1e-1"));
+
+        auto r21 = wccff::lexer::lexer(".1e+1 ");
+        REQUIRE(r21.has_value());
+        REQUIRE(r21.value().size() == 1);
+        REQUIRE(r21.value().at(0) == build_token(".1e+1"));
+
+        auto r22 = wccff::lexer::lexer(".1E1 ");
+        REQUIRE(r22.has_value());
+        REQUIRE(r22.value().size() == 1);
+        REQUIRE(r22.value().at(0) == build_token(".1E1"));
+
+        auto r23 = wccff::lexer::lexer(".1E-1 ");
+        REQUIRE(r23.has_value());
+        REQUIRE(r23.value().size() == 1);
+        REQUIRE(r23.value().at(0) == build_token(".1E-1"));
+
+        auto r24 = wccff::lexer::lexer(".1E+1 ");
+        REQUIRE(r24.has_value());
+        REQUIRE(r24.value().size() == 1);
+        REQUIRE(r24.value().at(0) == build_token(".1E+1"));
+
+        auto r25 = wccff::lexer::lexer(".12e12 ");
+        REQUIRE(r25.has_value());
+        REQUIRE(r25.value().size() == 1);
+        REQUIRE(r25.value().at(0) == build_token(".12e12"));
+
+        auto r26 = wccff::lexer::lexer(".12e-12 ");
+        REQUIRE(r26.has_value());
+        REQUIRE(r26.value().size() == 1);
+        REQUIRE(r26.value().at(0) == build_token(".12e-12"));
+
+        auto r27 = wccff::lexer::lexer(".12e+12 ");
+        REQUIRE(r27.has_value());
+        REQUIRE(r27.value().size() == 1);
+        REQUIRE(r27.value().at(0) == build_token(".12e+12"));
+
+        auto r28 = wccff::lexer::lexer(".12E12 ");
+        REQUIRE(r28.has_value());
+        REQUIRE(r28.value().size() == 1);
+        REQUIRE(r28.value().at(0) == build_token(".12E12"));
+
+        auto r29 = wccff::lexer::lexer(".12E-12 ");
+        REQUIRE(r29.has_value());
+        REQUIRE(r29.value().size() == 1);
+        REQUIRE(r29.value().at(0) == build_token(".12E-12"));
+
+        auto r30 = wccff::lexer::lexer(".12E+12 ");
+        REQUIRE(r30.has_value());
+        REQUIRE(r30.value().size() == 1);
+        REQUIRE(r30.value().at(0) == build_token(".12E+12"));
+    }
     SECTION("int")
     {
         SECTION("One digit")

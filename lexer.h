@@ -43,13 +43,17 @@ struct file_location
 enum class token_type
 {
     identifier,
+    // Constants
+    floating_porint_constant,
     int_constant,
     long_constant,
     unsigned_int_constant,
     unsigned_long_constant,
+    // Keywords
     break_keyword,
     continue_keyword,
     do_keyword,
+    double_keyword,
     else_keyword,
     extern_keyword,
     for_keyword,
@@ -63,6 +67,7 @@ enum class token_type
     signed_keyword,
     unsigned_keyword,
     while_keyword,
+    // Punctuators
     open_parenthesis,
     close_parenthesis,
     open_brace,
@@ -131,6 +136,7 @@ struct token
     token_type type;
     std::string_view text;
     file_location loc;
+    bool operator==(const token &) const = default;
 };
 
 std::expected<std::vector<token>, lexer_error> lexer(std::string_view input) noexcept;
@@ -152,6 +158,9 @@ struct fmt::formatter<wccff::lexer::token_type> : formatter<string_view>
             case token_type::identifier:
                 str = "Identifier";
                 break;
+            case token_type::floating_porint_constant:
+                str = "Floating point constant";
+                break;
             case token_type::int_constant:
                 str = "Int Constant";
                 break;
@@ -172,6 +181,9 @@ struct fmt::formatter<wccff::lexer::token_type> : formatter<string_view>
                 break;
             case token_type::do_keyword:
                 str = "Do Keyword";
+                break;
+            case token_type::double_keyword:
+                str = "Double Keyword";
                 break;
             case token_type::else_keyword:
                 str = "Else Keyword";
