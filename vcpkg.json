@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
-  "builtin-baseline": "3508985146f1b1d248c67ead13f8f54be5b4f5da",
+  "builtin-baseline": "bf1a3841b259bc4a14937e4c2f618914018e53a8",
   "dependencies": [
     {
       "name": "approval-tests-cpp",
@@ -17,6 +17,10 @@
     {
       "name": "cxxopts",
       "version>=": "3.2.1"
+    },
+    {
+      "name": "fast-float",
+      "version>=": "8.0.2"
     },
     {
       "name": "fmt",

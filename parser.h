@@ -473,6 +473,12 @@ type get_type(const std::unique_ptr<function_call> &n);
 type get_type(const std::unique_ptr<unary_node> &n);
 type get_type(const var &n);
 
+/// \brief Returns true if the token is a type specifier as declared in 6.7.2 Type specifiers
+bool is_type_specifier(const lexer::token &t);
+
+/// \brief Returns true if the token is a storage specifier as declared in 6.7.1 Storage-class specifiers
+bool is_storage_specifier(const lexer::token &t);
+
 std::expected<std::vector<expression>, parser_error> parse_argument_list(tokens &tokens);
 std::expected<block_item, parser_error> parse_block_item(tokens &tokens);
 std::expected<block, parser_error> parse_block(tokens &tokens);
@@ -509,6 +515,7 @@ std::string pretty_print(const break_statement &node, int32_t ident = 0);
 std::string pretty_print(const constant &node, int32_t ident = 0);
 std::string pretty_print(const continue_statement &node, int32_t ident = 0);
 std::string pretty_print(const declaration &node, int32_t ident = 0);
+std::string pretty_print(const double_constant &node, int32_t ident = 0);
 std::string pretty_print(const expression &node, int32_t ident = 0);
 std::string pretty_print(const for_init &node, int32_t ident = 0);
 std::string pretty_print(const function &node, int32_t ident = 0);

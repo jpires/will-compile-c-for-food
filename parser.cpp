@@ -22,6 +22,7 @@
 #include "visitor.h"
 #include <algorithm>
 #include <charconv>
+#include <fast_float/fast_float.h>
 #include <fmt/core.h>
 #include <ranges>
 
@@ -186,6 +187,7 @@ std::optional<parser_error> parse_semicolon(tokens &tokens)
 type get_type(const constant &n)
 {
     return std::visit(visitor{
+                        [](const double_constant &) -> type { return double_type{}; },
                         [](const int_constant &) -> type { return int_type{}; },
                         [](const long_constant &) -> type { return long_type{}; },
                         [](const unsigned_int_constant &) -> type { return unsigned_int_type{}; },
@@ -237,6 +239,19 @@ inline type get_type(const var &n)
     return copy_type(n.type.value());
 }
 
+bool is_type_specifier(const lexer::token &t)
+{
+    using enum lexer::token_type;
+    return t.type == double_keyword || t.type == int_keyword || t.type == long_keyword || t.type == signed_keyword ||
+           t.type == unsigned_keyword;
+}
+
+bool is_storage_specifier(const lexer::token &t)
+{
+    using enum lexer::token_type;
+    return t.type == extern_keyword || t.type == static_keyword;
+}
+
 std::expected<std::vector<expression>, parser_error> parse_argument_list(tokens &tokens)
 {
     std::vector<expression> arguments;
@@ -267,13 +282,13 @@ std::expected<block_item, parser_error> parse_block_item(tokens &tokens)
 {
     using enum lexer::token_type;
     auto next_token = tokens.peek();
-    if (next_token.type == int_keyword || next_token.type == long_keyword || next_token.type == extern_keyword ||
-        next_token.type == static_keyword || next_token.type == signed_keyword || next_token.type == unsigned_keyword)
+    if (is_storage_specifier(next_token) || is_type_specifier(next_token))
     {
         return parse_declaration(tokens);
     }
     return parse_statement(tokens);
 }
+
 std::expected<block, parser_error> parse_block(tokens &tokens)
 {
     // Discard the '{'
@@ -743,8 +758,7 @@ std::expected<specifier, parser_error> parse_specifier(tokens &tokens)
     while (true)
     {
         auto token = tokens.peek();
-        if (token.type == lexer::token_type::int_keyword || token.type == lexer::token_type::long_keyword ||
-            token.type == lexer::token_type::unsigned_keyword || token.type == lexer::token_type::signed_keyword)
+        if (is_type_specifier(token))
         {
             type.push_back(tokens.get_next_token_safe());
         }
@@ -929,10 +943,22 @@ std::expected<type, parser_error> parse_type(const std::vector<lexer::token> &to
         {
             return unsigned_int_type{};
         }
+        if (tokens.front().type == lexer::token_type::double_keyword)
+        {
+            return double_type{};
+        }
 
-        auto msg = fmt::format("Unexpected type specifier, expected 'int' or 'long' but found '{}'",
+        auto msg = fmt::format("Unexpected type specifier, expected 'int' or 'long' or 'double' but found '{}'",
                                tokens.front().type);
         return std::unexpected{ parser_error{ msg } };
+    }
+
+    // The double type specifier doesn't have any other "modifiers"
+    // If there is more than one token, and one of them is the double.
+    // Then, it's an error
+    if (contains(tokens, lexer::token_type::double_keyword))
+    {
+        return std::unexpected{ parser_error{ generate_error_msg(tokens) } };
     }
 
     if (contains(tokens, lexer::token_type::unsigned_keyword) && contains(tokens, lexer::token_type::long_keyword))
@@ -953,11 +979,6 @@ std::expected<type, parser_error> parse_type(const std::vector<lexer::token> &to
 
 std::expected<type, parser_error> parse_type_specifier(tokens &tokens, lexer::token_type stop_token)
 {
-    auto is_type = [](lexer::token_type t) {
-        using enum lexer::token_type;
-        return t == int_keyword || t == long_keyword || t == signed_keyword || t == unsigned_keyword;
-    };
-
     std::vector<lexer::token> type_specifier;
     while (tokens.peek().type != stop_token)
     {
@@ -966,7 +987,7 @@ std::expected<type, parser_error> parse_type_specifier(tokens &tokens, lexer::to
         {
             return std::unexpected{ generate_unexpected_end_of_tokens(tokens) };
         }
-        if (is_type(t->type) == false)
+        if (is_type_specifier(t.value()) == false)
         {
             auto msg = fmt::format("Unexpected token: Expected an type specifier but found {}", t->type);
             return std::unexpected{ parser_error{ msg } };
@@ -1119,6 +1140,7 @@ std::expected<expression, parser_error> parse_factor(tokens &tokens)
 
             return var{ i.value() };
         }
+        case lexer::token_type::floating_porint_constant:
         case lexer::token_type::int_constant:
         case lexer::token_type::long_constant:
         case lexer::token_type::unsigned_int_constant:
@@ -1147,10 +1169,7 @@ std::expected<expression, parser_error> parse_factor(tokens &tokens)
         }
         case lexer::token_type::open_parenthesis:
         {
-            if (tokens.peek(1).type == lexer::token_type::int_keyword ||
-                tokens.peek(1).type == lexer::token_type::long_keyword ||
-                tokens.peek(1).type == lexer::token_type::signed_keyword ||
-                tokens.peek(1).type == lexer::token_type::unsigned_keyword)
+            if (is_type_specifier(tokens.peek(1)))
             {
                 return parse_cast_expression(tokens);
             }
@@ -1393,8 +1412,9 @@ std::expected<constant, parser_error> parse_constant(tokens &tokens)
 
     if (token->type == lexer::token_type::int_constant || token->type == lexer::token_type::long_constant)
     {
+        using fast_float::from_chars;
         int64_t value = 0;
-        if (auto [ptr, ec] = std::from_chars(token->text.data(), token->text.data() + token->text.size(), value, 10);
+        if (auto [ptr, ec] = from_chars(token->text.data(), token->text.data() + token->text.size(), value, 10);
             ec != std::errc{})
         {
             if (ec == std::errc::result_out_of_range)
@@ -1423,8 +1443,9 @@ std::expected<constant, parser_error> parse_constant(tokens &tokens)
     if (token->type == lexer::token_type::unsigned_int_constant ||
         token->type == lexer::token_type::unsigned_long_constant)
     {
+        using fast_float::from_chars;
         uint64_t value = 0;
-        if (auto [ptr, ec] = std::from_chars(token->text.data(), token->text.data() + token->text.size(), value, 10);
+        if (auto [ptr, ec] = from_chars(token->text.data(), token->text.data() + token->text.size(), value, 10);
             ec != std::errc{})
         {
             if (ec == std::errc::result_out_of_range)
@@ -1450,6 +1471,26 @@ std::expected<constant, parser_error> parse_constant(tokens &tokens)
         return wccff::constant(unsigned_long_constant{ value });
     }
 
+    if (token->type == lexer::token_type::floating_porint_constant)
+    {
+        using fast_float::from_chars;
+        double value = 0;
+        if (auto [ptr, ec] = from_chars(token->text.data(), token->text.data() + token->text.size(), value);
+            ec != std::errc{})
+        {
+            if (ec == std::errc::invalid_argument)
+            {
+                auto msg = fmt::format(
+                  "Internal Error at {}. Expect constant {}, but failed to parse it as decimal constant",
+                  token->loc,
+                  token->text);
+                return std::unexpected{ parser_error{ msg } };
+            }
+            // Don't handle the out-of-range error.
+            // from_chars will round the value to zero, or to infinity depending on if it's too small or too large.
+        }
+        return wccff::constant(double_constant{ value });
+    }
     auto msg = fmt::format("Parse failure at: {}. Expected Constant but found {}", token->loc, token->type);
     return std::unexpected{ parser_error{ msg } };
 }
@@ -1632,6 +1673,7 @@ std::string pretty_print(const break_statement &node, int32_t ident)
 std::string pretty_print(const constant &node, int32_t ident)
 {
     return std::visit(visitor{
+                        [ident](const double_constant &n) { return pretty_print(n, ident); },
                         [ident](const int_constant &n) { return pretty_print(n, ident); },
                         [ident](const long_constant &n) { return pretty_print(n, ident); },
                         [ident](const unsigned_int_constant &n) { return pretty_print(n, ident); },
@@ -1650,6 +1692,11 @@ std::string pretty_print(const declaration &node, int32_t ident)
                         [ident](const variable_declaration &n) { return pretty_print(n, ident); },
                       },
                       node);
+}
+
+std::string pretty_print(const double_constant &node, int32_t ident)
+{
+    return wccff::format_indented(ident, "DoubleConstant({})", node.value);
 }
 
 std::string pretty_print(const expression &node, int32_t ident)
@@ -1961,6 +2008,7 @@ std::string pretty_print(const std::unique_ptr<while_statement> &node, int32_t i
 std::string pretty_print(const type &node, int32_t ident)
 {
     return std::visit(visitor{
+                        [ident](const double_type) { return wccff::format_indented(ident, "Double"); },
                         [ident](const int_type) { return wccff::format_indented(ident, "Int"); },
                         [ident](const long_type) { return wccff::format_indented(ident, "Long"); },
                         [ident](const std::unique_ptr<fun_type> &node) { return pretty_print(node, ident); },

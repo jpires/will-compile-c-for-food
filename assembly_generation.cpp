@@ -81,6 +81,7 @@ assembly_type get_assembly_type(const tacky::var &v, const wccff::symbol_table::
 
     return std::visit(
       visitor{
+        [](const wccff::double_type &) -> assembly_type { throw std::logic_error("Not implemented"); },
         [](const wccff::int_type &) -> assembly_type { return long_word{}; },
         [](const wccff::long_type &) -> assembly_type { return quad_word{}; },
         [](const wccff::unsigned_int_type &) -> assembly_type { return long_word{}; },

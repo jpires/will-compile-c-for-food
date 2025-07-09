@@ -39,6 +39,7 @@ std::unique_ptr<fun_type> copy_fun_type(const std::unique_ptr<fun_type> &n)
 type copy_type(const type &n)
 {
     return std::visit(visitor{
+                        [](const double_type) -> type { return double_type{}; },
                         [](const int_type) -> type { return int_type{}; },
                         [](const long_type) -> type { return long_type{}; },
                         [](const std::unique_ptr<fun_type> &n) -> type { return copy_fun_type(n); },
@@ -111,6 +112,7 @@ initial get_default_initial(const type &t)
 {
     return std::visit(
       visitor{
+        [](const double_type) -> initial { throw std::runtime_error("Not Implemented"); },
         [](const int_type) -> initial { return int_initial{ 0 }; },
         [](const long_type) -> initial { return long_initial{ 0 }; },
         [](const unsigned_int_type) -> initial { return long_initial{ 0 }; },
@@ -124,6 +126,7 @@ initial get_default_initial(const type &t)
 std::string pretty_print(const initial &i)
 {
     return std::visit(visitor{
+                        [](const double_initial &n) { return std::to_string(n.value); },
                         [](const int_initial &n) { return std::to_string(n.value); },
                         [](const long_initial &n) { return std::to_string(n.value); },
                         [](const unsigned_int_initial &n) { return std::to_string(n.value); },

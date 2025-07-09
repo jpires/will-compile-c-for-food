@@ -1807,6 +1807,7 @@ TEST_CASE("parse_type", "[parser]")
     using enum wccff::lexer::token_type;
     using wccff::lexer::token;
 
+    constexpr auto double_token = token{ double_keyword, "double", {} };
     constexpr auto int_token = token{ int_keyword, "int", {} };
     constexpr auto long_token = token{ long_keyword, "long", {} };
     constexpr auto signed_token = token{ signed_keyword, "signed", {} };
@@ -1819,10 +1820,13 @@ TEST_CASE("parse_type", "[parser]")
         REQUIRE(parse_type({ long_token, long_token }).has_value() == false);
         REQUIRE(parse_type({ int_token, signed_token, unsigned_token }).has_value() == false);
         REQUIRE(parse_type({ long_token, signed_token, unsigned_token }).has_value() == false);
+        REQUIRE(parse_type({ double_token, unsigned_token }).has_value() == false);
     }
 
     SECTION("Valid")
     {
+        REQUIRE(parse_type({ double_token }).value() == wccff::double_type{});
+
         REQUIRE(parse_type({ int_token }).value() == wccff::int_type{});
         REQUIRE(parse_type({ signed_token }).value() == wccff::int_type{});
         REQUIRE(parse_type({ signed_token, int_token }).value() == wccff::int_type{});
@@ -1840,8 +1844,7 @@ TEST_CASE("parse_type", "[parser]")
         REQUIRE(parse_type({ long_token, int_token, signed_token }).value() == wccff::long_type{});
         REQUIRE(parse_type({ long_token, signed_token, int_token }).value() == wccff::long_type{});
 
-        auto f = parse_type({ unsigned_token });
-        REQUIRE(f.value() == wccff::unsigned_int_type{});
+        REQUIRE(parse_type({ unsigned_token }).value() == wccff::unsigned_int_type{});
         REQUIRE(parse_type({ unsigned_token, int_token }).value() == wccff::unsigned_int_type{});
         REQUIRE(parse_type({ int_token, unsigned_token }).value() == wccff::unsigned_int_type{});
 

@@ -30,6 +30,7 @@ target_link_libraries(unit_tests PRIVATE
         Catch2::Catch2
         Catch2::Catch2WithMain
         ctre::ctre
+        FastFloat::fast_float
         fmt::fmt
 )
 target_include_directories(unit_tests PRIVATE ..)

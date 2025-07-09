@@ -4,6 +4,7 @@
 TEST_CASE("Types", "[common]")
 {
     using wccff::copy_type;
+    using wccff::double_type;
     using wccff::fun_type;
     using wccff::int_type;
     using wccff::long_type;
@@ -21,6 +22,7 @@ TEST_CASE("Types", "[common]")
         p3.emplace_back(int_type{});
         p3.emplace_back(long_type{});
 
+        REQUIRE(double_type{} == double_type{});
         REQUIRE(int_type{} == int_type{});
         REQUIRE(long_type{} == long_type{});
         REQUIRE(unsigned_int_type{} == unsigned_int_type{});

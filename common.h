@@ -32,6 +32,9 @@ namespace wccff {
 
 std::string get_not_implemented_message(std::source_location loc = std::source_location::current());
 
+struct double_type
+{
+};
 struct int_type
 {
 };
@@ -49,8 +52,13 @@ struct void_type
 {
 };
 
-using type =
-  std::variant<int_type, long_type, std::unique_ptr<fun_type>, unsigned_int_type, unsigned_long_type, void_type>;
+using type = std::variant<int_type,
+                          long_type,
+                          std::unique_ptr<fun_type>,
+                          unsigned_int_type,
+                          unsigned_long_type,
+                          void_type,
+                          double_type>;
 
 struct fun_type
 {
@@ -63,6 +71,7 @@ struct fun_type
 constexpr bool operator==(const type &lhs, const type &rhs)
 {
     return std::visit(visitor{
+                        [](const double_type &, const double_type &) { return true; },
                         [](const std::unique_ptr<fun_type> &l, const std::unique_ptr<fun_type> &r) { return *l == *r; },
                         [](const int_type &, const int_type &) { return true; },
                         [](const long_type &, const long_type &) { return true; },
@@ -84,6 +93,10 @@ int32_t get_type_size(const type &t);
 
 bool is_signed_type(const type &t);
 
+struct double_initial
+{
+    double value;
+};
 struct int_initial
 {
     int32_t value;
@@ -107,6 +120,11 @@ std::string pretty_print(const initial &i);
 
 initial get_default_initial(const type &t);
 
+struct double_constant
+{
+    double value;
+};
+
 struct int_constant
 {
     int32_t value;
@@ -127,7 +145,8 @@ struct unsigned_long_constant
     uint64_t value;
 };
 
-using constant = std::variant<int_constant, long_constant, unsigned_int_constant, unsigned_long_constant>;
+using constant =
+  std::variant<double_constant, int_constant, long_constant, unsigned_int_constant, unsigned_long_constant>;
 
 struct long_word
 {
