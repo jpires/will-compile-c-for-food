@@ -29,22 +29,31 @@ namespace wccff::sema::type_checker {
 
 auto convert_constant(const constant &c, const type &t) -> symbol_table::initial_value
 {
-    auto get_value = [](const constant &con) {
+    auto get_int_value = [](const constant &con) {
         return std::visit(visitor{ [](const auto &n) { return static_cast<int64_t>(n.value); } }, con);
     };
 
-    int64_t value = get_value(c);
+    auto get_uint_value = [](const constant &con) {
+        return std::visit(visitor{ [](const auto &n) { return static_cast<uint64_t>(n.value); } }, con);
+    };
+
+    auto get_value_double = [](const constant &con) {
+        return std::visit(visitor{ [](const auto &n) { return static_cast<double>(n.value); } }, con);
+    };
+
+    auto value = get_int_value(c);
+    auto uint_value = get_uint_value(c);
+    auto double_value = get_value_double(c);
     return std::visit(
       visitor{
-        [value](const int_type &n) -> symbol_table::initial_value {
-            return int_initial{ static_cast<int32_t>(value) };
+        [double_value](const double_type &) -> symbol_table::initial_value { return double_initial{ double_value }; },
+        [value](const int_type &) -> symbol_table::initial_value { return int_initial{ static_cast<int32_t>(value) }; },
+        [value](const long_type &) -> symbol_table::initial_value { return long_initial{ value }; },
+        [uint_value](const unsigned_int_type &) -> symbol_table::initial_value {
+            return unsigned_int_initial{ static_cast<uint32_t>(uint_value) };
         },
-        [value](const long_type &n) -> symbol_table::initial_value { return long_initial{ value }; },
-        [value](const unsigned_int_type &n) -> symbol_table::initial_value {
-            return unsigned_int_initial{ static_cast<uint32_t>(value) };
-        },
-        [value](const unsigned_long_type &n) -> symbol_table::initial_value {
-            return unsigned_long_initial{ static_cast<uint64_t>(value) };
+        [uint_value](const unsigned_long_type &) -> symbol_table::initial_value {
+            return unsigned_long_initial{ static_cast<uint64_t>(uint_value) };
         },
         [](const auto &) -> symbol_table::initial_value { throw std::logic_error("Undefined operator"); },
       },
@@ -85,6 +94,31 @@ auto process_binary_node(const std::unique_ptr<parser::binary_node> &node, symbo
     if (right.has_value() == false)
     {
         return std::unexpected{ right.error() };
+    }
+
+    if (get_type(left.value()) == double_type{} || get_type(right.value()) == double_type{})
+    {
+        // 6.5.5:2 Multiplicative operators
+        // 6.5.7:2 Bitwise shift operators
+        // 6.5.10:2 Bitwise AND operator
+        // 6.5.11:2 Bitwise exclusive OR operator
+        // 6.5.12:2 Bitwise inclusive OR operator
+        if (std::holds_alternative<parser::remainder_operator>(node->op) ||
+            std::holds_alternative<parser::compound_remainder_operator>(node->op) ||
+            std::holds_alternative<parser::left_shift_operator>(node->op) ||
+            std::holds_alternative<parser::compound_left_shift_operator>(node->op) ||
+            std::holds_alternative<parser::right_shift_operator>(node->op) ||
+            std::holds_alternative<parser::compound_right_shift_operator>(node->op) ||
+            std::holds_alternative<parser::bitwise_and_operator>(node->op) ||
+            std::holds_alternative<parser::compound_bitwise_and_operator>(node->op) ||
+            std::holds_alternative<parser::bitwise_xor_operator>(node->op) ||
+            std::holds_alternative<parser::compound_bitwise_xor_operator>(node->op) ||
+            std::holds_alternative<parser::bitwise_or_operator>(node->op) ||
+            std::holds_alternative<parser::compound_bitwise_or_operator>(node->op))
+        {
+            auto msg = fmt::format("Operation '{}' cannot be applied to a double", pretty_print(node->op));
+            return std::unexpected{ semantic_error{ msg } };
+        }
     }
 
     auto common_type = wccff::get_common_type(get_type(left.value()), get_type(right.value()));
@@ -591,6 +625,12 @@ auto process_unary_node(const std::unique_ptr<parser::unary_node> &node, symbol_
     if (exp.has_value() == false)
     {
         return std::unexpected{ exp.error() };
+    }
+
+    if (std::holds_alternative<parser::bitwise_complement_operator>(node->op) && get_type(exp.value()) == double_type{})
+    {
+        auto msg = fmt::format("Bitwise complement '~' cannot be applied to a double");
+        return std::unexpected{ semantic_error{ msg } };
     }
 
     if (std::holds_alternative<parser::negate_operator>(node->op) ||

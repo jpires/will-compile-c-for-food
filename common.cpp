@@ -66,6 +66,11 @@ type get_common_type(const type &t1, const type &t2)
         return copy_type(t1);
     }
 
+    if (double_type{} == t1 || double_type{} == t2)
+    {
+        return double_type{};
+    }
+
     if (get_type_size(t1) == get_type_size(t2))
     {
         if (is_signed_type(t1))

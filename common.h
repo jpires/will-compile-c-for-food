@@ -114,7 +114,7 @@ struct unsigned_long_initial
     uint64_t value;
 };
 
-using initial = std::variant<int_initial, long_initial, unsigned_int_initial, unsigned_long_initial>;
+using initial = std::variant<int_initial, long_initial, unsigned_int_initial, unsigned_long_initial, double_initial>;
 
 std::string pretty_print(const initial &i);
 
