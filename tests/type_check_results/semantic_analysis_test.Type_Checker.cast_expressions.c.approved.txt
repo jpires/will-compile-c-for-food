@@ -3,11 +3,11 @@ FunctionDecl(explicit_cast_of_variable
              FunType(RetType(Long)
                      Param(Int)
              )
-             (a)
+             (var.a.0)
              Return(
                     Cast(
                           Target(Long)
-                          Var(a)
+                          Var(var.a.0)
                     )
              )
 )
@@ -16,13 +16,13 @@ FunctionDecl(explicit_cast_of_expression
              FunType(RetType(Long)
                      Param(Int,Int)
              )
-             (a, b)
+             (var.a.1, var.b.2)
              Return(
                     Cast(
                           Target(Long)
                           Binary(Plus
-                                 Var(a)
-                                 Var(b)
+                                 Var(var.a.1)
+                                 Var(var.b.2)
                           )
                     )
              )
@@ -32,16 +32,16 @@ FunctionDecl(explicit_cast_of_expression1
              FunType(RetType(Long)
                      Param(Int,Int)
              )
-             (a, b)
+             (var.a.3, var.b.4)
              Return(
                     Binary(Plus
                            Cast(
                                  Target(Long)
-                                 Var(a)
+                                 Var(var.a.3)
                            )
                            Cast(
                                  Target(Long)
-                                 Var(b)
+                                 Var(var.b.4)
                            )
                     )
              )
@@ -51,16 +51,16 @@ FunctionDecl(explicit_cast_of_expression3
              FunType(RetType(Long)
                      Param(Int,Int)
              )
-             (a, b)
+             (var.a.5, var.b.6)
              Return(
                     Binary(Plus
                            Cast(
                                  Target(Long)
-                                 Var(a)
+                                 Var(var.a.5)
                            )
                            Cast(
                                  Target(Long)
-                                 Var(b)
+                                 Var(var.b.6)
                            )
                     )
              )
@@ -70,12 +70,12 @@ FunctionDecl(explicit_cast_of_function_call
              FunType(RetType(Long)
                      Param(Int)
              )
-             (a)
+             (var.a.7)
              Return(
                     Cast(
                           Target(Long)
                           Function Call(explicit_cast_of_variable
-                                        Var(a)
+                                        Var(var.a.7)
                           )
                     )
              )

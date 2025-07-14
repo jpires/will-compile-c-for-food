@@ -4,7 +4,7 @@ FunctionDecl(f
                      Param(Void)
              )
              ()
-             DeclVar(a1
+             DeclVar(var.a1.0
                      Storage(none)
                      Type(Int)
                      Binary(Plus
@@ -12,7 +12,7 @@ FunctionDecl(f
                             IntConstant(2)
                      )
              )
-             DeclVar(a2
+             DeclVar(var.a2.1
                      Storage(none)
                      Type(Int)
                      Binary(Subtract
@@ -20,7 +20,7 @@ FunctionDecl(f
                             IntConstant(2)
                      )
              )
-             DeclVar(a3
+             DeclVar(var.a3.2
                      Storage(none)
                      Type(Int)
                      Binary(Multiply
@@ -28,7 +28,7 @@ FunctionDecl(f
                             IntConstant(2)
                      )
              )
-             DeclVar(a4
+             DeclVar(var.a4.3
                      Storage(none)
                      Type(Int)
                      Binary(Divide
@@ -36,7 +36,7 @@ FunctionDecl(f
                             IntConstant(2)
                      )
              )
-             DeclVar(a5
+             DeclVar(var.a5.4
                      Storage(none)
                      Type(Int)
                      Binary(Remainder
@@ -44,17 +44,17 @@ FunctionDecl(f
                             IntConstant(2)
                      )
              )
-             DeclVar(int_var
+             DeclVar(var.int_var.5
                      Storage(none)
                      Type(Int)
                      IntConstant(2)
              )
-             DeclVar(long_var
+             DeclVar(var.long_var.6
                      Storage(none)
                      Type(Long)
                      LongConstant(3)
              )
-             DeclVar(b1
+             DeclVar(var.b1.7
                      Storage(none)
                      Type(Int)
                      Cast(
@@ -62,13 +62,13 @@ FunctionDecl(f
                            Binary(Plus
                                   Cast(
                                         Target(Long)
-                                        Var(int_var)
+                                        Var(var.int_var.5)
                                   )
-                                  Var(long_var)
+                                  Var(var.long_var.6)
                            )
                      )
              )
-             DeclVar(b2
+             DeclVar(var.b2.8
                      Storage(none)
                      Type(Int)
                      Cast(
@@ -76,13 +76,13 @@ FunctionDecl(f
                            Binary(Subtract
                                   Cast(
                                         Target(Long)
-                                        Var(int_var)
+                                        Var(var.int_var.5)
                                   )
-                                  Var(long_var)
+                                  Var(var.long_var.6)
                            )
                      )
              )
-             DeclVar(b3
+             DeclVar(var.b3.9
                      Storage(none)
                      Type(Int)
                      Cast(
@@ -90,13 +90,13 @@ FunctionDecl(f
                            Binary(Multiply
                                   Cast(
                                         Target(Long)
-                                        Var(int_var)
+                                        Var(var.int_var.5)
                                   )
-                                  Var(long_var)
+                                  Var(var.long_var.6)
                            )
                      )
              )
-             DeclVar(b4
+             DeclVar(var.b4.10
                      Storage(none)
                      Type(Int)
                      Cast(
@@ -104,13 +104,13 @@ FunctionDecl(f
                            Binary(Divide
                                   Cast(
                                         Target(Long)
-                                        Var(int_var)
+                                        Var(var.int_var.5)
                                   )
-                                  Var(long_var)
+                                  Var(var.long_var.6)
                            )
                      )
              )
-             DeclVar(b5
+             DeclVar(var.b5.11
                      Storage(none)
                      Type(Int)
                      Cast(
@@ -118,386 +118,386 @@ FunctionDecl(f
                            Binary(Remainder
                                   Cast(
                                         Target(Long)
-                                        Var(int_var)
+                                        Var(var.int_var.5)
                                   )
-                                  Var(long_var)
+                                  Var(var.long_var.6)
                            )
                      )
              )
-             DeclVar(c1
+             DeclVar(var.c1.12
                      Storage(none)
                      Type(Long)
                      Binary(Plus
                             Cast(
                                   Target(Long)
-                                  Var(int_var)
+                                  Var(var.int_var.5)
                             )
-                            Var(long_var)
+                            Var(var.long_var.6)
                      )
              )
-             DeclVar(c2
+             DeclVar(var.c2.13
                      Storage(none)
                      Type(Long)
                      Binary(Subtract
                             Cast(
                                   Target(Long)
-                                  Var(int_var)
+                                  Var(var.int_var.5)
                             )
-                            Var(long_var)
+                            Var(var.long_var.6)
                      )
              )
-             DeclVar(c3
+             DeclVar(var.c3.14
                      Storage(none)
                      Type(Long)
                      Binary(Multiply
                             Cast(
                                   Target(Long)
-                                  Var(int_var)
+                                  Var(var.int_var.5)
                             )
-                            Var(long_var)
+                            Var(var.long_var.6)
                      )
              )
-             DeclVar(c4
+             DeclVar(var.c4.15
                      Storage(none)
                      Type(Long)
                      Binary(Divide
                             Cast(
                                   Target(Long)
-                                  Var(int_var)
+                                  Var(var.int_var.5)
                             )
-                            Var(long_var)
+                            Var(var.long_var.6)
                      )
              )
-             DeclVar(c5
+             DeclVar(var.c5.16
                      Storage(none)
                      Type(Long)
                      Binary(Remainder
                             Cast(
                                   Target(Long)
-                                  Var(int_var)
+                                  Var(var.int_var.5)
                             )
-                            Var(long_var)
+                            Var(var.long_var.6)
                      )
              )
-             DeclVar(d1
+             DeclVar(var.d1.17
                      Storage(none)
                      Type(Int)
                      IntConstant(1)
              )
-             Assign(Var(d1)
+             Assign(Var(var.d1.17)
                     Binary(Plus
-                           Var(d1)
+                           Var(var.d1.17)
                            IntConstant(4)
                     )
              )
-             Assign(Var(d1)
+             Assign(Var(var.d1.17)
                     Cast(
                           Target(Int)
                           Binary(Plus
                                  Cast(
                                        Target(Long)
-                                       Var(d1)
+                                       Var(var.d1.17)
                                  )
                                  LongConstant(42)
                           )
                     )
              )
-             Assign(Var(d1)
+             Assign(Var(var.d1.17)
                     Binary(Subtract
-                           Var(d1)
+                           Var(var.d1.17)
                            IntConstant(4)
                     )
              )
-             Assign(Var(d1)
+             Assign(Var(var.d1.17)
                     Cast(
                           Target(Int)
                           Binary(Subtract
                                  Cast(
                                        Target(Long)
-                                       Var(d1)
+                                       Var(var.d1.17)
                                  )
                                  LongConstant(42)
                           )
                     )
              )
-             Assign(Var(d1)
+             Assign(Var(var.d1.17)
                     Binary(Multiply
-                           Var(d1)
+                           Var(var.d1.17)
                            IntConstant(4)
                     )
              )
-             Assign(Var(d1)
+             Assign(Var(var.d1.17)
                     Cast(
                           Target(Int)
                           Binary(Multiply
                                  Cast(
                                        Target(Long)
-                                       Var(d1)
+                                       Var(var.d1.17)
                                  )
                                  LongConstant(42)
                           )
                     )
              )
-             Assign(Var(d1)
+             Assign(Var(var.d1.17)
                     Binary(Divide
-                           Var(d1)
+                           Var(var.d1.17)
                            IntConstant(4)
                     )
              )
-             Assign(Var(d1)
+             Assign(Var(var.d1.17)
                     Cast(
                           Target(Int)
                           Binary(Divide
                                  Cast(
                                        Target(Long)
-                                       Var(d1)
+                                       Var(var.d1.17)
                                  )
                                  LongConstant(42)
                           )
                     )
              )
-             Assign(Var(d1)
+             Assign(Var(var.d1.17)
                     Binary(Remainder
-                           Var(d1)
+                           Var(var.d1.17)
                            IntConstant(4)
                     )
              )
-             Assign(Var(d1)
+             Assign(Var(var.d1.17)
                     Cast(
                           Target(Int)
                           Binary(Remainder
                                  Cast(
                                        Target(Long)
-                                       Var(d1)
+                                       Var(var.d1.17)
                                  )
                                  LongConstant(42)
                           )
                     )
              )
-             Assign(Var(d1)
+             Assign(Var(var.d1.17)
                     Binary(Bitwise And
-                           Var(d1)
+                           Var(var.d1.17)
                            IntConstant(4)
                     )
              )
-             Assign(Var(d1)
+             Assign(Var(var.d1.17)
                     Cast(
                           Target(Int)
                           Binary(Bitwise And
                                  Cast(
                                        Target(Long)
-                                       Var(d1)
+                                       Var(var.d1.17)
                                  )
                                  LongConstant(42)
                           )
                     )
              )
-             Assign(Var(d1)
+             Assign(Var(var.d1.17)
                     Binary(Bitwise Or
-                           Var(d1)
+                           Var(var.d1.17)
                            IntConstant(4)
                     )
              )
-             Assign(Var(d1)
+             Assign(Var(var.d1.17)
                     Cast(
                           Target(Int)
                           Binary(Bitwise Or
                                  Cast(
                                        Target(Long)
-                                       Var(d1)
+                                       Var(var.d1.17)
                                  )
                                  LongConstant(42)
                           )
                     )
              )
-             Assign(Var(d1)
+             Assign(Var(var.d1.17)
                     Binary(Bitwise Xor
-                           Var(d1)
+                           Var(var.d1.17)
                            IntConstant(4)
                     )
              )
-             Assign(Var(d1)
+             Assign(Var(var.d1.17)
                     Cast(
                           Target(Int)
                           Binary(Bitwise Xor
                                  Cast(
                                        Target(Long)
-                                       Var(d1)
+                                       Var(var.d1.17)
                                  )
                                  LongConstant(42)
                           )
                     )
              )
-             Assign(Var(d1)
+             Assign(Var(var.d1.17)
                     Binary(Left Shift
-                           Var(d1)
+                           Var(var.d1.17)
                            IntConstant(4)
                     )
              )
-             Assign(Var(d1)
+             Assign(Var(var.d1.17)
                     Binary(Left Shift
-                           Var(d1)
+                           Var(var.d1.17)
                            LongConstant(42)
                     )
              )
-             Assign(Var(d1)
+             Assign(Var(var.d1.17)
                     Binary(Right Shift
-                           Var(d1)
+                           Var(var.d1.17)
                            IntConstant(4)
                     )
              )
-             Assign(Var(d1)
+             Assign(Var(var.d1.17)
                     Binary(Right Shift
-                           Var(d1)
+                           Var(var.d1.17)
                            LongConstant(42)
                     )
              )
-             DeclVar(d2
+             DeclVar(var.d2.18
                      Storage(none)
                      Type(Long)
                      LongConstant(4)
              )
-             Assign(Var(d2)
+             Assign(Var(var.d2.18)
                     Binary(Plus
-                           Var(d2)
+                           Var(var.d2.18)
                            Cast(
                                  Target(Long)
                                  IntConstant(4)
                            )
                     )
              )
-             Assign(Var(d2)
+             Assign(Var(var.d2.18)
                     Binary(Plus
-                           Var(d2)
+                           Var(var.d2.18)
                            LongConstant(42)
                     )
              )
-             Assign(Var(d2)
+             Assign(Var(var.d2.18)
                     Binary(Subtract
-                           Var(d2)
+                           Var(var.d2.18)
                            Cast(
                                  Target(Long)
                                  IntConstant(4)
                            )
                     )
              )
-             Assign(Var(d2)
+             Assign(Var(var.d2.18)
                     Binary(Subtract
-                           Var(d2)
+                           Var(var.d2.18)
                            LongConstant(42)
                     )
              )
-             Assign(Var(d2)
+             Assign(Var(var.d2.18)
                     Binary(Multiply
-                           Var(d2)
+                           Var(var.d2.18)
                            Cast(
                                  Target(Long)
                                  IntConstant(4)
                            )
                     )
              )
-             Assign(Var(d2)
+             Assign(Var(var.d2.18)
                     Binary(Multiply
-                           Var(d2)
+                           Var(var.d2.18)
                            LongConstant(42)
                     )
              )
-             Assign(Var(d2)
+             Assign(Var(var.d2.18)
                     Binary(Divide
-                           Var(d2)
+                           Var(var.d2.18)
                            Cast(
                                  Target(Long)
                                  IntConstant(4)
                            )
                     )
              )
-             Assign(Var(d2)
+             Assign(Var(var.d2.18)
                     Binary(Divide
-                           Var(d2)
+                           Var(var.d2.18)
                            LongConstant(42)
                     )
              )
-             Assign(Var(d2)
+             Assign(Var(var.d2.18)
                     Binary(Remainder
-                           Var(d2)
+                           Var(var.d2.18)
                            Cast(
                                  Target(Long)
                                  IntConstant(4)
                            )
                     )
              )
-             Assign(Var(d2)
+             Assign(Var(var.d2.18)
                     Binary(Remainder
-                           Var(d2)
+                           Var(var.d2.18)
                            LongConstant(42)
                     )
              )
-             Assign(Var(d2)
+             Assign(Var(var.d2.18)
                     Binary(Bitwise And
-                           Var(d2)
+                           Var(var.d2.18)
                            Cast(
                                  Target(Long)
                                  IntConstant(4)
                            )
                     )
              )
-             Assign(Var(d2)
+             Assign(Var(var.d2.18)
                     Binary(Bitwise And
-                           Var(d2)
+                           Var(var.d2.18)
                            LongConstant(42)
                     )
              )
-             Assign(Var(d2)
+             Assign(Var(var.d2.18)
                     Binary(Bitwise Or
-                           Var(d2)
+                           Var(var.d2.18)
                            Cast(
                                  Target(Long)
                                  IntConstant(4)
                            )
                     )
              )
-             Assign(Var(d2)
+             Assign(Var(var.d2.18)
                     Binary(Bitwise Or
-                           Var(d2)
+                           Var(var.d2.18)
                            LongConstant(42)
                     )
              )
-             Assign(Var(d2)
+             Assign(Var(var.d2.18)
                     Binary(Bitwise Xor
-                           Var(d2)
+                           Var(var.d2.18)
                            Cast(
                                  Target(Long)
                                  IntConstant(4)
                            )
                     )
              )
-             Assign(Var(d2)
+             Assign(Var(var.d2.18)
                     Binary(Bitwise Xor
-                           Var(d2)
+                           Var(var.d2.18)
                            LongConstant(42)
                     )
              )
-             Assign(Var(d2)
+             Assign(Var(var.d2.18)
                     Binary(Left Shift
-                           Var(d2)
+                           Var(var.d2.18)
                            IntConstant(4)
                     )
              )
-             Assign(Var(d2)
+             Assign(Var(var.d2.18)
                     Binary(Left Shift
-                           Var(d2)
+                           Var(var.d2.18)
                            LongConstant(42)
                     )
              )
-             Assign(Var(d2)
+             Assign(Var(var.d2.18)
                     Binary(Right Shift
-                           Var(d2)
+                           Var(var.d2.18)
                            IntConstant(4)
                     )
              )
-             Assign(Var(d2)
+             Assign(Var(var.d2.18)
                     Binary(Right Shift
-                           Var(d2)
+                           Var(var.d2.18)
                            LongConstant(42)
                     )
              )

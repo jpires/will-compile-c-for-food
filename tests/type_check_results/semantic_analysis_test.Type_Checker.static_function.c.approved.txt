@@ -3,11 +3,11 @@ FunctionDecl(sub
              FunType(RetType(Int)
                      Param(Int,Int)
              )
-             (a, b)
+             (var.a.0, var.b.1)
              Return(
                     Binary(Subtract
-                           Var(a)
-                           Var(b)
+                           Var(var.a.0)
+                           Var(var.b.1)
                     )
              )
 )
