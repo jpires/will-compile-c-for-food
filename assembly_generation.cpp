@@ -397,6 +397,7 @@ std::vector<instruction> process_statement(const tacky::instruction &i, const wc
                         [](const tacky::sing_extend &n) -> std::vector<instruction> { return process_statement(n); },
                         [](const tacky::truncate &n) -> std::vector<instruction> { return process_statement(n); },
                         [](const tacky::zero_extend &n) -> std::vector<instruction> { return process_statement(n); },
+                        [](const auto &) -> std::vector<instruction> { throw std::runtime_error("NOT IMPLEMENTED"); },
                       },
                       i);
 }

@@ -211,10 +211,28 @@ struct copy_statement
     val dst;
 };
 
+struct double_to_int
+{
+    val src;
+    val dst;
+};
+
+struct double_to_uint
+{
+    val src;
+    val dst;
+};
+
 struct fun_call
 {
     identifier fun_name;
     std::vector<val> args;
+    val dst;
+};
+
+struct int_to_double
+{
+    val src;
     val dst;
 };
 
@@ -270,6 +288,12 @@ struct truncate
     val dst;
 };
 
+struct uint_to_double
+{
+    val src;
+    val dst;
+};
+
 struct zero_extend
 {
     val src;
@@ -280,13 +304,17 @@ using instruction = std::variant<return_statement,
                                  unary_statement,
                                  binary_statement,
                                  copy_statement,
+                                 double_to_int,
+                                 double_to_uint,
                                  jump_statement,
                                  jump_if_zero_statement,
                                  jump_if_not_zero_statement,
+                                 int_to_double,
                                  label_statement,
                                  fun_call,
                                  sing_extend,
                                  truncate,
+                                 uint_to_double,
                                  zero_extend>;
 
 struct function_definition
@@ -416,10 +444,13 @@ program process(const parser::program &input, symbol_table::symbol_table &table)
 std::string pretty_print(const binary_statement &i, int32_t ident = 0);
 std::string pretty_print(const constant &val, int32_t ident = 0);
 std::string pretty_print(const copy_statement &i, int32_t ident = 0);
+std::string pretty_print(const double_to_int &i, int32_t ident = 0);
+std::string pretty_print(const double_to_uint &i, int32_t ident = 0);
 std::string pretty_print(const initial &node, int32_t ident = 0);
 std::string pretty_print(const instruction &instruction, int32_t ident = 0);
 std::string pretty_print(const fun_call &f, int32_t ident = 0);
 std::string pretty_print(const function_definition &f, int32_t ident = 0);
+std::string pretty_print(const int_to_double &instruction, int32_t ident = 0);
 std::string pretty_print(const jump_statement &i, int32_t ident = 0);
 std::string pretty_print(const jump_if_zero_statement &i, int32_t ident = 0);
 std::string pretty_print(const jump_if_not_zero_statement &i, int32_t ident = 0);
@@ -431,6 +462,7 @@ std::string pretty_print(const static_variable &top, int32_t ident = 0);
 std::string pretty_print(const std::vector<instruction> &instructions, int32_t ident = 0);
 std::string pretty_print(const top_level &top, int32_t ident = 0);
 std::string pretty_print(const truncate &node, int32_t ident = 0);
+std::string pretty_print(const uint_to_double &instruction, int32_t ident = 0);
 std::string pretty_print(const unary_statement &instruction, int32_t ident = 0);
 std::string pretty_print(const unary_operator &val, int32_t ident = 0);
 std::string pretty_print(const var &val, int32_t ident = 0);

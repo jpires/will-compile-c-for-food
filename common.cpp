@@ -117,7 +117,7 @@ initial get_default_initial(const type &t)
 {
     return std::visit(
       visitor{
-        [](const double_type) -> initial { throw std::runtime_error("Not Implemented"); },
+        [](const double_type) -> initial { return double_initial{ 0.0 }; },
         [](const int_type) -> initial { return int_initial{ 0 }; },
         [](const long_type) -> initial { return long_initial{ 0 }; },
         [](const unsigned_int_type) -> initial { return long_initial{ 0 }; },

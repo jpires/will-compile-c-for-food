@@ -144,6 +144,7 @@ constant process_constant(const constant &node)
                         [](const long_constant &c) -> constant { return c; },
                         [](const unsigned_int_constant &c) -> constant { return c; },
                         [](const unsigned_long_constant &c) -> constant { return c; },
+                        [](const double_constant &c) -> constant { return c; },
                         [](const auto &) -> constant { throw std::runtime_error{ "Not Implemented" }; },
                       },
                       node);
@@ -471,7 +472,30 @@ val process_cast_expression(const std::unique_ptr<parser::cast_expression> &node
     }
 
     auto dst = make_temporary_variable(node->target, table);
-    if (get_type_size(node->target) == get_type_size(get_type(node->exp)))
+
+    if (std::holds_alternative<double_type>(node->target))
+    {
+        if (is_signed_type(get_type(node->exp)))
+        {
+            instructions.emplace_back(int_to_double{ src, dst });
+        }
+        else
+        {
+            instructions.emplace_back(uint_to_double{ src, dst });
+        }
+    }
+    else if (std::holds_alternative<double_type>(get_type(node->exp)))
+    {
+        if (is_signed_type(node->target))
+        {
+            instructions.emplace_back(double_to_int{ src, dst });
+        }
+        else
+        {
+            instructions.emplace_back(double_to_uint{ src, dst });
+        }
+    }
+    else if (get_type_size(node->target) == get_type_size(get_type(node->exp)))
     {
         instructions.emplace_back(copy_statement{ src, dst });
     }
@@ -772,6 +796,7 @@ std::string pretty_print(const constant &val, int32_t ident)
 {
     return std::visit(
       visitor{
+        [ident](const double_constant &val) { return wccff::format_indented(ident, "DoubleConstant({})", val.value); },
         [ident](const int_constant &val) { return wccff::format_indented(ident, "IntConstant({})", val.value); },
         [ident](const long_constant &val) { return wccff::format_indented(ident, "LongConstant({})", val.value); },
         [ident](const unsigned_int_constant &val) {
@@ -849,6 +874,16 @@ std::string pretty_print(const copy_statement &i, int32_t ident)
     return wccff::format_indented(ident, "Copy({}, {})\n", pretty_print(i.src, 0), pretty_print(i.dst, 0));
 }
 
+std::string pretty_print(const double_to_int &i, int32_t ident)
+{
+    return wccff::format_indented(ident, "Double2Int({}, {})\n", pretty_print(i.src, 0), pretty_print(i.dst, 0));
+}
+
+std::string pretty_print(const double_to_uint &i, int32_t ident)
+{
+    return wccff::format_indented(ident, "Double2UInt({}, {})\n", pretty_print(i.src, 0), pretty_print(i.dst, 0));
+}
+
 std::string pretty_print(const initial &node, int32_t ident)
 {
     return std::visit(
@@ -876,6 +911,12 @@ std::string pretty_print(const fun_call &f, int32_t ident)
 
     return wccff::format_indented(ident, "FUNCALL({}, ({}), {})\n", f.fun_name.name, params, pretty_print(f.dst));
 }
+
+std::string pretty_print(const int_to_double &i, int32_t ident)
+{
+    return wccff::format_indented(ident, "Int2Double({}, {})\n", pretty_print(i.src, 0), pretty_print(i.dst, 0));
+}
+
 std::string pretty_print(const jump_statement &i, int32_t ident)
 {
     return wccff::format_indented(ident, "Jump({})\n", i.target.name);
@@ -901,6 +942,9 @@ std::string pretty_print(const instruction &instruction, int32_t ident)
         [ident](const unary_statement &n) { return pretty_print(n, ident); },
         [ident](const binary_statement &n) { return pretty_print(n, ident); },
         [ident](const copy_statement &n) { return pretty_print(n, ident); },
+        [ident](const double_to_int &n) { return pretty_print(n, ident); },
+        [ident](const double_to_uint &n) { return pretty_print(n, ident); },
+        [ident](const int_to_double &n) { return pretty_print(n, ident); },
         [ident](const jump_statement &n) { return pretty_print(n, ident); },
         [ident](const jump_if_zero_statement &n) { return pretty_print(n, ident); },
         [ident](const jump_if_not_zero_statement &n) { return pretty_print(n, ident); },
@@ -908,6 +952,7 @@ std::string pretty_print(const instruction &instruction, int32_t ident)
         [ident](const fun_call &n) { return pretty_print(n, ident); },
         [ident](const sing_extend &n) { return pretty_print(n, ident); },
         [ident](const truncate &n) { return pretty_print(n, ident); },
+        [ident](const uint_to_double &n) { return pretty_print(n, ident); },
         [ident](const zero_extend &n) { return pretty_print(n, ident); },
         [](const auto &) -> std::string { throw std::logic_error(wccff::get_not_implemented_message()); },
       },
@@ -942,6 +987,11 @@ std::string pretty_print(const program &p, int ident)
         output += pretty_print(f, ident);
     }
     return output;
+}
+
+std::string pretty_print(const uint_to_double &i, int32_t ident)
+{
+    return wccff::format_indented(ident, "UInt2Double({}, {})\n", pretty_print(i.src, 0), pretty_print(i.dst, 0));
 }
 
 std::string pretty_print(const zero_extend &node, int32_t ident)
