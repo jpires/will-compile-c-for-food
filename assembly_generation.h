@@ -307,27 +307,43 @@ type get_type(const tacky::var &v, const wccff::symbol_table::symbol_table &tabl
 bool is_larger_immediate(const operand &op);
 bool is_memory_operand(const operand &o);
 
-std::vector<instruction> process_statement(const wccff::tacky::copy_statement &stmt,
-                                           const wccff::symbol_table::symbol_table &t);
-std::vector<instruction> process_statement(const wccff::tacky::return_statement &stmt,
-                                           const wccff::symbol_table::symbol_table &t);
-std::vector<instruction> process_statement(const wccff::tacky::binary_statement &stmt,
-                                           const wccff::symbol_table::symbol_table &t);
-std::vector<instruction> process_statement(const wccff::tacky::unary_statement &stmt,
-                                           const wccff::symbol_table::symbol_table &t);
-std::vector<instruction> process_statement(const tacky::instruction &i, const wccff::symbol_table::symbol_table &t);
-std::vector<instruction> process_statement(const std::vector<tacky::instruction> &s,
-                                           const wccff::symbol_table::symbol_table &t);
-std::vector<instruction> process_statement(const tacky::sing_extend &i);
-std::vector<instruction> process_statement(const tacky::truncate &i);
-std::vector<instruction> process_statement(const tacky::zero_extend &i);
-std::vector<instruction> fun_call(const tacky::fun_call &i, const wccff::symbol_table::symbol_table &t);
+class assembly_generation
+{
+  public:
+    explicit assembly_generation(const wccff::symbol_table::symbol_table &table_)
+      : m_table(table_)
+    {
+    }
 
-function process_function(const wccff::tacky::function_definition &f, const symbol_table::symbol_table &t);
-top_level process_top_level(const wccff::tacky::top_level &f, const wccff::symbol_table::symbol_table &t);
-static_variable process_static_variable(const wccff::tacky::static_variable &f,
-                                        const wccff::symbol_table::symbol_table &t);
-program process(const wccff::tacky::program &program, const wccff::symbol_table::symbol_table &t);
+    void process(const tacky::binary_statement &stmt);
+    operand process(const constant &n);
+    void process(const tacky::copy_statement &stmt);
+    void process(const tacky::fun_call &i);
+    function process(const tacky::function_definition &f);
+    identifier process(const tacky::identifier &id);
+    void process(const tacky::instruction &i);
+    void process(const tacky::jump_if_not_zero_statement &stmt);
+    void process(const tacky::jump_if_zero_statement &stmt);
+    void process(const tacky::jump_statement &stmt);
+    void process(const tacky::label_statement &stmt);
+    program process(const tacky::program &program);
+    void process(const tacky::return_statement &stmt);
+    void process(const tacky::sing_extend &i);
+    static_variable process(const tacky::static_variable &f);
+    top_level process(const tacky::top_level &f);
+    void process(const tacky::truncate &i);
+    void process(const tacky::unary_statement &stmt);
+    operand process(const wccff::tacky::val &v);
+    void process(const std::vector<tacky::instruction> &s);
+    void process(const tacky::zero_extend &i);
+
+    const std::vector<instruction> &get_instructions() const { return m_instructions; }
+    void reset_instructions() { m_instructions.clear(); }
+
+  private:
+    std::vector<instruction> m_instructions;
+    const wccff::symbol_table::symbol_table &m_table;
+};
 
 void replace_pseudo_registers(program &node, symbol_table::backend_symbol_table &t);
 

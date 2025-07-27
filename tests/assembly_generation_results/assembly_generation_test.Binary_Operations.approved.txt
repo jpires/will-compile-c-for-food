@@ -1,0 +1,75 @@
+--op=binary_and; src1 = int_constant; src2 = int_constant; dst = var--
+		Mov(type(long_word), src(Imm(1)), dst(Pseudo(tacky-1)))
+		Binary(type(long_word), op(Binary And), src(Imm(2)), dst(Pseudo(tacky-1)))
+--op=binary_or; src1 = long_constant; src2 = long_constant; dst = var--
+		Mov(type(quad_word), src(Imm(1)), dst(Pseudo(tacky-1)))
+		Binary(type(quad_word), op(Binary Or), src(Imm(2)), dst(Pseudo(tacky-1)))
+--op=binary_xor; src1 = unsigned_int_constant; src2 = unsigned_int_constant; dst = var--
+		Mov(type(long_word), src(Imm(1)), dst(Pseudo(tacky-1)))
+		Binary(type(long_word), op(Binary Xor), src(Imm(2)), dst(Pseudo(tacky-1)))
+--op=plus_operator; src1 = unsigned_long_constant; src2 = unsigned_long_constant; dst = var--
+		Mov(type(quad_word), src(Imm(1)), dst(Pseudo(tacky-1)))
+		Binary(type(quad_word), op(Add), src(Imm(2)), dst(Pseudo(tacky-1)))
+--op=subtract_operator; src1 = int_var; src2 = int_constant; dst = var--
+		Mov(type(long_word), src(Pseudo(int_var)), dst(Pseudo(tacky-1)))
+		Binary(type(long_word), op(Sub), src(Imm(2)), dst(Pseudo(tacky-1)))
+--op=multiply_operator; src1 = long_var; src2 = long_constant; dst = var--
+		Mov(type(quad_word), src(Pseudo(long_var)), dst(Pseudo(tacky-1)))
+		Binary(type(quad_word), op(Mul), src(Imm(2)), dst(Pseudo(tacky-1)))
+--op=left_shift_operator; src1 = ulong_var; src2 = long_constant; dst = var--
+		Mov(type(quad_word), src(Pseudo(unsigned_long_var)), dst(Pseudo(tacky-1)))
+		Binary(type(quad_word), op(Left Shift Arithmetic), src(Imm(2)), dst(Pseudo(tacky-1)))
+--op=right_shift_operator; src1 = uint_constant; src2 = uint_var; dst = var--
+		Mov(type(long_word), src(Imm(1)), dst(Pseudo(tacky-1)))
+		Binary(type(long_word), op(Right Shift Arithmetic), src(Pseudo(unsigned_int_var)), dst(Pseudo(tacky-1)))
+--op=divide_operator; src1 = uint_constant; src2 = uint_var; dst = var--
+		Mov(type(long_word), src(Imm(1)), dst(ax))
+		Mov(type(long_word), src(Imm(0)), dst(dx))
+		Div(type(long_word))
+		Mov(type(long_word), src(ax), dst(Pseudo(tacky-1)))
+--op=remainder_operator; src1 = uint_constant; src2 = uint_var; dst = var--
+		Mov(type(long_word), src(Imm(1)), dst(ax))
+		Mov(type(long_word), src(Imm(0)), dst(dx))
+		iDiv(type(long_word))
+		Mov(type(long_word), src(dx), dst(Pseudo(tacky-1)))
+--op=equal_operator; src1 = uint_constant; src2 = uint_var; dst = var--
+		Cmp(type(long_word), lhs(Pseudo(unsigned_int_var)), rhs(Imm(1)))
+		Mov(type(long_word), src(Imm(0)), dst(Pseudo(tacky-1)))
+		SetCC(cond(E), dst(Pseudo(tacky-1)))
+--op=not_equal_operator; src1 = int_constant; src2 = int_var; dst = var--
+		Cmp(type(long_word), lhs(Pseudo(int_var)), rhs(Imm(1)))
+		Mov(type(long_word), src(Imm(0)), dst(Pseudo(tacky-1)))
+		SetCC(cond(NE), dst(Pseudo(tacky-1)))
+--op=less_than_operator; src1 = long_constant; src2 = long_var; dst = var--
+		Cmp(type(quad_word), lhs(Pseudo(long_var)), rhs(Imm(1)))
+		Mov(type(long_word), src(Imm(0)), dst(Pseudo(tacky-1)))
+		SetCC(cond(L), dst(Pseudo(tacky-1)))
+--op=less_than_operator; src1 = ulong_constant; src2 = ulong_var; dst = var--
+		Cmp(type(quad_word), lhs(Pseudo(unsigned_long_var)), rhs(Imm(1)))
+		Mov(type(long_word), src(Imm(0)), dst(Pseudo(tacky-1)))
+		SetCC(cond(B), dst(Pseudo(tacky-1)))
+--op=less_than_or_equal_operator; src1 = long_constant; src2 = long_var; dst = var--
+		Cmp(type(quad_word), lhs(Pseudo(long_var)), rhs(Imm(1)))
+		Mov(type(long_word), src(Imm(0)), dst(Pseudo(tacky-1)))
+		SetCC(cond(LE), dst(Pseudo(tacky-1)))
+--op=less_than_or_equal_operator; src1 = ulong_constant; src2 = ulong_var; dst = var--
+		Cmp(type(quad_word), lhs(Pseudo(unsigned_long_var)), rhs(Imm(1)))
+		Mov(type(long_word), src(Imm(0)), dst(Pseudo(tacky-1)))
+		SetCC(cond(BE), dst(Pseudo(tacky-1)))
+--op=greater_than_operator; src1 = long_constant; src2 = long_var; dst = var--
+		Cmp(type(quad_word), lhs(Pseudo(long_var)), rhs(Imm(1)))
+		Mov(type(long_word), src(Imm(0)), dst(Pseudo(tacky-1)))
+		SetCC(cond(G), dst(Pseudo(tacky-1)))
+--op=greater_than_operator; src1 = ulong_constant; src2 = ulong_var; dst = var--
+		Cmp(type(quad_word), lhs(Pseudo(unsigned_long_var)), rhs(Imm(1)))
+		Mov(type(long_word), src(Imm(0)), dst(Pseudo(tacky-1)))
+		SetCC(cond(A), dst(Pseudo(tacky-1)))
+--op=greater_than_or_equal_operator; src1 = long_constant; src2 = long_var; dst = var--
+		Cmp(type(quad_word), lhs(Pseudo(long_var)), rhs(Imm(1)))
+		Mov(type(long_word), src(Imm(0)), dst(Pseudo(tacky-1)))
+		SetCC(cond(GE), dst(Pseudo(tacky-1)))
+--op=greater_than_or_equal_operator; src1 = ulong_constant; src2 = ulong_var; dst = var--
+		Cmp(type(quad_word), lhs(Pseudo(unsigned_long_var)), rhs(Imm(1)))
+		Mov(type(long_word), src(Imm(0)), dst(Pseudo(tacky-1)))
+		SetCC(cond(AE), dst(Pseudo(tacky-1)))
+

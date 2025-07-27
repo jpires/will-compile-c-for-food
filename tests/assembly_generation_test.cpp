@@ -3,195 +3,165 @@
 #include "../tacky.h"
 #include <ApprovalTests.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <ctll/parser.hpp>
 
 TEST_CASE("Binary Operations", "[assembly_generation]")
 {
-    //     SECTION("binary_and")
-    //     {
-    //         wccff::int_constant src1{ 1 };
-    //         wccff::int_constant src2{ 2 };
-    //         wccff::tacky::var dst{ "tacky-1" };
-    //         wccff::tacky::binary_statement stmt{ wccff::tacky::binary_and_operator{}, src1, src2, dst };
-    //
-    //         auto instructions = wccff::assembly_generation::process_statement(stmt);
-    //         REQUIRE(instructions.size() == 2);
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::mov_instruction>(instructions.at(0)));
-    //         auto inst1 = std::get<wccff::assembly_generation::mov_instruction>(instructions.at(0));
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::immediate>(inst1.src));
-    //         REQUIRE(std::get<wccff::assembly_generation::immediate>(inst1.src).value == 1);
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::pseudo>(inst1.dst));
-    //         REQUIRE(std::get<wccff::assembly_generation::pseudo>(inst1.dst).name.name == "tacky-1");
-    //
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::binary>(instructions.at(1)));
-    //         auto inst2 = std::get<wccff::assembly_generation::binary>(instructions.at(1));
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::binary_and>(inst2.op));
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::immediate>(inst2.src));
-    //         REQUIRE(std::get<wccff::assembly_generation::immediate>(inst2.src).value == 2);
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::pseudo>(inst2.dst));
-    //         REQUIRE(std::get<wccff::assembly_generation::pseudo>(inst2.dst).name.name == "tacky-1");
-    //     }
-    //
-    //     SECTION("binary_or")
-    //     {
-    //         wccff::int_constant src1{ 1 };
-    //         wccff::int_constant src2{ 2 };
-    //         wccff::tacky::var dst{ "tacky-1" };
-    //         wccff::tacky::binary_statement stmt{ wccff::tacky::binary_or_operator{}, src1, src2, dst };
-    //
-    //         auto instructions = wccff::assembly_generation::process_statement(stmt);
-    //         REQUIRE(instructions.size() == 2);
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::mov_instruction>(instructions.at(0)));
-    //         auto inst1 = std::get<wccff::assembly_generation::mov_instruction>(instructions.at(0));
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::immediate>(inst1.src));
-    //         REQUIRE(std::get<wccff::assembly_generation::immediate>(inst1.src).value == 1);
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::pseudo>(inst1.dst));
-    //         REQUIRE(std::get<wccff::assembly_generation::pseudo>(inst1.dst).name.name == "tacky-1");
-    //
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::binary>(instructions.at(1)));
-    //         auto inst2 = std::get<wccff::assembly_generation::binary>(instructions.at(1));
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::binary_or>(inst2.op));
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::immediate>(inst2.src));
-    //         REQUIRE(std::get<wccff::assembly_generation::immediate>(inst2.src).value == 2);
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::pseudo>(inst2.dst));
-    //         REQUIRE(std::get<wccff::assembly_generation::pseudo>(inst2.dst).name.name == "tacky-1");
-    //     }
-    //
-    //     SECTION("binary_xor")
-    //     {
-    //         wccff::int_constant src1{ 1 };
-    //         wccff::int_constant src2{ 2 };
-    //         wccff::tacky::var dst{ "tacky-1" };
-    //         wccff::tacky::binary_statement stmt{ wccff::tacky::binary_xor_operator{}, src1, src2, dst };
-    //
-    //         auto instructions = wccff::assembly_generation::process_statement(stmt);
-    //         REQUIRE(instructions.size() == 2);
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::mov_instruction>(instructions.at(0)));
-    //         auto inst1 = std::get<wccff::assembly_generation::mov_instruction>(instructions.at(0));
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::immediate>(inst1.src));
-    //         REQUIRE(std::get<wccff::assembly_generation::immediate>(inst1.src).value == 1);
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::pseudo>(inst1.dst));
-    //         REQUIRE(std::get<wccff::assembly_generation::pseudo>(inst1.dst).name.name == "tacky-1");
-    //
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::binary>(instructions.at(1)));
-    //         auto inst2 = std::get<wccff::assembly_generation::binary>(instructions.at(1));
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::binary_xor>(inst2.op));
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::immediate>(inst2.src));
-    //         REQUIRE(std::get<wccff::assembly_generation::immediate>(inst2.src).value == 2);
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::pseudo>(inst2.dst));
-    //         REQUIRE(std::get<wccff::assembly_generation::pseudo>(inst2.dst).name.name == "tacky-1");
-    //     }
-    //
-    //     SECTION("left_shift")
-    //     {
-    //         wccff::int_constant src1{ 1 };
-    //         wccff::int_constant src2{ 2 };
-    //         wccff::tacky::var dst{ "tacky-1" };
-    //         wccff::tacky::binary_statement stmt{ wccff::tacky::left_shift_operator{}, src1, src2, dst };
-    //
-    //         auto instructions = wccff::assembly_generation::process_statement(stmt);
-    //         REQUIRE(instructions.size() == 2);
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::mov_instruction>(instructions.at(0)));
-    //         auto inst1 = std::get<wccff::assembly_generation::mov_instruction>(instructions.at(0));
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::immediate>(inst1.src));
-    //         REQUIRE(std::get<wccff::assembly_generation::immediate>(inst1.src).value == 1);
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::pseudo>(inst1.dst));
-    //         REQUIRE(std::get<wccff::assembly_generation::pseudo>(inst1.dst).name.name == "tacky-1");
-    //
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::binary>(instructions.at(1)));
-    //         auto inst2 = std::get<wccff::assembly_generation::binary>(instructions.at(1));
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::left_shift>(inst2.op));
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::immediate>(inst2.src));
-    //         REQUIRE(std::get<wccff::assembly_generation::immediate>(inst2.src).value == 2);
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::pseudo>(inst2.dst));
-    //         REQUIRE(std::get<wccff::assembly_generation::pseudo>(inst2.dst).name.name == "tacky-1");
-    //     }
-    //
-    //     SECTION("right_shift")
-    //     {
-    //         wccff::int_constant src1{ 1 };
-    //         wccff::int_constant src2{ 2 };
-    //         wccff::tacky::var dst{ "tacky-1" };
-    //         wccff::tacky::binary_statement stmt{ wccff::tacky::right_shift_operator{}, src1, src2, dst };
-    //
-    //         auto instructions = wccff::assembly_generation::process_statement(stmt);
-    //         REQUIRE(instructions.size() == 2);
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::mov_instruction>(instructions.at(0)));
-    //         auto inst1 = std::get<wccff::assembly_generation::mov_instruction>(instructions.at(0));
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::immediate>(inst1.src));
-    //         REQUIRE(std::get<wccff::assembly_generation::immediate>(inst1.src).value == 1);
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::pseudo>(inst1.dst));
-    //         REQUIRE(std::get<wccff::assembly_generation::pseudo>(inst1.dst).name.name == "tacky-1");
-    //
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::binary>(instructions.at(1)));
-    //         auto inst2 = std::get<wccff::assembly_generation::binary>(instructions.at(1));
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::right_shift>(inst2.op));
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::immediate>(inst2.src));
-    //         REQUIRE(std::get<wccff::assembly_generation::immediate>(inst2.src).value == 2);
-    //         REQUIRE(std::holds_alternative<wccff::assembly_generation::pseudo>(inst2.dst));
-    //         REQUIRE(std::get<wccff::assembly_generation::pseudo>(inst2.dst).name.name == "tacky-1");
-    //     }
-    //
-    //     SECTION("equal_operator")
-    //     {
-    //         using namespace wccff;
-    //         int_constant src1{ 1 };
-    //         int_constant src2{ 2 };
-    //         tacky::var dst{ "tacky-1" };
-    //         tacky::binary_statement stmt{ tacky::equal_operator{}, src1, src2, dst };
-    //         auto instructions = assembly_generation::process_statement(stmt);
-    //         REQUIRE(instructions.size() == 3);
-    //
-    //         REQUIRE(std::holds_alternative<assembly_generation::cmp>(instructions.at(0)));
-    //         auto inst1 = std::get<assembly_generation::cmp>(instructions.at(0));
-    //         REQUIRE(std::holds_alternative<assembly_generation::immediate>(inst1.lhs));
-    //         REQUIRE(std::get<assembly_generation::immediate>(inst1.lhs).value == 2);
-    //         REQUIRE(std::holds_alternative<assembly_generation::immediate>(inst1.rhs));
-    //         REQUIRE(std::get<assembly_generation::immediate>(inst1.rhs).value == 1);
-    //
-    //         REQUIRE(std::holds_alternative<assembly_generation::mov_instruction>(instructions.at(1)));
-    //         auto inst2 = std::get<assembly_generation::mov_instruction>(instructions.at(1));
-    //         REQUIRE(std::holds_alternative<assembly_generation::immediate>(inst2.src));
-    //         REQUIRE(std::get<assembly_generation::immediate>(inst2.src).value == 0);
-    //         REQUIRE(std::holds_alternative<assembly_generation::pseudo>(inst2.dst));
-    //         REQUIRE(std::get<assembly_generation::pseudo>(inst2.dst).name.name == "tacky-1");
-    //
-    //         REQUIRE(std::holds_alternative<assembly_generation::setcc>(instructions.at(2)));
-    //         auto inst3 = std::get<assembly_generation::setcc>(instructions.at(2));
-    //         REQUIRE(std::holds_alternative<assembly_generation::E>(inst3.cond));
-    //         REQUIRE(std::get<assembly_generation::pseudo>(inst3.dst).name.name == "tacky-1");
-    //     }
-    // }
-    //
-    // TEST_CASE("Unary Operations", "[assembly_generation]")
-    // {
-    //     using namespace wccff;
-    //     SECTION("not_operator")
-    //     {
-    //         int_constant src1{ 1 };
-    //         tacky::var dst{ "tacky-1" };
-    //         tacky::unary_statement stmt{ tacky::not_operator{}, src1, dst };
-    //         auto instructions = assembly_generation::process_statement(stmt);
-    //         REQUIRE(instructions.size() == 3);
-    //
-    //         REQUIRE(std::holds_alternative<assembly_generation::cmp>(instructions.at(0)));
-    //         auto inst1 = std::get<assembly_generation::cmp>(instructions.at(0));
-    //         REQUIRE(std::holds_alternative<assembly_generation::immediate>(inst1.lhs));
-    //         REQUIRE(std::get<assembly_generation::immediate>(inst1.lhs).value == 0);
-    //         REQUIRE(std::holds_alternative<assembly_generation::immediate>(inst1.rhs));
-    //         REQUIRE(std::get<assembly_generation::immediate>(inst1.rhs).value == 1);
-    //
-    //         REQUIRE(std::holds_alternative<assembly_generation::mov_instruction>(instructions.at(1)));
-    //         auto inst2 = std::get<assembly_generation::mov_instruction>(instructions.at(1));
-    //         REQUIRE(std::holds_alternative<assembly_generation::immediate>(inst2.src));
-    //         REQUIRE(std::get<assembly_generation::immediate>(inst2.src).value == 0);
-    //         REQUIRE(std::holds_alternative<assembly_generation::pseudo>(inst2.dst));
-    //         REQUIRE(std::get<assembly_generation::pseudo>(inst2.dst).name.name == "tacky-1");
-    //
-    //         REQUIRE(std::holds_alternative<assembly_generation::setcc>(instructions.at(2)));
-    //         auto inst3 = std::get<assembly_generation::setcc>(instructions.at(2));
-    //         REQUIRE(std::holds_alternative<assembly_generation::E>(inst3.cond));
-    //         REQUIRE(std::get<assembly_generation::pseudo>(inst3.dst).name.name == "tacky-1");
-    //     }
+    using wccff::assembly_generation::pretty_print;
+    auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("assembly_generation_results");
+
+    wccff::tacky::var int_var{ "int_var" };
+    wccff::tacky::var long_var{ "long_var" };
+    wccff::tacky::var uint_var{ "unsigned_int_var" };
+    wccff::tacky::var ulong_var{ "unsigned_long_var" };
+
+    wccff::symbol_table::symbol_table table;
+    table.add(wccff::parser::identifier{ "tacky-1" }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ int_var.id.name }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ long_var.id.name },
+              wccff::long_type{},
+              wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ uint_var.id.name },
+              wccff::unsigned_int_type{},
+              wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ ulong_var.id.name },
+              wccff::unsigned_long_type{},
+              wccff::symbol_table::local_attributes{});
+
+    auto ams_process = wccff::assembly_generation::assembly_generation(table);
+    std::string result;
+
+    wccff::int_constant c_int1{ 1 };
+    wccff::int_constant c_int2{ 2 };
+    wccff::long_constant c_long1{ 1 };
+    wccff::long_constant c_long2{ 2 };
+    wccff::unsigned_int_constant c_uint1{ 1 };
+    wccff::unsigned_int_constant c_uint2{ 2 };
+    wccff::unsigned_long_constant c_ulong1{ 1 };
+    wccff::unsigned_long_constant c_ulong2{ 2 };
+    wccff::tacky::var dst{ "tacky-1" };
+
+    result += "--op=binary_and; src1 = int_constant; src2 = int_constant; dst = var--\n";
+    wccff::tacky::binary_statement stmt1{ wccff::tacky::binary_and_operator{}, c_int1, c_int2, dst };
+    ams_process.process(stmt1);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=binary_or; src1 = long_constant; src2 = long_constant; dst = var--\n";
+    wccff::tacky::binary_statement stmt2{ wccff::tacky::binary_or_operator{}, c_long1, c_long2, dst };
+    ams_process.process(stmt2);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=binary_xor; src1 = unsigned_int_constant; src2 = unsigned_int_constant; dst = var--\n";
+    wccff::tacky::binary_statement stmt3{ wccff::tacky::binary_xor_operator{}, c_uint1, c_uint2, dst };
+    ams_process.process(stmt3);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=plus_operator; src1 = unsigned_long_constant; src2 = unsigned_long_constant; dst = var--\n";
+    wccff::tacky::binary_statement stmt4{ wccff::tacky::plus_operator{}, c_ulong1, c_ulong2, dst };
+    ams_process.process(stmt4);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=subtract_operator; src1 = int_var; src2 = int_constant; dst = var--\n";
+    wccff::tacky::binary_statement stmt5{ wccff::tacky::subtract_operator{}, int_var, c_int2, dst };
+    ams_process.process(stmt5);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=multiply_operator; src1 = long_var; src2 = long_constant; dst = var--\n";
+    wccff::tacky::binary_statement stmt6{ wccff::tacky::multiply_operator{}, long_var, c_long2, dst };
+    ams_process.process(stmt6);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=left_shift_operator; src1 = ulong_var; src2 = long_constant; dst = var--\n";
+    wccff::tacky::binary_statement stmt7{ wccff::tacky::left_shift_operator{}, ulong_var, c_ulong2, dst };
+    ams_process.process(stmt7);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=right_shift_operator; src1 = uint_constant; src2 = uint_var; dst = var--\n";
+    wccff::tacky::binary_statement stmt8{ wccff::tacky::right_shift_operator{}, c_uint1, uint_var, dst };
+    ams_process.process(stmt8);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=divide_operator; src1 = uint_constant; src2 = uint_var; dst = var--\n";
+    wccff::tacky::binary_statement stmt9{ wccff::tacky::divide_operator{}, c_uint1, uint_var, dst };
+    ams_process.process(stmt9);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=remainder_operator; src1 = uint_constant; src2 = uint_var; dst = var--\n";
+    wccff::tacky::binary_statement stmt10{ wccff::tacky::remainder_operator{}, c_uint1, uint_var, dst };
+    ams_process.process(stmt10);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=equal_operator; src1 = uint_constant; src2 = uint_var; dst = var--\n";
+    wccff::tacky::binary_statement stmt11{ wccff::tacky::equal_operator{}, c_uint1, uint_var, dst };
+    ams_process.process(stmt11);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=not_equal_operator; src1 = int_constant; src2 = int_var; dst = var--\n";
+    wccff::tacky::binary_statement stmt12{ wccff::tacky::not_equal_operator{}, c_int1, int_var, dst };
+    ams_process.process(stmt12);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=less_than_operator; src1 = long_constant; src2 = long_var; dst = var--\n";
+    wccff::tacky::binary_statement stmt13{ wccff::tacky::less_than_operator{}, c_long1, long_var, dst };
+    ams_process.process(stmt13);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=less_than_operator; src1 = ulong_constant; src2 = ulong_var; dst = var--\n";
+    wccff::tacky::binary_statement stmt14{ wccff::tacky::less_than_operator{}, c_ulong1, ulong_var, dst };
+    ams_process.process(stmt14);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=less_than_or_equal_operator; src1 = long_constant; src2 = long_var; dst = var--\n";
+    wccff::tacky::binary_statement stmt15{ wccff::tacky::less_than_or_equal_operator{}, c_long1, long_var, dst };
+    ams_process.process(stmt15);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=less_than_or_equal_operator; src1 = ulong_constant; src2 = ulong_var; dst = var--\n";
+    wccff::tacky::binary_statement stmt16{ wccff::tacky::less_than_or_equal_operator{}, c_ulong1, ulong_var, dst };
+    ams_process.process(stmt16);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=greater_than_operator; src1 = long_constant; src2 = long_var; dst = var--\n";
+    wccff::tacky::binary_statement stmt17{ wccff::tacky::greater_than_operator{}, c_long1, long_var, dst };
+    ams_process.process(stmt17);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=greater_than_operator; src1 = ulong_constant; src2 = ulong_var; dst = var--\n";
+    wccff::tacky::binary_statement stmt18{ wccff::tacky::greater_than_operator{}, c_ulong1, ulong_var, dst };
+    ams_process.process(stmt18);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=greater_than_or_equal_operator; src1 = long_constant; src2 = long_var; dst = var--\n";
+    wccff::tacky::binary_statement stmt19{ wccff::tacky::greater_than_or_equal_operator{}, c_long1, long_var, dst };
+    ams_process.process(stmt19);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=greater_than_or_equal_operator; src1 = ulong_constant; src2 = ulong_var; dst = var--\n";
+    wccff::tacky::binary_statement stmt20{ wccff::tacky::greater_than_or_equal_operator{}, c_ulong1, ulong_var, dst };
+    ams_process.process(stmt20);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    ApprovalTests::Approvals::verify(result);
 }
 
 TEST_CASE("helpers", "[assembly_generation]")

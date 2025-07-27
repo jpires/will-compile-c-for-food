@@ -25,33 +25,6 @@
 
 namespace wccff::assembly_generation {
 
-identifier process_identifier(const wccff::tacky::identifier &id)
-{
-    return { id.name };
-}
-
-operand process_constant(const constant &n)
-{
-    return std::visit(
-      visitor{
-        [](const int_constant &c) -> operand { return immediate{ c.value }; },
-        [](const long_constant &c) -> operand { return immediate{ c.value }; },
-        [](const unsigned_int_constant &c) -> operand { return immediate{ c.value }; },
-        [](const unsigned_long_constant &c) -> operand { return immediate{ static_cast<int64_t>(c.value) }; },
-        [](const auto &) -> operand { throw std::runtime_error("INTERNAL ERROR"); },
-      },
-      n);
-}
-
-operand process_val(const wccff::tacky::val &v)
-{
-    return std::visit(visitor{
-                        [](const constant &n) -> operand { return process_constant(n); },
-                        [](const tacky::var &n) -> operand { return pseudo{ process_identifier(n.id) }; },
-                      },
-                      v);
-}
-
 assembly_type get_assembly_type(const wccff::constant &v)
 {
     return std::visit(visitor{
@@ -120,40 +93,6 @@ type get_type(const tacky::var &v, const wccff::symbol_table::symbol_table &tabl
     }
 
     return copy_type(s.value().type);
-}
-
-std::vector<instruction> process_statement(const wccff::tacky::copy_statement &stmt,
-                                           const wccff::symbol_table::symbol_table &t)
-{
-    return { mov_instruction{ process_val(stmt.src), process_val(stmt.dst), get_assembly_type(stmt.src, t) } };
-}
-std::vector<instruction> process_statement(const wccff::tacky::jump_statement &stmt)
-{
-    return { jmp{ process_identifier(stmt.target) } };
-}
-std::vector<instruction> process_statement(const wccff::tacky::jump_if_zero_statement &stmt,
-                                           const wccff::symbol_table::symbol_table &t)
-{
-    return { cmp{ immediate{ 0 }, process_val(stmt.condition), get_assembly_type(stmt.condition, t) },
-             jmpcc{ E{}, process_identifier(stmt.target) } };
-}
-std::vector<instruction> process_statement(const wccff::tacky::jump_if_not_zero_statement &stmt,
-                                           const wccff::symbol_table::symbol_table &t)
-{
-    return { cmp{ immediate{ 0 }, process_val(stmt.condition), get_assembly_type(stmt.condition, t) },
-             jmpcc{ NE{}, process_identifier(stmt.target) } };
-}
-std::vector<instruction> process_statement(const wccff::tacky::label_statement &stmt)
-{
-    return { label{ process_identifier(stmt.target) } };
-}
-std::vector<instruction> process_statement(const wccff::tacky::return_statement &stmt,
-                                           const wccff::symbol_table::symbol_table &t)
-{
-    mov_instruction mov{ process_val(stmt.val), ax{}, get_assembly_type(stmt.val, t) };
-    ret_instruction ret{};
-
-    return { mov, ret };
 }
 
 unary_operator process_unary_operator(const wccff::tacky::unary_operator &op)
@@ -240,318 +179,6 @@ binary_operator process_binary_operator(const wccff::tacky::binary_operator &op,
 
       },
       op);
-}
-
-std::vector<instruction> process_statement(const wccff::tacky::unary_statement &stmt,
-                                           const wccff::symbol_table::symbol_table &t)
-{
-    std::vector<instruction> instructions;
-    if (std::holds_alternative<tacky::not_operator>(stmt.op))
-    {
-        instructions.emplace_back(
-          cmp{ operand{ immediate{ 0 } }, process_val(stmt.src), get_assembly_type(stmt.src, t) });
-        instructions.emplace_back(
-          mov_instruction{ immediate{ 0 }, process_val(stmt.dst), get_assembly_type(stmt.dst, t) });
-        instructions.emplace_back(setcc{ E{}, process_val(stmt.dst) });
-        return instructions;
-    }
-
-    mov_instruction mov{ process_val(stmt.src), process_val(stmt.dst), get_assembly_type(stmt.src, t) };
-    unary ret{ process_unary_operator(stmt.op), process_val(stmt.dst), get_assembly_type(stmt.src, t) };
-
-    return { mov, ret };
-}
-
-std::vector<instruction> process_statement(const wccff::tacky::binary_statement &stmt,
-                                           const wccff::symbol_table::symbol_table &t)
-{
-    auto is_relational_operator = [](tacky::binary_operator op) {
-        return std::visit(visitor{
-                            [](tacky::equal_operator) { return true; },
-                            [](tacky::not_equal_operator) { return true; },
-                            [](tacky::less_than_operator) { return true; },
-                            [](tacky::less_than_or_equal_operator) { return true; },
-                            [](tacky::greater_than_operator) { return true; },
-                            [](tacky::greater_than_or_equal_operator) { return true; },
-                            [](auto) { return false; },
-                          },
-                          op);
-    };
-
-    auto convert_tacky_op = [](tacky::binary_operator op, const wccff::type &t) {
-        if (is_signed_type(t))
-        {
-            return std::visit(visitor{
-                                [](tacky::equal_operator) -> cond_code { return E{}; },
-                                [](tacky::not_equal_operator) -> cond_code { return NE{}; },
-                                [](tacky::less_than_operator) -> cond_code { return L{}; },
-                                [](tacky::less_than_or_equal_operator) -> cond_code { return LE{}; },
-                                [](tacky::greater_than_operator) -> cond_code { return G{}; },
-                                [](tacky::greater_than_or_equal_operator) -> cond_code { return GE{}; },
-                                [](auto) -> cond_code {
-                                    throw std::logic_error("Binary operator is not converted into a binary operator");
-                                },
-                              },
-                              op);
-        }
-        else
-        {
-            return std::visit(visitor{
-                                [](tacky::equal_operator) -> cond_code { return E{}; },
-                                [](tacky::not_equal_operator) -> cond_code { return NE{}; },
-                                [](tacky::less_than_operator) -> cond_code { return B{}; },
-                                [](tacky::less_than_or_equal_operator) -> cond_code { return BE{}; },
-                                [](tacky::greater_than_operator) -> cond_code { return A{}; },
-                                [](tacky::greater_than_or_equal_operator) -> cond_code { return AE{}; },
-                                [](auto) -> cond_code {
-                                    throw std::logic_error("Binary operator is not converted into a binary operator");
-                                },
-                              },
-                              op);
-        }
-    };
-
-    auto src1_type = get_assembly_type(stmt.src1, t);
-    if (is_relational_operator(stmt.op))
-    {
-        auto op_type = get_type(stmt.src1, t);
-
-        std::vector<instruction> instructions;
-        auto dst_type = get_assembly_type(stmt.dst, t);
-        instructions.emplace_back(cmp{ process_val(stmt.src2), process_val(stmt.src1), src1_type });
-        instructions.emplace_back(mov_instruction{ immediate{ 0 }, process_val(stmt.dst), dst_type });
-        instructions.emplace_back(setcc{ convert_tacky_op(stmt.op, op_type), process_val(stmt.dst) });
-
-        return instructions;
-    }
-
-    if (std::holds_alternative<wccff::tacky::divide_operator>(stmt.op))
-    {
-        auto op_type = get_type(stmt.src1, t);
-        if (is_signed_type(op_type))
-        {
-            std::vector<instruction> instructions;
-            instructions.emplace_back(mov_instruction{ process_val(stmt.src1), ax{}, src1_type });
-            instructions.emplace_back(cdq{ src1_type });
-            instructions.emplace_back(idiv{ process_val(stmt.src2), src1_type });
-            instructions.emplace_back(mov_instruction{ ax{}, process_val(stmt.dst), src1_type });
-            return instructions;
-        }
-        else
-        {
-            std::vector<instruction> instructions;
-            instructions.emplace_back(mov_instruction{ process_val(stmt.src1), ax{}, src1_type });
-            instructions.emplace_back(mov_instruction{ immediate{ 0 }, dx{}, src1_type });
-            instructions.emplace_back(div{ process_val(stmt.src2), src1_type });
-            instructions.emplace_back(mov_instruction{ ax{}, process_val(stmt.dst), src1_type });
-            return instructions;
-        }
-    }
-
-    if (std::holds_alternative<wccff::tacky::remainder_operator>(stmt.op))
-    {
-        auto op_type = get_type(stmt.src1, t);
-
-        if (is_signed_type(op_type))
-        {
-            std::vector<instruction> instructions;
-            instructions.emplace_back(mov_instruction{ process_val(stmt.src1), ax{}, src1_type });
-            instructions.emplace_back(cdq{ src1_type });
-            instructions.emplace_back(idiv{ process_val(stmt.src2), src1_type });
-            instructions.emplace_back(mov_instruction{ dx{}, process_val(stmt.dst), src1_type });
-
-            return instructions;
-        }
-        else
-        {
-            std::vector<instruction> instructions;
-            instructions.emplace_back(mov_instruction{ process_val(stmt.src1), ax{}, src1_type });
-            instructions.emplace_back(mov_instruction{ immediate{ 0 }, dx{}, src1_type });
-            instructions.emplace_back(idiv{ process_val(stmt.src2), src1_type });
-            instructions.emplace_back(mov_instruction{ dx{}, process_val(stmt.dst), src1_type });
-            return instructions;
-        }
-    }
-
-    mov_instruction mov{ process_val(stmt.src1), process_val(stmt.dst), src1_type };
-    binary ret{ process_binary_operator(stmt.op, get_type(stmt.src1, t)),
-                process_val(stmt.src2),
-                process_val(stmt.dst),
-                src1_type };
-
-    return { mov, ret };
-}
-
-std::vector<instruction> process_statement(const tacky::instruction &i, const wccff::symbol_table::symbol_table &t)
-{
-    return std::visit(visitor{
-                        [&t](const tacky::return_statement &n) { return process_statement(n, t); },
-                        [&t](const tacky::unary_statement &n) { return process_statement(n, t); },
-                        [&t](const tacky::binary_statement &n) { return process_statement(n, t); },
-                        [&t](const tacky::copy_statement &n) { return process_statement(n, t); },
-                        [](const tacky::jump_statement &n) { return process_statement(n); },
-                        [&t](const tacky::jump_if_zero_statement &n) { return process_statement(n, t); },
-                        [&t](const tacky::jump_if_not_zero_statement &n) { return process_statement(n, t); },
-                        [](const tacky::label_statement &n) { return process_statement(n); },
-                        [&t](const tacky::fun_call &n) -> std::vector<instruction> { return fun_call(n, t); },
-                        [](const tacky::sing_extend &n) -> std::vector<instruction> { return process_statement(n); },
-                        [](const tacky::truncate &n) -> std::vector<instruction> { return process_statement(n); },
-                        [](const tacky::zero_extend &n) -> std::vector<instruction> { return process_statement(n); },
-                        [](const auto &) -> std::vector<instruction> { throw std::runtime_error("NOT IMPLEMENTED"); },
-                      },
-                      i);
-}
-
-std::vector<instruction> process_statement(const std::vector<tacky::instruction> &s,
-                                           const wccff::symbol_table::symbol_table &t)
-{
-    std::vector<instruction> ret_insts;
-    for (const auto &i : s)
-    {
-        ret_insts.append_range(process_statement(i, t));
-    }
-    return ret_insts;
-}
-
-std::vector<instruction> process_statement(const tacky::sing_extend &i)
-{
-    std::vector<instruction> instructions;
-    instructions.emplace_back(movx{ process_val(i.src), process_val(i.dst) });
-    return instructions;
-}
-std::vector<instruction> process_statement(const tacky::truncate &i)
-{
-    std::vector<instruction> instructions;
-    instructions.emplace_back(mov_instruction{ process_val(i.src), process_val(i.dst), long_word{} });
-    return instructions;
-}
-
-std::vector<instruction> process_statement(const tacky::zero_extend &i)
-{
-    std::vector<instruction> instructions;
-    instructions.emplace_back(mov_zero_extend{ process_val(i.src), process_val(i.dst) });
-    return instructions;
-}
-
-std::vector<instruction> fun_call(const tacky::fun_call &i, const wccff::symbol_table::symbol_table &t)
-{
-    std::array<reg, 6> regs = { di{}, si{}, dx{}, cx{}, R8{}, R9{} };
-    std::vector<instruction> instructions;
-    int stack_padding = i.args.size() % 2 ? 8 : 0;
-
-    int stack_args = i.args.size() >= 6 ? i.args.size() - 6 : 0;
-    if (stack_padding != 0)
-    {
-        instructions.emplace_back(binary{ sub{}, immediate{ stack_padding }, SP{}, quad_word{} });
-    }
-
-    std::span args_in_reg(i.args.begin(), std::min(i.args.size(), 6ul));
-    int pos = 0;
-    for (const auto &arg : args_in_reg)
-    {
-        auto src = process_val(arg);
-        instructions.emplace_back(mov_instruction{ src, regs[pos], get_assembly_type(arg, t) });
-        pos++;
-    }
-
-    if (i.args.size() > 6)
-    {
-        std::span arg_on_stack(i.args.begin() + 6, i.args.size() - 6);
-        for (const auto &arg : arg_on_stack | std::views::reverse)
-        {
-            auto src = process_val(arg);
-            if (std::holds_alternative<immediate>(src) || std::holds_alternative<reg>(src) ||
-                std::holds_alternative<quad_word>(get_assembly_type(arg, t)))
-            {
-                instructions.emplace_back(push{ src });
-            }
-            else
-            {
-                instructions.emplace_back(mov_instruction{ src, ax{}, long_word{} });
-                instructions.emplace_back(push{ ax{} });
-            }
-        }
-    }
-
-    instructions.emplace_back(call{ process_identifier(i.fun_name) });
-
-    if (int to_remove = (stack_args * 8) + stack_padding; to_remove != 0)
-    {
-        instructions.emplace_back(binary{ add{}, immediate{ to_remove }, SP{}, quad_word{} });
-    }
-
-    instructions.emplace_back(mov_instruction{ ax{}, process_val(i.dst), get_assembly_type(i.dst, t) });
-
-    return instructions;
-}
-
-function process_function(const wccff::tacky::function_definition &f, const wccff::symbol_table::symbol_table &t)
-{
-    auto p_source = [](int pos) -> operand {
-        switch (pos)
-        {
-            case 0:
-                return reg{ di{} };
-            case 1:
-                return reg{ si{} };
-            case 2:
-                return reg{ dx{} };
-            case 3:
-                return reg{ cx{} };
-            case 4:
-                return reg{ R8{} };
-            case 5:
-                return reg{ R9{} };
-            default:
-                return stack{ 16 + (pos - 6) * 8 };
-        }
-    };
-    std::vector<instruction> instructions;
-
-    int pos = 0;
-    for (const auto &p : f.params)
-    {
-        instructions.emplace_back(mov_instruction{ p_source(pos),
-                                                   pseudo{ process_identifier(p) },
-                                                   get_assembly_type(tacky::var{ p.name }, t) });
-        pos++;
-    }
-
-    instructions.append_range(process_statement(f.instructions, t));
-    return function{ process_identifier(f.name), std::move(instructions), .is_global = f.global };
-}
-
-top_level process_top_level(const wccff::tacky::top_level &f, const wccff::symbol_table::symbol_table &t)
-{
-    return std::visit(
-      visitor{ [&t](const tacky::function_definition &node) -> top_level { return process_function(node, t); },
-               [&t](const tacky::static_variable &node) -> top_level { return process_static_variable(node, t); } },
-      f);
-}
-
-static_variable process_static_variable(const wccff::tacky::static_variable &f,
-                                        const wccff::symbol_table::symbol_table &t)
-{
-    auto align = std::visit(visitor{
-                              [](const wccff::int_type &) { return 4; },
-                              [](const wccff::long_type &) { return 8; },
-                              [](const wccff::unsigned_int_type &) { return 4; },
-                              [](const wccff::unsigned_long_type &) { return 8; },
-                              [](const auto &) -> int32_t { throw std::logic_error("Not implemented"); },
-                            },
-                            t.get(parser::identifier{ f.name.name }).value().type);
-    return { process_identifier(f.name), f.global, align, f.init };
-}
-
-program process(const wccff::tacky::program &program, const wccff::symbol_table::symbol_table &t)
-{
-    std::vector<top_level> top_levels;
-    top_levels.reserve(program.function.size());
-    for (const auto &f : program.function)
-    {
-        top_levels.push_back(process_top_level(f, t));
-    }
-    return { std::move(top_levels) };
 }
 
 operand convert_pseudo(pseudo &r, wccff::symbol_table::backend_symbol_table &t)
@@ -746,6 +373,345 @@ bool is_larger_immediate(const operand &op)
 bool is_memory_operand(const operand &o)
 {
     return std::holds_alternative<stack>(o) || std::holds_alternative<data>(o);
+}
+
+void assembly_generation::process(const tacky::binary_statement &stmt)
+{
+    auto is_relational_operator = [](tacky::binary_operator op) {
+        return std::visit(visitor{
+                            [](tacky::equal_operator) { return true; },
+                            [](tacky::not_equal_operator) { return true; },
+                            [](tacky::less_than_operator) { return true; },
+                            [](tacky::less_than_or_equal_operator) { return true; },
+                            [](tacky::greater_than_operator) { return true; },
+                            [](tacky::greater_than_or_equal_operator) { return true; },
+                            [](auto) { return false; },
+                          },
+                          op);
+    };
+
+    auto convert_tacky_op = [](tacky::binary_operator op, const wccff::type &t) {
+        if (is_signed_type(t))
+        {
+            return std::visit(visitor{
+                                [](tacky::equal_operator) -> cond_code { return E{}; },
+                                [](tacky::not_equal_operator) -> cond_code { return NE{}; },
+                                [](tacky::less_than_operator) -> cond_code { return L{}; },
+                                [](tacky::less_than_or_equal_operator) -> cond_code { return LE{}; },
+                                [](tacky::greater_than_operator) -> cond_code { return G{}; },
+                                [](tacky::greater_than_or_equal_operator) -> cond_code { return GE{}; },
+                                [](auto) -> cond_code {
+                                    throw std::logic_error("Binary operator is not converted into a binary operator");
+                                },
+                              },
+                              op);
+        }
+        else
+        {
+            return std::visit(visitor{
+                                [](tacky::equal_operator) -> cond_code { return E{}; },
+                                [](tacky::not_equal_operator) -> cond_code { return NE{}; },
+                                [](tacky::less_than_operator) -> cond_code { return B{}; },
+                                [](tacky::less_than_or_equal_operator) -> cond_code { return BE{}; },
+                                [](tacky::greater_than_operator) -> cond_code { return A{}; },
+                                [](tacky::greater_than_or_equal_operator) -> cond_code { return AE{}; },
+                                [](auto) -> cond_code {
+                                    throw std::logic_error("Binary operator is not converted into a binary operator");
+                                },
+                              },
+                              op);
+        }
+    };
+
+    auto src1_type = get_assembly_type(stmt.src1, m_table);
+    if (is_relational_operator(stmt.op))
+    {
+        auto op_type = get_type(stmt.src1, m_table);
+
+        auto dst_type = get_assembly_type(stmt.dst, m_table);
+        m_instructions.emplace_back(cmp{ process(stmt.src2), process(stmt.src1), src1_type });
+        m_instructions.emplace_back(mov_instruction{ immediate{ 0 }, process(stmt.dst), dst_type });
+        m_instructions.emplace_back(setcc{ convert_tacky_op(stmt.op, op_type), process(stmt.dst) });
+
+        return;
+    }
+
+    if (std::holds_alternative<wccff::tacky::divide_operator>(stmt.op))
+    {
+        auto op_type = get_type(stmt.src1, m_table);
+        if (is_signed_type(op_type))
+        {
+            m_instructions.emplace_back(mov_instruction{ process(stmt.src1), ax{}, src1_type });
+            m_instructions.emplace_back(cdq{ src1_type });
+            m_instructions.emplace_back(idiv{ process(stmt.src2), src1_type });
+            m_instructions.emplace_back(mov_instruction{ ax{}, process(stmt.dst), src1_type });
+            return;
+        }
+        else
+        {
+            m_instructions.emplace_back(mov_instruction{ process(stmt.src1), ax{}, src1_type });
+            m_instructions.emplace_back(mov_instruction{ immediate{ 0 }, dx{}, src1_type });
+            m_instructions.emplace_back(div{ process(stmt.src2), src1_type });
+            m_instructions.emplace_back(mov_instruction{ ax{}, process(stmt.dst), src1_type });
+            return;
+        }
+    }
+
+    if (std::holds_alternative<wccff::tacky::remainder_operator>(stmt.op))
+    {
+        auto op_type = get_type(stmt.src1, m_table);
+
+        if (is_signed_type(op_type))
+        {
+            std::vector<instruction> instructions;
+            m_instructions.emplace_back(mov_instruction{ process(stmt.src1), ax{}, src1_type });
+            m_instructions.emplace_back(cdq{ src1_type });
+            m_instructions.emplace_back(idiv{ process(stmt.src2), src1_type });
+            m_instructions.emplace_back(mov_instruction{ dx{}, process(stmt.dst), src1_type });
+
+            return;
+        }
+        else
+        {
+            m_instructions.emplace_back(mov_instruction{ process(stmt.src1), ax{}, src1_type });
+            m_instructions.emplace_back(mov_instruction{ immediate{ 0 }, dx{}, src1_type });
+            m_instructions.emplace_back(idiv{ process(stmt.src2), src1_type });
+            m_instructions.emplace_back(mov_instruction{ dx{}, process(stmt.dst), src1_type });
+            return;
+        }
+    }
+
+    m_instructions.emplace_back(mov_instruction{ process(stmt.src1), process(stmt.dst), src1_type });
+    m_instructions.emplace_back(binary{ process_binary_operator(stmt.op, get_type(stmt.src1, m_table)),
+                                        process(stmt.src2),
+                                        process(stmt.dst),
+                                        src1_type });
+}
+
+operand assembly_generation::process(const constant &n)
+{
+    return std::visit(
+      visitor{
+        [](const int_constant &c) -> operand { return immediate{ c.value }; },
+        [](const long_constant &c) -> operand { return immediate{ c.value }; },
+        [](const unsigned_int_constant &c) -> operand { return immediate{ c.value }; },
+        [](const unsigned_long_constant &c) -> operand { return immediate{ static_cast<int64_t>(c.value) }; },
+        [](const auto &) -> operand { throw std::runtime_error("INTERNAL ERROR"); },
+      },
+      n);
+}
+
+void assembly_generation::process(const tacky::copy_statement &stmt)
+{
+    m_instructions.emplace_back(
+      mov_instruction{ process(stmt.src), process(stmt.dst), get_assembly_type(stmt.src, m_table) });
+}
+void assembly_generation::process(const tacky::fun_call &i)
+{
+    std::array<reg, 6> regs = { di{}, si{}, dx{}, cx{}, R8{}, R9{} };
+    int stack_padding = i.args.size() % 2 ? 8 : 0;
+
+    int stack_args = i.args.size() >= 6 ? i.args.size() - 6 : 0;
+    if (stack_padding != 0)
+    {
+        m_instructions.emplace_back(binary{ sub{}, immediate{ stack_padding }, SP{}, quad_word{} });
+    }
+
+    std::span args_in_reg(i.args.begin(), std::min(i.args.size(), 6ul));
+    int pos = 0;
+    for (const auto &arg : args_in_reg)
+    {
+        auto src = process(arg);
+        m_instructions.emplace_back(mov_instruction{ src, regs[pos], get_assembly_type(arg, m_table) });
+        pos++;
+    }
+
+    if (i.args.size() > 6)
+    {
+        std::span arg_on_stack(i.args.begin() + 6, i.args.size() - 6);
+        for (const auto &arg : arg_on_stack | std::views::reverse)
+        {
+            auto src = process(arg);
+            if (std::holds_alternative<immediate>(src) || std::holds_alternative<reg>(src) ||
+                std::holds_alternative<quad_word>(get_assembly_type(arg, m_table)))
+            {
+                m_instructions.emplace_back(push{ src });
+            }
+            else
+            {
+                m_instructions.emplace_back(mov_instruction{ src, ax{}, long_word{} });
+                m_instructions.emplace_back(push{ ax{} });
+            }
+        }
+    }
+
+    m_instructions.emplace_back(call{ process(i.fun_name) });
+
+    if (int to_remove = (stack_args * 8) + stack_padding; to_remove != 0)
+    {
+        m_instructions.emplace_back(binary{ add{}, immediate{ to_remove }, SP{}, quad_word{} });
+    }
+
+    m_instructions.emplace_back(mov_instruction{ ax{}, process(i.dst), get_assembly_type(i.dst, m_table) });
+
+    return;
+}
+function assembly_generation::process(const tacky::function_definition &f)
+{
+    auto p_source = [](int pos) -> operand {
+        switch (pos)
+        {
+            case 0:
+                return reg{ di{} };
+            case 1:
+                return reg{ si{} };
+            case 2:
+                return reg{ dx{} };
+            case 3:
+                return reg{ cx{} };
+            case 4:
+                return reg{ R8{} };
+            case 5:
+                return reg{ R9{} };
+            default:
+                return stack{ 16 + (pos - 6) * 8 };
+        }
+    };
+
+    int pos = 0;
+    for (const auto &p : f.params)
+    {
+        m_instructions.emplace_back(
+          mov_instruction{ p_source(pos), pseudo{ process(p) }, get_assembly_type(tacky::var{ p.name }, m_table) });
+        pos++;
+    }
+
+    process(f.instructions);
+    return function{ process(f.name), std::move(m_instructions), .is_global = f.global };
+}
+
+identifier assembly_generation::process(const wccff::tacky::identifier &id)
+{
+    return { id.name };
+}
+
+void assembly_generation::process(const tacky::instruction &i)
+{
+    std::visit(visitor{
+                 [&](const tacky::binary_statement &n) { process(n); },
+                 [&](const tacky::copy_statement &n) { process(n); },
+                 [&](const tacky::fun_call &n) { process(n); },
+                 [&](const tacky::jump_if_not_zero_statement &n) { process(n); },
+                 [&](const tacky::jump_if_zero_statement &n) { process(n); },
+                 [&](const tacky::jump_statement &n) { process(n); },
+                 [&](const tacky::label_statement &n) { process(n); },
+                 [&](const tacky::return_statement &n) { process(n); },
+                 [&](const tacky::sing_extend &n) { process(n); },
+                 [&](const tacky::truncate &n) { process(n); },
+                 [&](const tacky::unary_statement &n) { process(n); },
+                 [&](const tacky::zero_extend &n) { process(n); },
+                 [](const auto &) { throw std::runtime_error("NOT IMPLEMENTED"); },
+               },
+               i);
+}
+void assembly_generation::process(const tacky::jump_if_not_zero_statement &stmt)
+{
+    m_instructions.emplace_back(
+      cmp{ immediate{ 0 }, process(stmt.condition), get_assembly_type(stmt.condition, m_table) });
+    m_instructions.emplace_back(jmpcc{ NE{}, process(stmt.target) });
+}
+void assembly_generation::process(const tacky::jump_if_zero_statement &stmt)
+{
+    m_instructions.emplace_back(
+      cmp{ immediate{ 0 }, process(stmt.condition), get_assembly_type(stmt.condition, m_table) });
+    m_instructions.emplace_back(jmpcc{ E{}, process(stmt.target) });
+}
+void assembly_generation::process(const tacky::jump_statement &stmt)
+{
+    m_instructions.emplace_back(jmp{ process(stmt.target) });
+}
+void assembly_generation::process(const tacky::label_statement &stmt)
+{
+    m_instructions.emplace_back(label{ process(stmt.target) });
+}
+program assembly_generation::process(const tacky::program &program)
+{
+    std::vector<top_level> top_levels;
+    top_levels.reserve(program.function.size());
+    for (const auto &f : program.function)
+    {
+        top_levels.push_back(process(f));
+    }
+    return { std::move(top_levels) };
+}
+void assembly_generation::process(const tacky::return_statement &stmt)
+{
+    m_instructions.emplace_back(mov_instruction{ process(stmt.val), ax{}, get_assembly_type(stmt.val, m_table) });
+    m_instructions.emplace_back(ret_instruction{});
+}
+void assembly_generation::process(const tacky::sing_extend &i)
+{
+    m_instructions.emplace_back(movx{ process(i.src), process(i.dst) });
+}
+static_variable assembly_generation::process(const tacky::static_variable &f)
+{
+    auto align = std::visit(visitor{
+                              [](const wccff::int_type &) { return 4; },
+                              [](const wccff::long_type &) { return 8; },
+                              [](const wccff::unsigned_int_type &) { return 4; },
+                              [](const wccff::unsigned_long_type &) { return 8; },
+                              [](const auto &) -> int32_t { throw std::logic_error("Not implemented"); },
+                            },
+                            m_table.get(parser::identifier{ f.name.name }).value().type);
+    return { process(f.name), f.global, align, f.init };
+}
+top_level assembly_generation::process(const tacky::top_level &f)
+{
+    return std::visit(visitor{ [&](const tacky::function_definition &node) -> top_level { return process(node); },
+                               [&](const tacky::static_variable &node) -> top_level { return process(node); } },
+                      f);
+}
+void assembly_generation::process(const tacky::truncate &i)
+{
+    m_instructions.emplace_back(mov_instruction{ process(i.src), process(i.dst), long_word{} });
+}
+void assembly_generation::process(const tacky::unary_statement &stmt)
+{
+    if (std::holds_alternative<tacky::not_operator>(stmt.op))
+    {
+        m_instructions.emplace_back(
+          cmp{ operand{ immediate{ 0 } }, process(stmt.src), get_assembly_type(stmt.src, m_table) });
+        m_instructions.emplace_back(
+          mov_instruction{ immediate{ 0 }, process(stmt.dst), get_assembly_type(stmt.dst, m_table) });
+        m_instructions.emplace_back(setcc{ E{}, process(stmt.dst) });
+        return;
+    }
+
+    m_instructions.emplace_back(
+      mov_instruction{ process(stmt.src), process(stmt.dst), get_assembly_type(stmt.src, m_table) });
+    m_instructions.emplace_back(
+      unary{ process_unary_operator(stmt.op), process(stmt.dst), get_assembly_type(stmt.src, m_table) });
+}
+
+operand assembly_generation::process(const wccff::tacky::val &v)
+{
+    return std::visit(visitor{
+                        [&](const constant &n) -> operand { return process(n); },
+                        [&](const tacky::var &n) -> operand { return pseudo{ process(n.id) }; },
+                      },
+                      v);
+}
+
+void assembly_generation::process(const std::vector<tacky::instruction> &s)
+{
+    for (const auto &i : s)
+    {
+        process(i);
+    }
+}
+void assembly_generation::process(const tacky::zero_extend &i)
+{
+    m_instructions.emplace_back(mov_zero_extend{ process(i.src), process(i.dst) });
 }
 
 std::optional<std::vector<instruction>> fixing_up_instructions11(const mov_instruction &n)

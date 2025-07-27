@@ -113,7 +113,8 @@ bool compile(const std::filesystem::path &source_filename,
     //
 
     fmt::print("\nStart Assembly Generation\n");
-    auto codegen_result = assembly_generation::process(tacky_result, frontend_table);
+    assembly_generation::assembly_generation asm_generation{ frontend_table };
+    auto codegen_result = asm_generation.process(tacky_result);
 
     symbol_table::backend_symbol_table backend_table;
     backend_table.build(frontend_table);
