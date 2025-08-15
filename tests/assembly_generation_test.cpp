@@ -10,6 +10,7 @@ TEST_CASE("Binary Operations", "[assembly_generation]")
     using wccff::assembly_generation::pretty_print;
     auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("assembly_generation_results");
 
+    wccff::tacky::var double_var{ "double_var" };
     wccff::tacky::var int_var{ "int_var" };
     wccff::tacky::var long_var{ "long_var" };
     wccff::tacky::var uint_var{ "unsigned_int_var" };
@@ -27,137 +28,957 @@ TEST_CASE("Binary Operations", "[assembly_generation]")
     table.add(wccff::parser::identifier{ ulong_var.id.name },
               wccff::unsigned_long_type{},
               wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ double_var.id.name },
+              wccff::double_type{},
+              wccff::symbol_table::local_attributes{});
 
     auto ams_process = wccff::assembly_generation::assembly_generation(table);
     std::string result;
 
-    wccff::int_constant c_int1{ 1 };
-    wccff::int_constant c_int2{ 2 };
-    wccff::long_constant c_long1{ 1 };
-    wccff::long_constant c_long2{ 2 };
-    wccff::unsigned_int_constant c_uint1{ 1 };
-    wccff::unsigned_int_constant c_uint2{ 2 };
-    wccff::unsigned_long_constant c_ulong1{ 1 };
-    wccff::unsigned_long_constant c_ulong2{ 2 };
+    wccff::double_constant double_const_1{ 1.0 };
+    wccff::double_constant double_const_2{ 2.0 };
+    wccff::int_constant int_const_1{ 1 };
+    wccff::int_constant int_const_2{ 2 };
+    wccff::long_constant long_const_1{ 1 };
+    wccff::long_constant long_const_2{ 2 };
+    wccff::unsigned_int_constant uint_const_1{ 1 };
+    wccff::unsigned_int_constant uint_const_2{ 2 };
+    wccff::unsigned_long_constant ulong_const_1{ 1 };
+    wccff::unsigned_long_constant ulong_const_2{ 2 };
     wccff::tacky::var dst{ "tacky-1" };
 
     result += "--op=binary_and; src1 = int_constant; src2 = int_constant; dst = var--\n";
-    wccff::tacky::binary_statement stmt1{ wccff::tacky::binary_and_operator{}, c_int1, c_int2, dst };
+    wccff::tacky::binary_statement stmt1{ wccff::tacky::binary_and_operator{}, int_const_1, int_const_2, dst };
     ams_process.process(stmt1);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=binary_or; src1 = long_constant; src2 = long_constant; dst = var--\n";
-    wccff::tacky::binary_statement stmt2{ wccff::tacky::binary_or_operator{}, c_long1, c_long2, dst };
+    wccff::tacky::binary_statement stmt2{ wccff::tacky::binary_or_operator{}, long_const_1, long_const_2, dst };
     ams_process.process(stmt2);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=binary_xor; src1 = unsigned_int_constant; src2 = unsigned_int_constant; dst = var--\n";
-    wccff::tacky::binary_statement stmt3{ wccff::tacky::binary_xor_operator{}, c_uint1, c_uint2, dst };
+    wccff::tacky::binary_statement stmt3{ wccff::tacky::binary_xor_operator{}, uint_const_1, uint_const_2, dst };
     ams_process.process(stmt3);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=plus_operator; src1 = unsigned_long_constant; src2 = unsigned_long_constant; dst = var--\n";
-    wccff::tacky::binary_statement stmt4{ wccff::tacky::plus_operator{}, c_ulong1, c_ulong2, dst };
+    wccff::tacky::binary_statement stmt4{ wccff::tacky::plus_operator{}, ulong_const_1, ulong_const_2, dst };
     ams_process.process(stmt4);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=subtract_operator; src1 = int_var; src2 = int_constant; dst = var--\n";
-    wccff::tacky::binary_statement stmt5{ wccff::tacky::subtract_operator{}, int_var, c_int2, dst };
+    wccff::tacky::binary_statement stmt5{ wccff::tacky::subtract_operator{}, int_var, int_const_2, dst };
     ams_process.process(stmt5);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=multiply_operator; src1 = long_var; src2 = long_constant; dst = var--\n";
-    wccff::tacky::binary_statement stmt6{ wccff::tacky::multiply_operator{}, long_var, c_long2, dst };
+    wccff::tacky::binary_statement stmt6{ wccff::tacky::multiply_operator{}, long_var, long_const_2, dst };
     ams_process.process(stmt6);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=left_shift_operator; src1 = ulong_var; src2 = long_constant; dst = var--\n";
-    wccff::tacky::binary_statement stmt7{ wccff::tacky::left_shift_operator{}, ulong_var, c_ulong2, dst };
+    wccff::tacky::binary_statement stmt7{ wccff::tacky::left_shift_operator{}, ulong_var, ulong_const_2, dst };
     ams_process.process(stmt7);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=right_shift_operator; src1 = uint_constant; src2 = uint_var; dst = var--\n";
-    wccff::tacky::binary_statement stmt8{ wccff::tacky::right_shift_operator{}, c_uint1, uint_var, dst };
+    wccff::tacky::binary_statement stmt8{ wccff::tacky::right_shift_operator{}, uint_const_1, uint_var, dst };
     ams_process.process(stmt8);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=divide_operator; src1 = uint_constant; src2 = uint_var; dst = var--\n";
-    wccff::tacky::binary_statement stmt9{ wccff::tacky::divide_operator{}, c_uint1, uint_var, dst };
+    wccff::tacky::binary_statement stmt9{ wccff::tacky::divide_operator{}, uint_const_1, uint_var, dst };
     ams_process.process(stmt9);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=remainder_operator; src1 = uint_constant; src2 = uint_var; dst = var--\n";
-    wccff::tacky::binary_statement stmt10{ wccff::tacky::remainder_operator{}, c_uint1, uint_var, dst };
+    wccff::tacky::binary_statement stmt10{ wccff::tacky::remainder_operator{}, uint_const_1, uint_var, dst };
     ams_process.process(stmt10);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=equal_operator; src1 = uint_constant; src2 = uint_var; dst = var--\n";
-    wccff::tacky::binary_statement stmt11{ wccff::tacky::equal_operator{}, c_uint1, uint_var, dst };
+    wccff::tacky::binary_statement stmt11{ wccff::tacky::equal_operator{}, uint_const_1, uint_var, dst };
     ams_process.process(stmt11);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=not_equal_operator; src1 = int_constant; src2 = int_var; dst = var--\n";
-    wccff::tacky::binary_statement stmt12{ wccff::tacky::not_equal_operator{}, c_int1, int_var, dst };
+    wccff::tacky::binary_statement stmt12{ wccff::tacky::not_equal_operator{}, int_const_1, int_var, dst };
     ams_process.process(stmt12);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=less_than_operator; src1 = long_constant; src2 = long_var; dst = var--\n";
-    wccff::tacky::binary_statement stmt13{ wccff::tacky::less_than_operator{}, c_long1, long_var, dst };
+    wccff::tacky::binary_statement stmt13{ wccff::tacky::less_than_operator{}, long_const_1, long_var, dst };
     ams_process.process(stmt13);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=less_than_operator; src1 = ulong_constant; src2 = ulong_var; dst = var--\n";
-    wccff::tacky::binary_statement stmt14{ wccff::tacky::less_than_operator{}, c_ulong1, ulong_var, dst };
+    wccff::tacky::binary_statement stmt14{ wccff::tacky::less_than_operator{}, ulong_const_1, ulong_var, dst };
     ams_process.process(stmt14);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=less_than_or_equal_operator; src1 = long_constant; src2 = long_var; dst = var--\n";
-    wccff::tacky::binary_statement stmt15{ wccff::tacky::less_than_or_equal_operator{}, c_long1, long_var, dst };
+    wccff::tacky::binary_statement stmt15{ wccff::tacky::less_than_or_equal_operator{}, long_const_1, long_var, dst };
     ams_process.process(stmt15);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=less_than_or_equal_operator; src1 = ulong_constant; src2 = ulong_var; dst = var--\n";
-    wccff::tacky::binary_statement stmt16{ wccff::tacky::less_than_or_equal_operator{}, c_ulong1, ulong_var, dst };
+    wccff::tacky::binary_statement stmt16{ wccff::tacky::less_than_or_equal_operator{}, ulong_const_1, ulong_var, dst };
     ams_process.process(stmt16);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=greater_than_operator; src1 = long_constant; src2 = long_var; dst = var--\n";
-    wccff::tacky::binary_statement stmt17{ wccff::tacky::greater_than_operator{}, c_long1, long_var, dst };
+    wccff::tacky::binary_statement stmt17{ wccff::tacky::greater_than_operator{}, long_const_1, long_var, dst };
     ams_process.process(stmt17);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=greater_than_operator; src1 = ulong_constant; src2 = ulong_var; dst = var--\n";
-    wccff::tacky::binary_statement stmt18{ wccff::tacky::greater_than_operator{}, c_ulong1, ulong_var, dst };
+    wccff::tacky::binary_statement stmt18{ wccff::tacky::greater_than_operator{}, ulong_const_1, ulong_var, dst };
     ams_process.process(stmt18);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=greater_than_or_equal_operator; src1 = long_constant; src2 = long_var; dst = var--\n";
-    wccff::tacky::binary_statement stmt19{ wccff::tacky::greater_than_or_equal_operator{}, c_long1, long_var, dst };
+    wccff::tacky::binary_statement stmt19{ wccff::tacky::greater_than_or_equal_operator{},
+                                           long_const_1,
+                                           long_var,
+                                           dst };
     ams_process.process(stmt19);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=greater_than_or_equal_operator; src1 = ulong_constant; src2 = ulong_var; dst = var--\n";
-    wccff::tacky::binary_statement stmt20{ wccff::tacky::greater_than_or_equal_operator{}, c_ulong1, ulong_var, dst };
+    wccff::tacky::binary_statement stmt20{ wccff::tacky::greater_than_or_equal_operator{},
+                                           ulong_const_1,
+                                           ulong_var,
+                                           dst };
     ams_process.process(stmt20);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    // Double Operations
+    result += "---Double Operations---\n";
+    result += "--op=plus_operator; src1 = double_constant; src2 = double_var; dst = var--\n";
+    wccff::tacky::binary_statement stmt21{ wccff::tacky::plus_operator{}, double_const_1, double_var, dst };
+    ams_process.process(stmt21);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=subtract_operator; src1 = double_var; src2 = double_constant; dst = var--\n";
+    wccff::tacky::binary_statement stmt22{ wccff::tacky::subtract_operator{}, double_var, double_const_1, dst };
+    ams_process.process(stmt22);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=multiply_operator; src1 = double_var; src2 = double_constant; dst = var--\n";
+    wccff::tacky::binary_statement stmt23{ wccff::tacky::multiply_operator{}, double_var, double_const_1, dst };
+    ams_process.process(stmt23);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=divide_operator; src1 = double_var; src2 = double_constant; dst = var--\n";
+    wccff::tacky::binary_statement stmt24{ wccff::tacky::divide_operator{}, double_var, double_const_1, dst };
+    ams_process.process(stmt24);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=equal_operator; src1 = double_var; src2 = double_constant; dst = var--\n";
+    wccff::tacky::binary_statement stmt25{ wccff::tacky::equal_operator{}, double_var, double_const_1, dst };
+    ams_process.process(stmt25);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=not_equal_operator; src1 = double_var; src2 = double_constant; dst = var--\n";
+    wccff::tacky::binary_statement stmt26{ wccff::tacky::not_equal_operator{}, double_var, double_const_1, dst };
+    ams_process.process(stmt26);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=less_than_operator; src1 = double_var; src2 = double_constant; dst = var--\n";
+    wccff::tacky::binary_statement stmt27{ wccff::tacky::less_than_operator{}, double_var, double_const_1, dst };
+    ams_process.process(stmt27);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=less_than_or_equal_operator; src1 = double_constant; src2 = double_constant; dst = var--\n";
+    wccff::tacky::binary_statement stmt28{ wccff::tacky::less_than_or_equal_operator{},
+                                           double_const_2,
+                                           double_const_1,
+                                           dst };
+    ams_process.process(stmt28);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=greater_than_operator; src1 = double_var; src2 = double_constant; dst = var--\n";
+    wccff::tacky::binary_statement stmt29{ wccff::tacky::greater_than_operator{}, double_var, double_const_1, dst };
+    ams_process.process(stmt29);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=greater_than_or_equal_operator; src1 = double_constant; src2 = double_constant; dst = var--\n";
+    wccff::tacky::binary_statement stmt30{ wccff::tacky::greater_than_or_equal_operator{},
+                                           double_const_2,
+                                           double_const_1,
+                                           dst };
+    ams_process.process(stmt30);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    ApprovalTests::Approvals::verify(result);
+}
+
+TEST_CASE("Double to Uint", "[assembly_generation]")
+{
+    using wccff::assembly_generation::pretty_print;
+    auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("assembly_generation_results");
+
+    wccff::tacky::var double_var{ "double_var" };
+    wccff::tacky::var int_var{ "int_var" };
+    wccff::tacky::var long_var{ "long_var" };
+    wccff::tacky::var uint_var{ "unsigned_int_var" };
+    wccff::tacky::var ulong_var{ "unsigned_long_var" };
+
+    wccff::symbol_table::symbol_table table;
+    table.add(wccff::parser::identifier{ "tacky-1" }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ int_var.id.name }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ long_var.id.name },
+              wccff::long_type{},
+              wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ uint_var.id.name },
+              wccff::unsigned_int_type{},
+              wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ ulong_var.id.name },
+              wccff::unsigned_long_type{},
+              wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ double_var.id.name },
+              wccff::double_type{},
+              wccff::symbol_table::local_attributes{});
+
+    auto ams_process = wccff::assembly_generation::assembly_generation(table);
+    std::string result;
+
+    wccff::double_constant double_const{ 1.0 };
+    wccff::tacky::var dst{ "tacky-1" };
+
+    result += "--src = double_constant; dst = uint_var--\n";
+    wccff::tacky::double_to_uint stmt01{ double_const, uint_var };
+    ams_process.process(stmt01);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--src = double_var; dst = uint_var--\n";
+    wccff::tacky::double_to_uint stmt02{ double_var, uint_var };
+    ams_process.process(stmt02);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--src = double_constant; dst = ulong_var--\n";
+    wccff::tacky::double_to_uint stmt03{ double_const, ulong_var };
+    ams_process.process(stmt03);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--src = double_var; dst = ulong_var--\n";
+    wccff::tacky::double_to_uint stmt04{ double_var, ulong_var };
+    ams_process.process(stmt04);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    ApprovalTests::Approvals::verify(result);
+}
+
+TEST_CASE("Function Call", "[assembly_generation]")
+{
+    using wccff::assembly_generation::pretty_print;
+    auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("assembly_generation_results");
+
+    wccff::tacky::var double_var{ "double_var" };
+    wccff::tacky::var int_var{ "int_var" };
+    wccff::tacky::var long_var{ "long_var" };
+    wccff::tacky::var uint_var{ "unsigned_int_var" };
+    wccff::tacky::var ulong_var{ "unsigned_long_var" };
+
+    wccff::symbol_table::symbol_table table;
+    table.add(wccff::parser::identifier{ "tacky-1" }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ int_var.id.name }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ long_var.id.name },
+              wccff::long_type{},
+              wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ uint_var.id.name },
+              wccff::unsigned_int_type{},
+              wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ ulong_var.id.name },
+              wccff::unsigned_long_type{},
+              wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ double_var.id.name },
+              wccff::double_type{},
+              wccff::symbol_table::local_attributes{});
+
+    auto ams_process = wccff::assembly_generation::assembly_generation(table);
+    std::string result;
+
+    wccff::double_constant double_const_1{ 1.0 };
+    wccff::double_constant double_const_2{ 2.0 };
+    wccff::int_constant int_const_1{ 1 };
+    wccff::int_constant int_const_2{ 2 };
+    wccff::long_constant long_const_1{ 1 };
+    wccff::long_constant long_const_2{ 2 };
+    wccff::unsigned_int_constant uint_const_1{ 1 };
+    wccff::unsigned_int_constant uint_const_2{ 2 };
+    wccff::unsigned_long_constant ulong_const_1{ 1 };
+    wccff::unsigned_long_constant ulong_const_2{ 2 };
+    wccff::tacky::var dst{ "tacky-1" };
+
+    wccff::tacky::identifier no_params{ "no_params" };
+    wccff::tacky::identifier one_param{ "one_param" };
+    wccff::tacky::identifier six_params{ "six_params" };
+    wccff::tacky::identifier seven_params{ "seven_params" };
+    wccff::tacky::identifier eight_params{ "eight_params" };
+    wccff::tacky::identifier nine_params{ "nine_params" };
+
+    result += "----fun_name = no_params; params = NONE; dst = tacky-1\n";
+    wccff::tacky::fun_call stmt1{ no_params, {}, dst };
+    ams_process.process(stmt1);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "----fun_name = one_param; params = int_const; dst = tacky-1\n";
+    wccff::tacky::fun_call stmt2{ one_param, { int_const_1 }, dst };
+    ams_process.process(stmt2);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "----fun_name = one_param; params = int_var; dst = tacky-1\n";
+    wccff::tacky::fun_call stmt3{ one_param, { int_var }, dst };
+    ams_process.process(stmt3);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "----fun_name = one_param; params = long_const; dst = tacky-1\n";
+    wccff::tacky::fun_call stmt4{ one_param, { long_const_1 }, dst };
+    ams_process.process(stmt4);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "----fun_name = one_param; params = long_var; dst = tacky-1\n";
+    wccff::tacky::fun_call stmt5{ one_param, { long_var }, dst };
+    ams_process.process(stmt5);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "----fun_name = one_param; params = uint_const; dst = tacky-1\n";
+    wccff::tacky::fun_call stmt6{ one_param, { uint_const_1 }, dst };
+    ams_process.process(stmt6);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "----fun_name = one_param; params = uint_var; dst = tacky-1\n";
+    wccff::tacky::fun_call stmt7{ one_param, { uint_var }, dst };
+    ams_process.process(stmt7);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "----fun_name = one_param; params = ulong_var; dst = tacky-1\n";
+    wccff::tacky::fun_call stmt8{ one_param, { ulong_var }, dst };
+    ams_process.process(stmt8);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "----fun_name = six_params; params = int_const, int_var, long_const, long_var, uint_const, uint_var; dst "
+              "= tacky-1\n";
+    wccff::tacky::fun_call stmt9{ six_params,
+                                  {
+                                    int_const_1,
+                                    int_var,
+                                    long_var,
+                                    long_const_1,
+                                    uint_const_1,
+                                    uint_var,
+                                  },
+                                  dst };
+    ams_process.process(stmt9);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result +=
+      "----fun_name = seven_params; params = int_const, int_var, long_const, long_var, uint_const, uint_var; dst "
+      "= tacky-1\n";
+    wccff::tacky::fun_call stmt10{ seven_params,
+                                   {
+                                     int_const_1,
+                                     int_var,
+                                     long_const_1,
+                                     long_var,
+                                     uint_const_1,
+                                     uint_var,
+                                     ulong_const_1,
+                                   },
+                                   dst };
+    ams_process.process(stmt10);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result +=
+      "----fun_name = eight_params; params = int_const, int_var, long_const, long_var, uint_const, uint_var; dst "
+      "= tacky-1\n";
+    wccff::tacky::fun_call stmt11{ eight_params,
+                                   {
+                                     int_const_1,
+                                     int_var,
+                                     long_const_1,
+                                     long_var,
+                                     uint_const_1,
+                                     uint_var,
+                                     ulong_const_1,
+                                     ulong_var,
+                                   },
+                                   dst };
+    ams_process.process(stmt11);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "----fun_name = one_param; params = double_const; dst = tacky-1\n";
+    wccff::tacky::fun_call stmt12{ one_param, { double_const_1 }, dst };
+    ams_process.process(stmt12);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "----fun_name = one_param; params = double_var; dst = tacky-1\n";
+    wccff::tacky::fun_call stmt13{ one_param, { double_var }, dst };
+    ams_process.process(stmt13);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "----fun_name = eight_params; params = (double_const; dst = tacky-1\n";
+    wccff::tacky::fun_call stmt14{ eight_params,
+                                   {
+                                     double_const_1,
+                                     double_var,
+                                     double_const_2,
+                                     double_var,
+                                     double_const_1,
+                                     double_var,
+                                     double_const_2,
+                                     double_var,
+                                   },
+                                   dst };
+    ams_process.process(stmt14);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "----fun_name = nine_params; params = (double_const; dst = tacky-1\n";
+    wccff::tacky::fun_call stmt15{ nine_params,
+                                   {
+                                     double_const_1,
+                                     double_var,
+                                     double_const_2,
+                                     double_var,
+                                     double_const_1,
+                                     double_var,
+                                     double_const_2,
+                                     double_var,
+                                     double_var,
+                                   },
+                                   dst };
+    ams_process.process(stmt15);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    ApprovalTests::Approvals::verify(result);
+}
+
+TEST_CASE("Function Definition", "[assembly_generation]")
+{
+    using wccff::assembly_generation::pretty_print;
+    using wccff::symbol_table::local_attributes;
+    auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("assembly_generation_results");
+
+    wccff::tacky::identifier double_var_1{ "double_var_1" };
+    wccff::tacky::identifier double_var_2{ "double_var_2" };
+    wccff::tacky::identifier double_var_3{ "double_var_3" };
+    wccff::tacky::identifier double_var_4{ "double_var_4" };
+    wccff::tacky::identifier double_var_5{ "double_var_5" };
+    wccff::tacky::identifier double_var_6{ "double_var_6" };
+    wccff::tacky::identifier double_var_7{ "double_var_7" };
+    wccff::tacky::identifier double_var_8{ "double_var_8" };
+    wccff::tacky::identifier double_var_9{ "double_var_9" };
+    wccff::tacky::identifier int_var_1{ "int_var_1" };
+    wccff::tacky::identifier int_var_2{ "int_var_2" };
+    wccff::tacky::identifier long_var_1{ "long_var_1" };
+    wccff::tacky::identifier long_var_2{ "long_var_2" };
+    wccff::tacky::identifier uint_var_1{ "unsigned_int_var_1" };
+    wccff::tacky::identifier uint_var_2{ "unsigned_int_var_2" };
+    wccff::tacky::identifier ulong_var_1{ "unsigned_long_var_1" };
+    wccff::tacky::identifier ulong_var_2{ "unsigned_long_var_2" };
+
+    wccff::symbol_table::symbol_table table;
+    table.add(wccff::parser::identifier{ double_var_1.name }, wccff::double_type{}, local_attributes{});
+    table.add(wccff::parser::identifier{ double_var_2.name }, wccff::double_type{}, local_attributes{});
+    table.add(wccff::parser::identifier{ double_var_3.name }, wccff::double_type{}, local_attributes{});
+    table.add(wccff::parser::identifier{ double_var_4.name }, wccff::double_type{}, local_attributes{});
+    table.add(wccff::parser::identifier{ double_var_5.name }, wccff::double_type{}, local_attributes{});
+    table.add(wccff::parser::identifier{ double_var_6.name }, wccff::double_type{}, local_attributes{});
+    table.add(wccff::parser::identifier{ double_var_7.name }, wccff::double_type{}, local_attributes{});
+    table.add(wccff::parser::identifier{ double_var_8.name }, wccff::double_type{}, local_attributes{});
+    table.add(wccff::parser::identifier{ double_var_9.name }, wccff::double_type{}, local_attributes{});
+    table.add(wccff::parser::identifier{ int_var_1.name }, wccff::int_type{}, local_attributes{});
+    table.add(wccff::parser::identifier{ int_var_2.name }, wccff::int_type{}, local_attributes{});
+    table.add(wccff::parser::identifier{ long_var_1.name }, wccff::long_type{}, local_attributes{});
+    table.add(wccff::parser::identifier{ long_var_2.name }, wccff::long_type{}, local_attributes{});
+    table.add(wccff::parser::identifier{ uint_var_1.name }, wccff::unsigned_int_type{}, local_attributes{});
+    table.add(wccff::parser::identifier{ uint_var_2.name }, wccff::unsigned_int_type{}, local_attributes{});
+    table.add(wccff::parser::identifier{ ulong_var_1.name }, wccff::unsigned_long_type{}, local_attributes{});
+    table.add(wccff::parser::identifier{ ulong_var_2.name }, wccff::unsigned_long_type{}, local_attributes{});
+
+    auto ams_process = wccff::assembly_generation::assembly_generation(table);
+    std::string result;
+
+    wccff::double_constant double_const{ 1.0 };
+    wccff::int_constant int_const{ 1 };
+    wccff::long_constant long_const{ 1 };
+    wccff::unsigned_int_constant uint_const{ 1 };
+    wccff::unsigned_long_constant ulong_const{ 1 };
+    wccff::tacky::var dst{ "tacky-1" };
+
+    std::vector<wccff::tacky::instruction> double_body;
+    double_body.emplace_back(wccff::tacky::return_statement{ double_const });
+    std::vector<wccff::tacky::instruction> int_body;
+    int_body.emplace_back(wccff::tacky::return_statement{ int_const });
+    std::vector<wccff::tacky::instruction> long_body;
+    long_body.emplace_back(wccff::tacky::return_statement{ long_const });
+
+    wccff::tacky::identifier no_params{ "no_params" };
+    wccff::tacky::identifier one_param{ "one_param" };
+    wccff::tacky::identifier six_params{ "six_params" };
+    wccff::tacky::identifier seven_params{ "seven_params" };
+    wccff::tacky::identifier eight_params{ "eight_params" };
+    wccff::tacky::identifier nine_params{ "nine_params" };
+
+    result += "----fun_name = no_params; global = false; params = NONE; body = int_body\n";
+    wccff::tacky::function_definition stmt1{ no_params, false, {}, int_body };
+    result += pretty_print(ams_process.process(stmt1));
+
+    result += "\n----fun_name = one_param; global = true; params = int_var_1; body = int_body\n";
+    wccff::tacky::function_definition stmt2{ one_param, true, { int_var_1 }, int_body };
+    result += pretty_print(ams_process.process(stmt2));
+
+    result += "\n----fun_name = one_param; global = false; params = long_var_1; body = long_body\n";
+    wccff::tacky::function_definition stmt3{ one_param, false, { long_var_1 }, long_body };
+    result += pretty_print(ams_process.process(stmt3));
+
+    result += "\n----fun_name = six_params; global = false; params = int_var_1, int_var_2, long_var_1, long_var_2, "
+              "uint_var_1, uint_var_2; body = long_body\n";
+    wccff::tacky::function_definition stmt4{ six_params,
+                                             false,
+                                             { int_var_1, int_var_2, long_var_1, long_var_2, uint_var_1, uint_var_2 },
+                                             long_body };
+    result += pretty_print(ams_process.process(stmt4));
+
+    result += "\n----fun_name = seven_params; global = false; params = int_var_1, int_var_2, long_var_1, long_var_2, "
+              "uint_var_1, uint_var_2, ulong_var_1; body = long_body\n";
+    wccff::tacky::function_definition stmt5{
+        seven_params,
+        false,
+        { int_var_1, int_var_2, long_var_1, long_var_2, uint_var_1, uint_var_2, ulong_var_1 },
+        long_body
+    };
+    result += pretty_print(ams_process.process(stmt5));
+
+    result += "----fun_name = no_params; global = false; params = NONE; body = double_body\n";
+    wccff::tacky::function_definition stmt6{ no_params, false, {}, double_body };
+    result += pretty_print(ams_process.process(stmt6));
+
+    result += "----fun_name = eight_params; global = false; params = double_var_1, double_var_2, double_var_3, "
+              "double_var_4, double_var_5, double_var_6, double_var_7, double_var_8; body = double_body\n";
+    wccff::tacky::function_definition stmt7{ eight_params,
+                                             false,
+                                             { double_var_1,
+                                               double_var_2,
+                                               double_var_3,
+                                               double_var_4,
+                                               double_var_5,
+                                               double_var_6,
+                                               double_var_7,
+                                               double_var_8 },
+                                             double_body };
+    result += pretty_print(ams_process.process(stmt7));
+
+    result +=
+      "----fun_name = nine_params; global = false; params = double_var_1, double_var_2, double_var_3, "
+      "double_var_4, double_var_5, double_var_6, double_var_7, double_var_8, double_var_8; body = double_body\n";
+    wccff::tacky::function_definition stmt8{ nine_params,
+                                             false,
+                                             {
+                                               double_var_1,
+                                               double_var_2,
+                                               double_var_3,
+                                               double_var_4,
+                                               double_var_5,
+                                               double_var_6,
+                                               double_var_7,
+                                               double_var_8,
+                                               double_var_9,
+                                             },
+                                             double_body };
+    result += pretty_print(ams_process.process(stmt8));
+
+    ApprovalTests::Approvals::verify(result);
+}
+
+TEST_CASE("Others", "[assembly_generation]")
+{
+    using wccff::assembly_generation::pretty_print;
+    auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("assembly_generation_results");
+
+    wccff::tacky::var double_var{ "double_var" };
+    wccff::tacky::var int_var{ "int_var" };
+    wccff::tacky::var long_var{ "long_var" };
+    wccff::tacky::var uint_var{ "unsigned_int_var" };
+    wccff::tacky::var ulong_var{ "unsigned_long_var" };
+
+    wccff::symbol_table::symbol_table table;
+    table.add(wccff::parser::identifier{ "tacky-1" }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ int_var.id.name }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ long_var.id.name },
+              wccff::long_type{},
+              wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ uint_var.id.name },
+              wccff::unsigned_int_type{},
+              wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ ulong_var.id.name },
+              wccff::unsigned_long_type{},
+              wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ double_var.id.name },
+              wccff::double_type{},
+              wccff::symbol_table::local_attributes{});
+
+    auto ams_process = wccff::assembly_generation::assembly_generation(table);
+    std::string result;
+
+    wccff::double_constant double_const{ 1.0 };
+    wccff::int_constant int_const{ 1 };
+    wccff::long_constant long_const{ 1 };
+    wccff::unsigned_int_constant uint_const{ 1 };
+    wccff::unsigned_long_constant ulong_const{ 1 };
+    wccff::tacky::var dst{ "tacky-1" };
+
+    wccff::tacky::identifier target{ "jump_target" };
+
+    {
+        result += "---Jump If Not Zero---\n";
+        result += "--condition = double_constant; target = jump_target--\n";
+        wccff::tacky::jump_if_not_zero_statement stmt01{ double_const, target };
+        ams_process.process(stmt01);
+        result += pretty_print(ams_process.get_instructions());
+        ams_process.reset_instructions();
+
+        result += "--condition = double_var; target = jump_target--\n";
+        wccff::tacky::jump_if_not_zero_statement stmt02{ double_var, target };
+        ams_process.process(stmt02);
+        result += pretty_print(ams_process.get_instructions());
+        ams_process.reset_instructions();
+
+        result += "--condition = int_constant; target = jump_target--\n";
+        wccff::tacky::jump_if_not_zero_statement stmt03{ int_const, target };
+        ams_process.process(stmt03);
+        result += pretty_print(ams_process.get_instructions());
+        ams_process.reset_instructions();
+
+        result += "--condition = int_var; target = jump_target--\n";
+        wccff::tacky::jump_if_not_zero_statement stmt04{ int_var, target };
+        ams_process.process(stmt04);
+        result += pretty_print(ams_process.get_instructions());
+        ams_process.reset_instructions();
+
+        result += "--condition = long_constant; target = jump_target--\n";
+        wccff::tacky::jump_if_not_zero_statement stmt05{ long_const, target };
+        ams_process.process(stmt05);
+        result += pretty_print(ams_process.get_instructions());
+        ams_process.reset_instructions();
+
+        result += "--condition = long_var; target = jump_target--\n";
+        wccff::tacky::jump_if_not_zero_statement stmt06{ long_var, target };
+        ams_process.process(stmt06);
+        result += pretty_print(ams_process.get_instructions());
+        ams_process.reset_instructions();
+
+        result += "--condition = unsigned_int_constant; target = jump_target--\n";
+        wccff::tacky::jump_if_not_zero_statement stmt07{ uint_const, target };
+        ams_process.process(stmt07);
+        result += pretty_print(ams_process.get_instructions());
+        ams_process.reset_instructions();
+
+        result += "--condition = unsigned_int_var; target = jump_target--\n";
+        wccff::tacky::jump_if_not_zero_statement stmt08{ uint_var, target };
+        ams_process.process(stmt08);
+        result += pretty_print(ams_process.get_instructions());
+        ams_process.reset_instructions();
+
+        result += "--condition = unsigned_long_constant; target = jump_target--\n";
+        wccff::tacky::jump_if_not_zero_statement stmt09{ ulong_const, target };
+        ams_process.process(stmt09);
+        result += pretty_print(ams_process.get_instructions());
+        ams_process.reset_instructions();
+
+        result += "--condition = unsigned_long_var; target = jump_target--\n";
+        wccff::tacky::jump_if_not_zero_statement stmt10{ ulong_var, target };
+        ams_process.process(stmt10);
+        result += pretty_print(ams_process.get_instructions());
+        ams_process.reset_instructions();
+    }
+    {
+        result += "---Jump If Zero---\n";
+        result += "--condition = double_constant; target = jump_target--\n";
+        wccff::tacky::jump_if_zero_statement stmt01{ double_const, target };
+        ams_process.process(stmt01);
+        result += pretty_print(ams_process.get_instructions());
+        ams_process.reset_instructions();
+
+        result += "--condition = double_var; target = jump_target--\n";
+        wccff::tacky::jump_if_zero_statement stmt02{ double_var, target };
+        ams_process.process(stmt02);
+        result += pretty_print(ams_process.get_instructions());
+        ams_process.reset_instructions();
+
+        result += "--condition = int_constant; target = jump_target--\n";
+        wccff::tacky::jump_if_zero_statement stmt03{ int_const, target };
+        ams_process.process(stmt03);
+        result += pretty_print(ams_process.get_instructions());
+        ams_process.reset_instructions();
+
+        result += "--condition = int_var; target = jump_target--\n";
+        wccff::tacky::jump_if_zero_statement stmt04{ int_var, target };
+        ams_process.process(stmt04);
+        result += pretty_print(ams_process.get_instructions());
+        ams_process.reset_instructions();
+
+        result += "--condition = long_constant; target = jump_target--\n";
+        wccff::tacky::jump_if_zero_statement stmt05{ long_const, target };
+        ams_process.process(stmt05);
+        result += pretty_print(ams_process.get_instructions());
+        ams_process.reset_instructions();
+
+        result += "--condition = long_var; target = jump_target--\n";
+        wccff::tacky::jump_if_zero_statement stmt06{ long_var, target };
+        ams_process.process(stmt06);
+        result += pretty_print(ams_process.get_instructions());
+        ams_process.reset_instructions();
+
+        result += "--condition = unsigned_int_constant; target = jump_target--\n";
+        wccff::tacky::jump_if_zero_statement stmt07{ uint_const, target };
+        ams_process.process(stmt07);
+        result += pretty_print(ams_process.get_instructions());
+        ams_process.reset_instructions();
+
+        result += "--condition = unsigned_int_var; target = jump_target--\n";
+        wccff::tacky::jump_if_zero_statement stmt08{ uint_var, target };
+        ams_process.process(stmt08);
+        result += pretty_print(ams_process.get_instructions());
+        ams_process.reset_instructions();
+
+        result += "--condition = unsigned_long_constant; target = jump_target--\n";
+        wccff::tacky::jump_if_zero_statement stmt09{ ulong_const, target };
+        ams_process.process(stmt09);
+        result += pretty_print(ams_process.get_instructions());
+        ams_process.reset_instructions();
+
+        result += "--condition = unsigned_long_var; target = jump_target--\n";
+        wccff::tacky::jump_if_zero_statement stmt10{ ulong_var, target };
+        ams_process.process(stmt10);
+        result += pretty_print(ams_process.get_instructions());
+        ams_process.reset_instructions();
+    }
+    ApprovalTests::Approvals::verify(result);
+}
+
+TEST_CASE("Return Statement", "[assembly_generation]")
+{
+    using wccff::assembly_generation::pretty_print;
+    auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("assembly_generation_results");
+
+    wccff::tacky::var double_var{ "double_var" };
+    wccff::tacky::var int_var{ "int_var" };
+    wccff::tacky::var long_var{ "long_var" };
+    wccff::tacky::var uint_var{ "unsigned_int_var" };
+    wccff::tacky::var ulong_var{ "unsigned_long_var" };
+
+    wccff::symbol_table::symbol_table table;
+    table.add(wccff::parser::identifier{ "tacky-1" }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ int_var.id.name }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ long_var.id.name },
+              wccff::long_type{},
+              wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ uint_var.id.name },
+              wccff::unsigned_int_type{},
+              wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ ulong_var.id.name },
+              wccff::unsigned_long_type{},
+              wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ double_var.id.name },
+              wccff::double_type{},
+              wccff::symbol_table::local_attributes{});
+
+    auto ams_process = wccff::assembly_generation::assembly_generation(table);
+    std::string result;
+
+    wccff::double_constant double_const{ 1.0 };
+    wccff::int_constant int_const{ 1 };
+    wccff::long_constant long_const{ 1 };
+    wccff::unsigned_int_constant uint_const{ 1 };
+    wccff::unsigned_long_constant ulong_const{ 1 };
+    wccff::tacky::var dst{ "tacky-1" };
+
+    result += "--src1 = double_const--\n";
+    wccff::tacky::return_statement stmt01{ double_const };
+    ams_process.process(stmt01);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--src1 = double_var--\n";
+    wccff::tacky::return_statement stmt02{ double_var };
+    ams_process.process(stmt02);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--src1 = int_const--\n";
+    wccff::tacky::return_statement stmt03{ int_const };
+    ams_process.process(stmt03);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--src1 = int_var--\n";
+    wccff::tacky::return_statement stmt04{ int_var };
+    ams_process.process(stmt04);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--src1 = long_const--\n";
+    wccff::tacky::return_statement stmt05{ long_const };
+    ams_process.process(stmt05);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--src1 = long_var--\n";
+    wccff::tacky::return_statement stmt06{ long_var };
+    ams_process.process(stmt06);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--src1 = uint_const--\n";
+    wccff::tacky::return_statement stmt07{ uint_const };
+    ams_process.process(stmt07);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--src1 = uint_var--\n";
+    wccff::tacky::return_statement stmt08{ uint_var };
+    ams_process.process(stmt08);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--src1 = ulong_const--\n";
+    wccff::tacky::return_statement stmt09{ ulong_const };
+    ams_process.process(stmt09);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--src1 = ulong_var--\n";
+    wccff::tacky::return_statement stmt10{ ulong_var };
+    ams_process.process(stmt10);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    ApprovalTests::Approvals::verify(result);
+}
+
+TEST_CASE("Unary Operators", "[assembly_generation]")
+{
+    using wccff::assembly_generation::pretty_print;
+    auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("assembly_generation_results");
+
+    wccff::tacky::var double_var{ "double_var" };
+    wccff::tacky::var int_var{ "int_var" };
+    wccff::tacky::var long_var{ "long_var" };
+    wccff::tacky::var uint_var{ "unsigned_int_var" };
+    wccff::tacky::var ulong_var{ "unsigned_long_var" };
+
+    wccff::symbol_table::symbol_table table;
+    table.add(wccff::parser::identifier{ "tacky-1" }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ int_var.id.name }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ long_var.id.name },
+              wccff::long_type{},
+              wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ uint_var.id.name },
+              wccff::unsigned_int_type{},
+              wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ ulong_var.id.name },
+              wccff::unsigned_long_type{},
+              wccff::symbol_table::local_attributes{});
+    table.add(wccff::parser::identifier{ double_var.id.name },
+              wccff::double_type{},
+              wccff::symbol_table::local_attributes{});
+
+    auto ams_process = wccff::assembly_generation::assembly_generation(table);
+    std::string result;
+
+    wccff::double_constant double_const{ 1.0 };
+    wccff::int_constant int_const{ 1 };
+    wccff::long_constant long_const{ 1 };
+    wccff::unsigned_int_constant uint_const{ 1 };
+    wccff::unsigned_long_constant ulong_const{ 1 };
+    wccff::tacky::var dst{ "tacky-1" };
+
+    result += "--op=binary_complement_operator; src1 = int_constant; dst = var--\n";
+    wccff::tacky::unary_statement stmt01{ wccff::tacky::binary_complement_operator{}, int_const, dst };
+    ams_process.process(stmt01);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=negate_operator; src1 = long_constant; dst = var--\n";
+    wccff::tacky::unary_statement stmt02{ wccff::tacky::negate_operator{}, long_const, dst };
+    ams_process.process(stmt02);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=not_operator; src1 = unsigned_int_constant; dst = var--\n";
+    wccff::tacky::unary_statement stmt03{ wccff::tacky::not_operator{}, uint_const, dst };
+    ams_process.process(stmt03);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=binary_complement_operator; src1 = unsigned_long_constant; dst = var--\n";
+    wccff::tacky::unary_statement stmt04{ wccff::tacky::binary_complement_operator{}, ulong_const, dst };
+    ams_process.process(stmt04);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "---Double Operation---\n";
+    result += "--op=negate_operator; src1 = double_constant; dst = var--\n";
+    wccff::tacky::unary_statement stmt05{ wccff::tacky::negate_operator{}, double_const, dst };
+    ams_process.process(stmt05);
+    result += pretty_print(ams_process.get_instructions());
+    ams_process.reset_instructions();
+
+    result += "--op=negate_operator; src1 = double_constant; dst = var--\n";
+    wccff::tacky::unary_statement stmt06{ wccff::tacky::not_operator{}, double_const, dst };
+    ams_process.process(stmt06);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
@@ -194,6 +1015,8 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
     using wccff::long_word;
     using wccff::quad_word;
     using wccff::assembly_generation::ax;
+    using wccff::assembly_generation::XMM0;
+    using wccff::assembly_generation::XMM1;
 
     using wccff::assembly_generation::cx;
     using wccff::assembly_generation::data;
@@ -294,6 +1117,15 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
 
             cmp c8{ .lhs = stack{ 8 }, .rhs = ax{}, .type = quad_word{} };
             REQUIRE(fixing_up_instructions11(c8).has_value() == false);
+
+            cmp c9{ .lhs = XMM0{}, .rhs = XMM1{}, .type = wccff::double_asm{} };
+            REQUIRE(fixing_up_instructions11(c9).has_value() == false);
+
+            cmp c10{ .lhs = data{ "data_src" }, .rhs = XMM1{}, .type = wccff::double_asm{} };
+            REQUIRE(fixing_up_instructions11(c10).has_value() == false);
+
+            cmp c11{ .lhs = stack{ 8 }, .rhs = XMM1{}, .type = wccff::double_asm{} };
+            REQUIRE(fixing_up_instructions11(c11).has_value() == false);
         }
 
         std::string result;
@@ -371,6 +1203,128 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
         auto c12_result = fixing_up_instructions11(c12);
         REQUIRE(c12_result.has_value());
         result += pretty_print(c12_result.value());
+
+        result += "\n--lhs = reg; rhs = data; type = double_asm--\n";
+        cmp c13{ .lhs = XMM0{}, .rhs = data{ "data_dst" }, .type = wccff::double_asm{} };
+        auto c13_result = fixing_up_instructions11(c13);
+        REQUIRE(c13_result.has_value());
+        result += pretty_print(c13_result.value());
+
+        result += "\n--lhs = reg; rhs = stack; type = double_asm--\n";
+        cmp c14{ .lhs = XMM0{}, .rhs = stack{ 16 }, .type = wccff::double_asm{} };
+        auto c14_result = fixing_up_instructions11(c14);
+        REQUIRE(c14_result.has_value());
+        result += pretty_print(c14_result.value());
+
+        result += "\n--lhs = immediate; rhs = data; type = double_asm--\n";
+        cmp c15{ .lhs = immediate{ 8 }, .rhs = data{ "data_dst" }, .type = wccff::double_asm{} };
+        auto c15_result = fixing_up_instructions11(c15);
+        REQUIRE(c15_result.has_value());
+        result += pretty_print(c15_result.value());
+
+        result += "\n--lhs = immediate; rhs = stack; type = double_asm--\n";
+        cmp c16{ .lhs = immediate{ 8 }, .rhs = stack{ 16 }, .type = wccff::double_asm{} };
+        auto c16_result = fixing_up_instructions11(c16);
+        REQUIRE(c16_result.has_value());
+        result += pretty_print(c16_result.value());
+
+        result += "\n--lhs = data; rhs = data; type = double_asm--\n";
+        cmp c17{ .lhs = data{ "data_src" }, .rhs = data{ "data_dst" }, .type = wccff::double_asm{} };
+        auto c17_result = fixing_up_instructions11(c17);
+        REQUIRE(c17_result.has_value());
+        result += pretty_print(c17_result.value());
+
+        result += "\n--lhs = data; rhs = stack; type = double_asm--\n";
+        cmp c18{ .lhs = data{ "data_src" }, .rhs = stack{ 16 }, .type = wccff::double_asm{} };
+        auto c18_result = fixing_up_instructions11(c18);
+        REQUIRE(c18_result.has_value());
+        result += pretty_print(c18_result.value());
+
+        ApprovalTests::Approvals::verify(result);
+    }
+
+    SECTION("cvtsi2sd")
+    {
+        using wccff::assembly_generation::cvtsi2sd;
+        using wccff::assembly_generation::fixing_up_instructions11;
+        using wccff::assembly_generation::XMM1;
+
+        SECTION("No Fixing needed")
+        {
+            cvtsi2sd b1{ .src = ax{}, .dst = XMM1{}, .src_type = long_word{} };
+            REQUIRE(fixing_up_instructions11(b1).has_value() == false);
+
+            cvtsi2sd b2{ .src = data{ "data_src" }, .dst = XMM1{}, .src_type = quad_word{} };
+            REQUIRE(fixing_up_instructions11(b2).has_value() == false);
+
+            cvtsi2sd b3{ .src = stack{ 8 }, .dst = XMM1{}, .src_type = long_word{} };
+            REQUIRE(fixing_up_instructions11(b3).has_value() == false);
+        }
+        std::string result;
+
+        result += "--src = immediate; dst = XMM1; type = long_word--\n";
+        cvtsi2sd b1{ .src = immediate{ 8 }, .dst = XMM1{}, .src_type = long_word{} };
+        auto b1_result = fixing_up_instructions11(b1);
+        REQUIRE(b1_result.has_value());
+        result += pretty_print(b1_result.value());
+
+        result += "\n--src = immediate; dst = data_dst; type = long_word--\n";
+        cvtsi2sd b2{ .src = immediate{ 8 }, .dst = data{ "data_dst" }, .src_type = quad_word{} };
+        auto b2_result = fixing_up_instructions11(b2);
+        REQUIRE(b2_result.has_value());
+        result += pretty_print(b2_result.value());
+
+        result += "\n--src = immediate; dst = stack; type = long_word--\n";
+        cvtsi2sd b3{ .src = immediate{ 8 }, .dst = stack{ 8 }, .src_type = long_word{} };
+        auto b3_result = fixing_up_instructions11(b3);
+        REQUIRE(b3_result.has_value());
+        result += pretty_print(b3_result.value());
+
+        result += "\n--src = reg; dst = data_dst; type = long_word--\n";
+        cvtsi2sd b4{ .src = ax{}, .dst = data{ "data_dst" }, .src_type = quad_word{} };
+        auto b4_result = fixing_up_instructions11(b4);
+        REQUIRE(b4_result.has_value());
+        result += pretty_print(b4_result.value());
+
+        result += "\n--src = reg; dst = stack; type = long_word--\n";
+        cvtsi2sd b5{ .src = ax{}, .dst = stack{ 8 }, .src_type = long_word{} };
+        auto b5_result = fixing_up_instructions11(b5);
+        REQUIRE(b5_result.has_value());
+        result += pretty_print(b5_result.value());
+
+        ApprovalTests::Approvals::verify(result);
+    }
+
+    SECTION("cvttsd2si")
+    {
+        using wccff::assembly_generation::cvttsd2si;
+        using wccff::assembly_generation::fixing_up_instructions11;
+        using wccff::assembly_generation::XMM1;
+
+        SECTION("No Fixing needed")
+        {
+            cvttsd2si b1{ .src = XMM1{}, .dst = ax{}, .dst_type = long_word{} };
+            REQUIRE(fixing_up_instructions11(b1).has_value() == false);
+
+            cvttsd2si b2{ .src = data{ "data_src" }, .dst = ax{}, .dst_type = quad_word{} };
+            REQUIRE(fixing_up_instructions11(b2).has_value() == false);
+
+            cvttsd2si b3{ .src = stack{ 8 }, .dst = ax{}, .dst_type = long_word{} };
+            REQUIRE(fixing_up_instructions11(b3).has_value() == false);
+        }
+        std::string result;
+
+        result += "--src = reg; dst = data_dst; type = long_word--\n";
+        cvttsd2si b1{ .src = XMM1{}, .dst = data{ "data_dst" }, .dst_type = long_word{} };
+        auto b1_result = fixing_up_instructions11(b1);
+        REQUIRE(b1_result.has_value());
+        result += pretty_print(b1_result.value());
+
+        result += "\n--src = reg; dst = stack; type = long_word--\n";
+        cvttsd2si b2{ .src = XMM1{}, .dst = stack{ 8 }, .dst_type = quad_word{} };
+        auto b2_result = fixing_up_instructions11(b2);
+        REQUIRE(b2_result.has_value());
+        result += pretty_print(b2_result.value());
 
         ApprovalTests::Approvals::verify(result);
     }
@@ -789,6 +1743,8 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     using wccff::assembly_generation::binary;
     using wccff::assembly_generation::call;
     using wccff::assembly_generation::cmp;
+    using wccff::assembly_generation::cvtsi2sd;
+    using wccff::assembly_generation::cvttsd2si;
     using wccff::assembly_generation::data;
     using wccff::assembly_generation::E;
     using wccff::assembly_generation::function;
@@ -1049,6 +2005,100 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += pretty_print(wccff::assembly_generation::L{});
     result += '\n';
     result += pretty_print(wccff::assembly_generation::LE{});
+    result += '\n';
+
+    // cvtsi2sd
+    result += "--cvtsi2sd--\n";
+    result += pretty_print(cvtsi2sd{ .src = immediate{ 42 }, .dst = R11{}, .src_type = long_word{} });
+    result += '\n';
+    result += pretty_print(cvtsi2sd{ .src = immediate{ 42 }, .dst = pseudo{ "bar" }, .src_type = quad_word{} });
+    result += '\n';
+    result += pretty_print(cvtsi2sd{ .src = immediate{ 42 }, .dst = stack{ 50 }, .src_type = long_word{} });
+    result += '\n';
+    result += pretty_print(cvtsi2sd{ .src = immediate{ 42 }, .dst = data{ "bar" }, .src_type = quad_word{} });
+    result += '\n';
+
+    result += pretty_print(cvtsi2sd{ .src = R10{}, .dst = R11{}, .src_type = long_word{} });
+    result += '\n';
+    result += pretty_print(cvtsi2sd{ .src = R10{}, .dst = pseudo{ "bar" }, .src_type = quad_word{} });
+    result += '\n';
+    result += pretty_print(cvtsi2sd{ .src = R10{}, .dst = stack{ 50 }, .src_type = long_word{} });
+    result += '\n';
+    result += pretty_print(cvtsi2sd{ .src = R10{}, .dst = data{ "bar" }, .src_type = quad_word{} });
+    result += '\n';
+
+    result += pretty_print(cvtsi2sd{ .src = pseudo{ "bar" }, .dst = R11{}, .src_type = long_word{} });
+    result += '\n';
+    result += pretty_print(cvtsi2sd{ .src = pseudo{ "bar" }, .dst = pseudo{ "bar" }, .src_type = quad_word{} });
+    result += '\n';
+    result += pretty_print(cvtsi2sd{ .src = pseudo{ "bar" }, .dst = stack{ 50 }, .src_type = long_word{} });
+    result += '\n';
+    result += pretty_print(cvtsi2sd{ .src = pseudo{ "bar" }, .dst = data{ "bar" }, .src_type = quad_word{} });
+    result += '\n';
+
+    result += pretty_print(cvtsi2sd{ .src = stack{ 50 }, .dst = R11{}, .src_type = long_word{} });
+    result += '\n';
+    result += pretty_print(cvtsi2sd{ .src = stack{ 50 }, .dst = pseudo{ "bar" }, .src_type = quad_word{} });
+    result += '\n';
+    result += pretty_print(cvtsi2sd{ .src = stack{ 50 }, .dst = stack{ 50 }, .src_type = long_word{} });
+    result += '\n';
+    result += pretty_print(cvtsi2sd{ .src = stack{ 50 }, .dst = data{ "bar" }, .src_type = quad_word{} });
+    result += '\n';
+
+    result += pretty_print(cvtsi2sd{ .src = data{ "bar" }, .dst = R11{}, .src_type = long_word{} });
+    result += '\n';
+    result += pretty_print(cvtsi2sd{ .src = data{ "bar" }, .dst = pseudo{ "bar" }, .src_type = quad_word{} });
+    result += '\n';
+    result += pretty_print(cvtsi2sd{ .src = data{ "bar" }, .dst = stack{ 50 }, .src_type = long_word{} });
+    result += '\n';
+    result += pretty_print(cvtsi2sd{ .src = data{ "bar" }, .dst = data{ "bar" }, .src_type = quad_word{} });
+    result += '\n';
+
+    // cvttsd2si
+    result += "--cvttsd2si--\n";
+    result += pretty_print(cvttsd2si{ .src = immediate{ 42 }, .dst = R11{}, .dst_type = long_word{} });
+    result += '\n';
+    result += pretty_print(cvttsd2si{ .src = immediate{ 42 }, .dst = pseudo{ "bar" }, .dst_type = quad_word{} });
+    result += '\n';
+    result += pretty_print(cvttsd2si{ .src = immediate{ 42 }, .dst = stack{ 50 }, .dst_type = long_word{} });
+    result += '\n';
+    result += pretty_print(cvttsd2si{ .src = immediate{ 42 }, .dst = data{ "bar" }, .dst_type = quad_word{} });
+    result += '\n';
+
+    result += pretty_print(cvttsd2si{ .src = R10{}, .dst = R11{}, .dst_type = long_word{} });
+    result += '\n';
+    result += pretty_print(cvttsd2si{ .src = R10{}, .dst = pseudo{ "bar" }, .dst_type = quad_word{} });
+    result += '\n';
+    result += pretty_print(cvttsd2si{ .src = R10{}, .dst = stack{ 50 }, .dst_type = long_word{} });
+    result += '\n';
+    result += pretty_print(cvttsd2si{ .src = R10{}, .dst = data{ "bar" }, .dst_type = quad_word{} });
+    result += '\n';
+
+    result += pretty_print(cvttsd2si{ .src = pseudo{ "bar" }, .dst = R11{}, .dst_type = long_word{} });
+    result += '\n';
+    result += pretty_print(cvttsd2si{ .src = pseudo{ "bar" }, .dst = pseudo{ "bar" }, .dst_type = quad_word{} });
+    result += '\n';
+    result += pretty_print(cvttsd2si{ .src = pseudo{ "bar" }, .dst = stack{ 50 }, .dst_type = long_word{} });
+    result += '\n';
+    result += pretty_print(cvttsd2si{ .src = pseudo{ "bar" }, .dst = data{ "bar" }, .dst_type = quad_word{} });
+    result += '\n';
+
+    result += pretty_print(cvttsd2si{ .src = stack{ 50 }, .dst = R11{}, .dst_type = long_word{} });
+    result += '\n';
+    result += pretty_print(cvttsd2si{ .src = stack{ 50 }, .dst = pseudo{ "bar" }, .dst_type = quad_word{} });
+    result += '\n';
+    result += pretty_print(cvttsd2si{ .src = stack{ 50 }, .dst = stack{ 50 }, .dst_type = long_word{} });
+    result += '\n';
+    result += pretty_print(cvttsd2si{ .src = stack{ 50 }, .dst = data{ "bar" }, .dst_type = quad_word{} });
+    result += '\n';
+
+    result += pretty_print(cvttsd2si{ .src = data{ "bar" }, .dst = R11{}, .dst_type = long_word{} });
+    result += '\n';
+    result += pretty_print(cvttsd2si{ .src = data{ "bar" }, .dst = pseudo{ "bar" }, .dst_type = quad_word{} });
+    result += '\n';
+    result += pretty_print(cvttsd2si{ .src = data{ "bar" }, .dst = stack{ 50 }, .dst_type = long_word{} });
+    result += '\n';
+    result += pretty_print(cvttsd2si{ .src = data{ "bar" }, .dst = data{ "bar" }, .dst_type = quad_word{} });
     result += '\n';
 
     // data

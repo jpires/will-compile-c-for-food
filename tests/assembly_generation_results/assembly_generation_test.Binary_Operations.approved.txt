@@ -72,4 +72,41 @@
 		Cmp(type(quad_word), lhs(Pseudo(unsigned_long_var)), rhs(Imm(1)))
 		Mov(type(long_word), src(Imm(0)), dst(Pseudo(tacky-1)))
 		SetCC(cond(AE), dst(Pseudo(tacky-1)))
+---Double Operations---
+--op=plus_operator; src1 = double_constant; src2 = double_var; dst = var--
+		Mov(type(double_asm), src(Data(double_constant_0)), dst(Pseudo(tacky-1)))
+		Binary(type(double_asm), op(Add), src(Pseudo(double_var)), dst(Pseudo(tacky-1)))
+--op=subtract_operator; src1 = double_var; src2 = double_constant; dst = var--
+		Mov(type(double_asm), src(Pseudo(double_var)), dst(Pseudo(tacky-1)))
+		Binary(type(double_asm), op(Sub), src(Data(double_constant_0)), dst(Pseudo(tacky-1)))
+--op=multiply_operator; src1 = double_var; src2 = double_constant; dst = var--
+		Mov(type(double_asm), src(Pseudo(double_var)), dst(Pseudo(tacky-1)))
+		Binary(type(double_asm), op(Mul), src(Data(double_constant_0)), dst(Pseudo(tacky-1)))
+--op=divide_operator; src1 = double_var; src2 = double_constant; dst = var--
+		Mov(type(double_asm), src(Pseudo(double_var)), dst(Pseudo(tacky-1)))
+		Binary(type(double_asm), op(Double Division), src(Data(double_constant_0)), dst(Pseudo(tacky-1)))
+--op=equal_operator; src1 = double_var; src2 = double_constant; dst = var--
+		Cmp(type(double_asm), lhs(Data(double_constant_0)), rhs(Pseudo(double_var)))
+		Mov(type(long_word), src(Imm(0)), dst(Pseudo(tacky-1)))
+		SetCC(cond(E), dst(Pseudo(tacky-1)))
+--op=not_equal_operator; src1 = double_var; src2 = double_constant; dst = var--
+		Cmp(type(double_asm), lhs(Data(double_constant_0)), rhs(Pseudo(double_var)))
+		Mov(type(long_word), src(Imm(0)), dst(Pseudo(tacky-1)))
+		SetCC(cond(NE), dst(Pseudo(tacky-1)))
+--op=less_than_operator; src1 = double_var; src2 = double_constant; dst = var--
+		Cmp(type(double_asm), lhs(Data(double_constant_0)), rhs(Pseudo(double_var)))
+		Mov(type(long_word), src(Imm(0)), dst(Pseudo(tacky-1)))
+		SetCC(cond(B), dst(Pseudo(tacky-1)))
+--op=less_than_or_equal_operator; src1 = double_constant; src2 = double_constant; dst = var--
+		Cmp(type(double_asm), lhs(Data(double_constant_0)), rhs(Data(double_constant_1)))
+		Mov(type(long_word), src(Imm(0)), dst(Pseudo(tacky-1)))
+		SetCC(cond(BE), dst(Pseudo(tacky-1)))
+--op=greater_than_operator; src1 = double_var; src2 = double_constant; dst = var--
+		Cmp(type(double_asm), lhs(Data(double_constant_0)), rhs(Pseudo(double_var)))
+		Mov(type(long_word), src(Imm(0)), dst(Pseudo(tacky-1)))
+		SetCC(cond(A), dst(Pseudo(tacky-1)))
+--op=greater_than_or_equal_operator; src1 = double_constant; src2 = double_constant; dst = var--
+		Cmp(type(double_asm), lhs(Data(double_constant_0)), rhs(Data(double_constant_1)))
+		Mov(type(long_word), src(Imm(0)), dst(Pseudo(tacky-1)))
+		SetCC(cond(AE), dst(Pseudo(tacky-1)))
 

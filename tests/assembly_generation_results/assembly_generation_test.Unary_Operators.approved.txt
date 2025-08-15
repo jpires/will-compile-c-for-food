@@ -1,0 +1,23 @@
+--op=binary_complement_operator; src1 = int_constant; dst = var--
+		Mov(type(long_word), src(Imm(1)), dst(Pseudo(tacky-1)))
+		Unary(type(long_word), op(Complement), dst(Pseudo(tacky-1)))
+--op=negate_operator; src1 = long_constant; dst = var--
+		Mov(type(quad_word), src(Imm(1)), dst(Pseudo(tacky-1)))
+		Unary(type(quad_word), op(Negate), dst(Pseudo(tacky-1)))
+--op=not_operator; src1 = unsigned_int_constant; dst = var--
+		Cmp(type(long_word), lhs(Imm(0)), rhs(Imm(1)))
+		Mov(type(long_word), src(Imm(0)), dst(Pseudo(tacky-1)))
+		SetCC(cond(E), dst(Pseudo(tacky-1)))
+--op=binary_complement_operator; src1 = unsigned_long_constant; dst = var--
+		Mov(type(quad_word), src(Imm(1)), dst(Pseudo(tacky-1)))
+		Unary(type(quad_word), op(Complement), dst(Pseudo(tacky-1)))
+---Double Operation---
+--op=negate_operator; src1 = double_constant; dst = var--
+		Mov(type(double_asm), src(Data(double_constant_1)), dst(Pseudo(tacky-1)))
+		Binary(type(double_asm), op(Binary Xor), src(Data(double_constant_0)), dst(Pseudo(tacky-1)))
+--op=negate_operator; src1 = double_constant; dst = var--
+		Binary(type(double_asm), op(Binary Xor), src(XMM0), dst(XMM0))
+		Cmp(type(double_asm), lhs(Data(double_constant_1)), rhs(XMM0))
+		Mov(type(long_word), src(Imm(0)), dst(Pseudo(tacky-1)))
+		SetCC(cond(E), dst(Pseudo(tacky-1)))
+

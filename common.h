@@ -21,6 +21,7 @@
 #define TYPES_H
 
 #include "visitor.h"
+#include <cmath>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -93,28 +94,63 @@ int32_t get_type_size(const type &t);
 
 bool is_signed_type(const type &t);
 
+/**
+ * \brief Stores the initial value for a double variable
+ * \remarks The values -0.0 and 0.0 are not equal to each other.
+ */
 struct double_initial
 {
     double value;
+    bool operator==(const double_initial &other) const
+    {
+        if (value == 0.0 && other.value == 0.0)
+        {
+            return std::signbit(value) == std::signbit(other.value);
+        };
+
+        return value == other.value;
+    };
 };
+
 struct int_initial
 {
     int32_t value;
+    bool operator==(const int_initial &other) const = default;
 };
+
 struct long_initial
 {
     int64_t value;
+    bool operator==(const long_initial &other) const = default;
 };
+
 struct unsigned_int_initial
 {
     uint32_t value;
+    bool operator==(const unsigned_int_initial &other) const = default;
 };
+
 struct unsigned_long_initial
 {
     uint64_t value;
+    bool operator==(const unsigned_long_initial &other) const = default;
 };
 
 using initial = std::variant<int_initial, long_initial, unsigned_int_initial, unsigned_long_initial, double_initial>;
+
+constexpr bool operator==(const initial &left, const initial &right)
+{
+    return std::visit(visitor{
+                        [](const int_initial &l, const int_initial &r) { return l == r; },
+                        [](const long_initial &l, const long_initial &r) { return l == r; },
+                        [](const unsigned_int_initial &l, const unsigned_int_initial &r) { return l == r; },
+                        [](const unsigned_long_initial &l, const unsigned_long_initial &r) { return l == r; },
+                        [](const double_initial &l, const double_initial &r) { return l == r; },
+                        [](const auto &, const auto &) { return false; },
+                      },
+                      left,
+                      right);
+}
 
 std::string pretty_print(const initial &i);
 
@@ -154,9 +190,70 @@ struct long_word
 struct quad_word
 {
 };
+struct double_asm
+{
+};
 
-using assembly_type = std::variant<long_word, quad_word>;
+using assembly_type = std::variant<long_word, quad_word, double_asm>;
 
 } // namespace wccff
+
+template<>
+struct std::hash<wccff::int_initial>
+{
+    std::size_t operator()(const wccff::int_initial &k) const noexcept { return std::hash<int32_t>()(k.value); }
+};
+template<>
+struct std::hash<wccff::long_initial>
+{
+    std::size_t operator()(const wccff::long_initial &k) const noexcept { return std::hash<int64_t>()(k.value); }
+};
+
+template<>
+struct std::hash<wccff::unsigned_int_initial>
+{
+    std::size_t operator()(const wccff::unsigned_int_initial &k) const noexcept
+    {
+        return std::hash<uint32_t>()(k.value);
+    }
+};
+template<>
+struct std::hash<wccff::unsigned_long_initial>
+{
+    std::size_t operator()(const wccff::unsigned_long_initial &k) const noexcept
+    {
+        return std::hash<uint64_t>()(k.value);
+    }
+};
+
+/**
+ * \brief Hash specialisation for double_initial
+ * \remark The hash for 0.0 and -0.0 are different.
+ */
+template<>
+struct std::hash<wccff::double_initial>
+{
+    std::size_t operator()(const wccff::double_initial &k) const noexcept
+    {
+        return *reinterpret_cast<const std::size_t *>(&k.value);
+    }
+};
+
+template<>
+struct std::hash<wccff::initial>
+{
+    std::size_t operator()(const wccff::initial &k) const noexcept
+    {
+        return std::visit(
+          wccff::visitor{
+            [](const wccff::int_initial &k1) { return std::hash<wccff::int_initial>()(k1); },
+            [](const wccff::long_initial &k1) { return std::hash<wccff::long_initial>()(k1); },
+            [](const wccff::unsigned_int_initial &k1) { return std::hash<wccff::unsigned_int_initial>()(k1); },
+            [](const wccff::unsigned_long_initial &k1) { return std::hash<wccff::unsigned_long_initial>()(k1); },
+            [](const wccff::double_initial &k1) { return std::hash<wccff::double_initial>()(k1); },
+          },
+          k);
+    }
+};
 
 #endif // TYPES_H

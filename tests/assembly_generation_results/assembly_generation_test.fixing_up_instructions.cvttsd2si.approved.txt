@@ -1,0 +1,8 @@
+--src = reg; dst = data_dst; type = long_word--
+		CVTTSD2SI(type(long_word), src(XMM1), dst(R11d))
+		Mov(type(long_word), src(R11d), dst(Data(data_dst)))
+
+--src = reg; dst = stack; type = long_word--
+		CVTTSD2SI(type(quad_word), src(XMM1), dst(R11d))
+		Mov(type(quad_word), src(R11d), dst(Stack(Imm(8))))
+

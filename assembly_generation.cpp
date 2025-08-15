@@ -28,6 +28,7 @@ namespace wccff::assembly_generation {
 assembly_type get_assembly_type(const wccff::constant &v)
 {
     return std::visit(visitor{
+                        [](const double_constant &) -> assembly_type { return double_asm{}; },
                         [](const int_constant &) -> assembly_type { return long_word{}; },
                         [](const long_constant &) -> assembly_type { return quad_word{}; },
                         [](const unsigned_int_constant &) -> assembly_type { return long_word{}; },
@@ -54,7 +55,7 @@ assembly_type get_assembly_type(const tacky::var &v, const wccff::symbol_table::
 
     return std::visit(
       visitor{
-        [](const wccff::double_type &) -> assembly_type { throw std::logic_error("Not implemented"); },
+        [](const wccff::double_type &) -> assembly_type { return double_asm{}; },
         [](const wccff::int_type &) -> assembly_type { return long_word{}; },
         [](const wccff::long_type &) -> assembly_type { return quad_word{}; },
         [](const wccff::unsigned_int_type &) -> assembly_type { return long_word{}; },
@@ -68,6 +69,7 @@ assembly_type get_assembly_type(const tacky::var &v, const wccff::symbol_table::
 type get_type(const wccff::constant &v)
 {
     return std::visit(visitor{
+                        [](const double_constant &) -> type { return double_type{}; },
                         [](const int_constant &) -> type { return int_type{}; },
                         [](const long_constant &) -> type { return long_type{}; },
                         [](const unsigned_int_constant &) -> type { return unsigned_int_type{}; },
@@ -114,7 +116,7 @@ binary_operator process_binary_operator(const wccff::tacky::binary_operator &op,
         [](const tacky::plus_operator &) -> binary_operator { return add{}; },
         [](const tacky::subtract_operator &) -> binary_operator { return sub{}; },
         [](const tacky::multiply_operator &) -> binary_operator { return mul{}; },
-        [](const tacky::divide_operator &) -> binary_operator { return sub{}; },
+        [](const tacky::divide_operator &) -> binary_operator { return div_double{}; },
         [](const tacky::remainder_operator &) -> binary_operator { return mul{}; },
         [](const tacky::binary_and_operator &) -> binary_operator { return binary_and{}; },
         [](const tacky::binary_or_operator &) -> binary_operator { return binary_or{}; },
@@ -262,6 +264,37 @@ void replace_pseudo_registers(binary &i, wccff::symbol_table::backend_symbol_tab
         i.dst = convert_pseudo(r, t);
     }
 }
+
+void replace_pseudo_registers(cvtsi2sd &i, wccff::symbol_table::backend_symbol_table &t)
+{
+    if (std::holds_alternative<pseudo>(i.src))
+    {
+        auto r = std::get<pseudo>(i.src);
+        i.src = convert_pseudo(r, t);
+    }
+
+    if (std::holds_alternative<pseudo>(i.dst))
+    {
+        auto r = std::get<pseudo>(i.dst);
+        i.dst = convert_pseudo(r, t);
+    }
+}
+
+void replace_pseudo_registers(cvttsd2si &i, wccff::symbol_table::backend_symbol_table &t)
+{
+    if (std::holds_alternative<pseudo>(i.src))
+    {
+        auto r = std::get<pseudo>(i.src);
+        i.src = convert_pseudo(r, t);
+    }
+
+    if (std::holds_alternative<pseudo>(i.dst))
+    {
+        auto r = std::get<pseudo>(i.dst);
+        i.dst = convert_pseudo(r, t);
+    }
+}
+
 void replace_pseudo_registers(cmp &i, wccff::symbol_table::backend_symbol_table &t)
 {
     if (std::holds_alternative<pseudo>(i.lhs))
@@ -319,11 +352,13 @@ void replace_pseudo_registers(function &f, wccff::symbol_table::backend_symbol_t
     {
         std::visit(visitor{
                      [&t](mov_instruction &inst) { replace_pseudo_registers(inst, t); },
-                     [&t](movx &inst) { return replace_pseudo_registers(inst, t); },
-                     [&t](mov_zero_extend &inst) { return replace_pseudo_registers(inst, t); },
+                     [&t](movx &inst) { replace_pseudo_registers(inst, t); },
+                     [&t](mov_zero_extend &inst) { replace_pseudo_registers(inst, t); },
                      [&t](unary &inst) { replace_pseudo_registers(inst, t); },
                      [&t](binary &inst) { replace_pseudo_registers(inst, t); },
                      [&t](cmp &inst) { replace_pseudo_registers(inst, t); },
+                     [&t](cvtsi2sd &inst) { replace_pseudo_registers(inst, t); },
+                     [&t](cvttsd2si &inst) { replace_pseudo_registers(inst, t); },
                      [&t](idiv &inst) { replace_pseudo_registers(inst, t); },
                      [&t](div &inst) { replace_pseudo_registers(inst, t); },
                      [](cdq &) { /*Nothing to do */ },
@@ -345,6 +380,7 @@ void replace_pseudo_registers(top_level &program, wccff::symbol_table::backend_s
     std::visit(visitor{
                  [&t](function &f) { replace_pseudo_registers(f, t); },
                  [](static_variable &) { /*Nothing to do here*/ },
+                 [](static_constant &) { /*Nothing to do here*/ },
                },
                program);
 }
@@ -375,6 +411,52 @@ bool is_memory_operand(const operand &o)
     return std::holds_alternative<stack>(o) || std::holds_alternative<data>(o);
 }
 
+void assembly_generation::process_binary_statement_double(const tacky::binary_statement &stmt)
+{
+    auto is_relational_operator = [](tacky::binary_operator op) {
+        return std::visit(visitor{
+                            [](tacky::equal_operator) { return true; },
+                            [](tacky::not_equal_operator) { return true; },
+                            [](tacky::less_than_operator) { return true; },
+                            [](tacky::less_than_or_equal_operator) { return true; },
+                            [](tacky::greater_than_operator) { return true; },
+                            [](tacky::greater_than_or_equal_operator) { return true; },
+                            [](auto) { return false; },
+                          },
+                          op);
+    };
+
+    auto convert_tacky_op = [](tacky::binary_operator op) {
+        return std::visit(visitor{
+                            [](tacky::equal_operator) -> cond_code { return E{}; },
+                            [](tacky::not_equal_operator) -> cond_code { return NE{}; },
+                            [](tacky::less_than_operator) -> cond_code { return B{}; },
+                            [](tacky::less_than_or_equal_operator) -> cond_code { return BE{}; },
+                            [](tacky::greater_than_operator) -> cond_code { return A{}; },
+                            [](tacky::greater_than_or_equal_operator) -> cond_code { return AE{}; },
+                            [](auto) -> cond_code {
+                                throw std::logic_error("Binary operator is not converted into a binary operator");
+                            },
+                          },
+                          op);
+    };
+
+    auto src1_type = get_assembly_type(stmt.src1, m_table);
+    if (is_relational_operator(stmt.op))
+    {
+        m_instructions.emplace_back(cmp{ process(stmt.src2), process(stmt.src1), src1_type });
+        m_instructions.emplace_back(mov_instruction{ immediate{ 0 }, process(stmt.dst), long_word{} });
+        m_instructions.emplace_back(setcc{ convert_tacky_op(stmt.op), process(stmt.dst) });
+
+        return;
+    }
+
+    m_instructions.emplace_back(mov_instruction{ process(stmt.src1), process(stmt.dst), src1_type });
+    m_instructions.emplace_back(binary{ process_binary_operator(stmt.op, get_type(stmt.src1, m_table)),
+                                        process(stmt.src2),
+                                        process(stmt.dst),
+                                        src1_type });
+}
 void assembly_generation::process(const tacky::binary_statement &stmt)
 {
     auto is_relational_operator = [](tacky::binary_operator op) {
@@ -424,6 +506,12 @@ void assembly_generation::process(const tacky::binary_statement &stmt)
     };
 
     auto src1_type = get_assembly_type(stmt.src1, m_table);
+    if (std::holds_alternative<double_asm>(src1_type))
+    {
+        process_binary_statement_double(stmt);
+        return;
+    }
+
     if (is_relational_operator(stmt.op))
     {
         auto op_type = get_type(stmt.src1, m_table);
@@ -492,6 +580,7 @@ operand assembly_generation::process(const constant &n)
 {
     return std::visit(
       visitor{
+        [&](const double_constant &c) -> operand { return process(c); },
         [](const int_constant &c) -> operand { return immediate{ c.value }; },
         [](const long_constant &c) -> operand { return immediate{ c.value }; },
         [](const unsigned_int_constant &c) -> operand { return immediate{ c.value }; },
@@ -506,42 +595,106 @@ void assembly_generation::process(const tacky::copy_statement &stmt)
     m_instructions.emplace_back(
       mov_instruction{ process(stmt.src), process(stmt.dst), get_assembly_type(stmt.src, m_table) });
 }
+
+operand assembly_generation::process(const double_constant &stmt)
+{
+    identifier constant_identifier;
+    auto initial_value = double_initial{ stmt.value };
+    if (m_constants_map.contains(initial_value))
+    {
+        const auto &value = m_constants_map[initial_value];
+        constant_identifier = value.name;
+    }
+    else
+    {
+        constant_identifier = identifier{ fmt::format("double_constant_{}", m_constant_count++) };
+        if (initial_value == double_initial{ -0.0f })
+        {
+            m_constants_map[initial_value] = static_constant{ constant_identifier, 16, initial_value };
+        }
+        else
+        {
+            m_constants_map[initial_value] = static_constant{ constant_identifier, 8, initial_value };
+        }
+    }
+
+    return data{ constant_identifier };
+}
+void assembly_generation::process(const tacky::double_to_int &stmt)
+{
+    auto dst_type = get_assembly_type(stmt.dst, m_table);
+    m_instructions.emplace_back(cvttsd2si{ process(stmt.src), process(stmt.dst), dst_type });
+}
+void assembly_generation::process(const tacky::double_to_uint &stmt)
+{
+    // The destination is an unsigned int
+    if (std::holds_alternative<long_word>(get_assembly_type(stmt.dst, m_table)))
+    {
+        m_instructions.emplace_back(cvttsd2si{ process(stmt.src), ax{}, quad_word{} });
+        m_instructions.emplace_back(mov_instruction{ ax{}, process(stmt.dst), long_word{} });
+        return;
+    }
+    // The destination is an unsigned long
+    if (std::holds_alternative<quad_word>(get_assembly_type(stmt.dst, m_table)))
+    {
+        auto upper_bound = process(double_constant{ 9223372036854775808.0 });
+        auto label_1 = get_new_label();
+        auto label_2 = get_new_label();
+
+        m_instructions.emplace_back(cmp{ upper_bound, process(stmt.src), double_asm{} });
+        m_instructions.emplace_back(jmpcc{ AE{}, label_1 });
+        m_instructions.emplace_back(cvttsd2si{ process(stmt.src), process(stmt.dst), quad_word{} });
+        m_instructions.emplace_back(jmp{ label_2 });
+        m_instructions.emplace_back(label{ label_1 });
+        m_instructions.emplace_back(mov_instruction{ process(stmt.src), XMM15{}, double_asm{} });
+        m_instructions.emplace_back(binary{ sub{}, upper_bound, XMM15{}, double_asm{} });
+        m_instructions.emplace_back(cvttsd2si{ XMM15{}, process(stmt.dst), quad_word{} });
+        m_instructions.emplace_back(mov_instruction{ immediate(9223372036854775808ul), ax{}, quad_word{} });
+        m_instructions.emplace_back(binary{ add{}, ax{}, process(stmt.dst), quad_word{} });
+        m_instructions.emplace_back(label{ label_2 });
+        return;
+    }
+}
+
 void assembly_generation::process(const tacky::fun_call &i)
 {
-    std::array<reg, 6> regs = { di{}, si{}, dx{}, cx{}, R8{}, R9{} };
-    int stack_padding = i.args.size() % 2 ? 8 : 0;
+    std::array<reg, 6> int_regs = { di{}, si{}, dx{}, cx{}, R8{}, R9{} };
+    std::array<reg, 8> double_regs = { XMM0{}, XMM1{}, XMM2{}, XMM3{}, XMM4{}, XMM5{}, XMM6{}, XMM7{} };
 
-    int stack_args = i.args.size() >= 6 ? i.args.size() - 6 : 0;
+    int stack_padding = i.args.size() % 2 ? 8 : 0;
     if (stack_padding != 0)
     {
         m_instructions.emplace_back(binary{ sub{}, immediate{ stack_padding }, SP{}, quad_word{} });
     }
 
-    std::span args_in_reg(i.args.begin(), std::min(i.args.size(), 6ul));
+    auto args_pos = classify_parameters(i.args);
+
+    int stack_args = i.args.size() >= 6 ? i.args.size() - 6 : 0;
     int pos = 0;
-    for (const auto &arg : args_in_reg)
+    for (const auto &[type, src] : args_pos[0])
     {
-        auto src = process(arg);
-        m_instructions.emplace_back(mov_instruction{ src, regs[pos], get_assembly_type(arg, m_table) });
+        m_instructions.emplace_back(mov_instruction{ src, int_regs[pos], type });
         pos++;
     }
 
-    if (i.args.size() > 6)
+    pos = 0;
+    for (const auto &[type, src] : args_pos[1])
     {
-        std::span arg_on_stack(i.args.begin() + 6, i.args.size() - 6);
-        for (const auto &arg : arg_on_stack | std::views::reverse)
+        m_instructions.emplace_back(mov_instruction{ src, double_regs[pos], type });
+        pos++;
+    }
+
+    for (const auto &[type, src] : args_pos[2] | std::views::reverse)
+    {
+        if (std::holds_alternative<immediate>(src) || std::holds_alternative<reg>(src) ||
+            std::holds_alternative<quad_word>(type) || std::holds_alternative<double_asm>(type))
         {
-            auto src = process(arg);
-            if (std::holds_alternative<immediate>(src) || std::holds_alternative<reg>(src) ||
-                std::holds_alternative<quad_word>(get_assembly_type(arg, m_table)))
-            {
-                m_instructions.emplace_back(push{ src });
-            }
-            else
-            {
-                m_instructions.emplace_back(mov_instruction{ src, ax{}, long_word{} });
-                m_instructions.emplace_back(push{ ax{} });
-            }
+            m_instructions.emplace_back(push{ src });
+        }
+        else
+        {
+            m_instructions.emplace_back(mov_instruction{ src, ax{}, type });
+            m_instructions.emplace_back(push{ ax{} });
         }
     }
 
@@ -552,42 +705,48 @@ void assembly_generation::process(const tacky::fun_call &i)
         m_instructions.emplace_back(binary{ add{}, immediate{ to_remove }, SP{}, quad_word{} });
     }
 
-    m_instructions.emplace_back(mov_instruction{ ax{}, process(i.dst), get_assembly_type(i.dst, m_table) });
-
-    return;
+    if (auto type = get_assembly_type(i.dst, m_table); std::holds_alternative<double_asm>(type))
+    {
+        m_instructions.emplace_back(mov_instruction{ XMM0{}, process(i.dst), type });
+    }
+    else
+    {
+        m_instructions.emplace_back(mov_instruction{ ax{}, process(i.dst), type });
+    }
 }
 function assembly_generation::process(const tacky::function_definition &f)
 {
-    auto p_source = [](int pos) -> operand {
-        switch (pos)
-        {
-            case 0:
-                return reg{ di{} };
-            case 1:
-                return reg{ si{} };
-            case 2:
-                return reg{ dx{} };
-            case 3:
-                return reg{ cx{} };
-            case 4:
-                return reg{ R8{} };
-            case 5:
-                return reg{ R9{} };
-            default:
-                return stack{ 16 + (pos - 6) * 8 };
-        }
-    };
+    std::array<reg, 6> int_regs = { di{}, si{}, dx{}, cx{}, R8{}, R9{} };
+    std::array<reg, 8> double_regs = { XMM0{}, XMM1{}, XMM2{}, XMM3{}, XMM4{}, XMM5{}, XMM6{}, XMM7{} };
 
+    std::vector<tacky::val> tmp_params;
+    tmp_params.reserve(f.params.size());
+    std::ranges::transform(f.params, std::back_inserter(tmp_params), [](const auto &i) { return tacky::var{ i }; });
+
+    auto args_pos = classify_parameters(tmp_params);
     int pos = 0;
-    for (const auto &p : f.params)
+    for (const auto &[type, dst] : args_pos[0])
     {
-        m_instructions.emplace_back(
-          mov_instruction{ p_source(pos), pseudo{ process(p) }, get_assembly_type(tacky::var{ p.name }, m_table) });
+        m_instructions.emplace_back(mov_instruction{ int_regs[pos], dst, type });
         pos++;
     }
 
+    pos = 0;
+    for (const auto &[type, dst] : args_pos[1])
+    {
+        m_instructions.emplace_back(mov_instruction{ double_regs[pos], dst, type });
+        pos++;
+    }
+
+    int32_t offset = 16;
+    for (const auto &[type, dst] : args_pos[2])
+    {
+        m_instructions.emplace_back(mov_instruction{ stack{ offset }, dst, type });
+        offset += 8;
+    }
+
     process(f.instructions);
-    return function{ process(f.name), std::move(m_instructions), .is_global = f.global };
+    return function{ .name = process(f.name), .instructions = std::move(m_instructions), .is_global = f.global };
 }
 
 identifier assembly_generation::process(const wccff::tacky::identifier &id)
@@ -595,12 +754,20 @@ identifier assembly_generation::process(const wccff::tacky::identifier &id)
     return { id.name };
 }
 
+void assembly_generation::process(const tacky::int_to_double &stmt)
+{
+    m_instructions.emplace_back(cvtsi2sd{ process(stmt.src), process(stmt.dst), get_assembly_type(stmt.src, m_table) });
+}
+
 void assembly_generation::process(const tacky::instruction &i)
 {
     std::visit(visitor{
                  [&](const tacky::binary_statement &n) { process(n); },
                  [&](const tacky::copy_statement &n) { process(n); },
+                 [&](const tacky::double_to_int &n) { process(n); },
+                 [&](const tacky::double_to_uint &n) { process(n); },
                  [&](const tacky::fun_call &n) { process(n); },
+                 [&](const tacky::int_to_double &n) { process(n); },
                  [&](const tacky::jump_if_not_zero_statement &n) { process(n); },
                  [&](const tacky::jump_if_zero_statement &n) { process(n); },
                  [&](const tacky::jump_statement &n) { process(n); },
@@ -608,6 +775,7 @@ void assembly_generation::process(const tacky::instruction &i)
                  [&](const tacky::return_statement &n) { process(n); },
                  [&](const tacky::sing_extend &n) { process(n); },
                  [&](const tacky::truncate &n) { process(n); },
+                 [&](const tacky::uint_to_double &n) { process(n); },
                  [&](const tacky::unary_statement &n) { process(n); },
                  [&](const tacky::zero_extend &n) { process(n); },
                  [](const auto &) { throw std::runtime_error("NOT IMPLEMENTED"); },
@@ -616,15 +784,35 @@ void assembly_generation::process(const tacky::instruction &i)
 }
 void assembly_generation::process(const tacky::jump_if_not_zero_statement &stmt)
 {
-    m_instructions.emplace_back(
-      cmp{ immediate{ 0 }, process(stmt.condition), get_assembly_type(stmt.condition, m_table) });
-    m_instructions.emplace_back(jmpcc{ NE{}, process(stmt.target) });
+    auto asm_type = get_assembly_type(stmt.condition, m_table);
+
+    if (std::holds_alternative<double_asm>(asm_type))
+    {
+        m_instructions.emplace_back(binary{ binary_xor{}, XMM0{}, XMM0{}, double_asm{} });
+        m_instructions.emplace_back(cmp{ XMM0{}, process(stmt.condition), asm_type });
+        m_instructions.emplace_back(jmpcc{ NE{}, process(stmt.target) });
+    }
+    else
+    {
+        m_instructions.emplace_back(cmp{ immediate{ 0 }, process(stmt.condition), asm_type });
+        m_instructions.emplace_back(jmpcc{ NE{}, process(stmt.target) });
+    }
 }
 void assembly_generation::process(const tacky::jump_if_zero_statement &stmt)
 {
-    m_instructions.emplace_back(
-      cmp{ immediate{ 0 }, process(stmt.condition), get_assembly_type(stmt.condition, m_table) });
-    m_instructions.emplace_back(jmpcc{ E{}, process(stmt.target) });
+    auto asm_type = get_assembly_type(stmt.condition, m_table);
+
+    if (std::holds_alternative<double_asm>(asm_type))
+    {
+        m_instructions.emplace_back(binary{ binary_xor{}, XMM0{}, XMM0{}, double_asm{} });
+        m_instructions.emplace_back(cmp{ XMM0{}, process(stmt.condition), asm_type });
+        m_instructions.emplace_back(jmpcc{ E{}, process(stmt.target) });
+    }
+    else
+    {
+        m_instructions.emplace_back(cmp{ immediate{ 0 }, process(stmt.condition), asm_type });
+        m_instructions.emplace_back(jmpcc{ E{}, process(stmt.target) });
+    }
 }
 void assembly_generation::process(const tacky::jump_statement &stmt)
 {
@@ -642,10 +830,23 @@ program assembly_generation::process(const tacky::program &program)
     {
         top_levels.push_back(process(f));
     }
+
+    for (const auto &v : m_constants_map | std::views::values)
+    {
+        top_levels.emplace_back(v);
+    }
+
     return { std::move(top_levels) };
 }
 void assembly_generation::process(const tacky::return_statement &stmt)
 {
+    auto asm_type = get_assembly_type(stmt.val, m_table);
+    if (std::holds_alternative<double_asm>(asm_type))
+    {
+        m_instructions.emplace_back(mov_instruction{ process(stmt.val), XMM0{}, double_asm{} });
+        m_instructions.emplace_back(ret_instruction{});
+        return;
+    }
     m_instructions.emplace_back(mov_instruction{ process(stmt.val), ax{}, get_assembly_type(stmt.val, m_table) });
     m_instructions.emplace_back(ret_instruction{});
 }
@@ -656,6 +857,7 @@ void assembly_generation::process(const tacky::sing_extend &i)
 static_variable assembly_generation::process(const tacky::static_variable &f)
 {
     auto align = std::visit(visitor{
+                              [](const wccff::double_type &) { return 8; },
                               [](const wccff::int_type &) { return 4; },
                               [](const wccff::long_type &) { return 8; },
                               [](const wccff::unsigned_int_type &) { return 4; },
@@ -675,15 +877,66 @@ void assembly_generation::process(const tacky::truncate &i)
 {
     m_instructions.emplace_back(mov_instruction{ process(i.src), process(i.dst), long_word{} });
 }
+void assembly_generation::process(const tacky::uint_to_double &stmt)
+{
+    // The source is an unsigned int
+    if (std::holds_alternative<long_word>(get_assembly_type(stmt.src, m_table)))
+    {
+        m_instructions.emplace_back(mov_zero_extend{ process(stmt.src), ax{} });
+        m_instructions.emplace_back(cvtsi2sd{ ax{}, process(stmt.dst), quad_word{} });
+        return;
+    }
+    // The source is an unsigned long
+    if (std::holds_alternative<quad_word>(get_assembly_type(stmt.src, m_table)))
+    {
+        auto upper_bound = process(double_constant{ 9223372036854775808.0 });
+        auto label_1 = get_new_label();
+        auto label_2 = get_new_label();
+
+        // signed comparison to zero,
+        m_instructions.emplace_back(cmp{ immediate{ 0 }, process(stmt.src), quad_word{} });
+        m_instructions.emplace_back(jmpcc{ L{}, label_1 });
+        m_instructions.emplace_back(cvtsi2sd{ process(stmt.src), process(stmt.dst), quad_word{} });
+        m_instructions.emplace_back(jmp{ label_2 });
+        m_instructions.emplace_back(label{ label_1 });
+        m_instructions.emplace_back(mov_instruction{ process(stmt.src), ax{}, quad_word{} });
+        m_instructions.emplace_back(mov_instruction{ ax{}, dx{}, quad_word{} });
+        m_instructions.emplace_back(binary{ right_shift_aritmetic{}, immediate{ 1 }, dx{}, quad_word{} });
+        m_instructions.emplace_back(binary{ binary_and{}, immediate{ 1 }, ax{}, quad_word{} });
+        m_instructions.emplace_back(binary{ binary_or{}, ax{}, dx{}, quad_word{} });
+        m_instructions.emplace_back(cvtsi2sd{ dx{}, process(stmt.dst), quad_word{} });
+        m_instructions.emplace_back(binary{ add{}, process(stmt.dst), process(stmt.dst), double_asm{} });
+        m_instructions.emplace_back(label{ label_2 });
+        return;
+    }
+}
 void assembly_generation::process(const tacky::unary_statement &stmt)
 {
     if (std::holds_alternative<tacky::not_operator>(stmt.op))
     {
+        if (std::holds_alternative<double_asm>(get_assembly_type(stmt.src, m_table)))
+        {
+            m_instructions.emplace_back(binary{ binary_xor{}, XMM0{}, XMM0{}, double_asm{} });
+            m_instructions.emplace_back(cmp{ process(stmt.src), XMM0{}, double_asm{} });
+            m_instructions.emplace_back(
+              mov_instruction{ immediate{ 0 }, process(stmt.dst), get_assembly_type(stmt.dst, m_table) });
+            m_instructions.emplace_back(setcc{ E{}, process(stmt.dst) });
+            return;
+        }
         m_instructions.emplace_back(
           cmp{ operand{ immediate{ 0 } }, process(stmt.src), get_assembly_type(stmt.src, m_table) });
         m_instructions.emplace_back(
           mov_instruction{ immediate{ 0 }, process(stmt.dst), get_assembly_type(stmt.dst, m_table) });
         m_instructions.emplace_back(setcc{ E{}, process(stmt.dst) });
+        return;
+    }
+
+    if (std::holds_alternative<tacky::negate_operator>(stmt.op) &&
+        std::holds_alternative<double_asm>(get_assembly_type(stmt.src, m_table)))
+    {
+        auto neg_zero = process(double_constant{ -0.0 });
+        m_instructions.emplace_back(mov_instruction{ process(stmt.src), process(stmt.dst), double_asm{} });
+        m_instructions.emplace_back(binary{ binary_xor{}, neg_zero, process(stmt.dst), double_asm{} });
         return;
     }
 
@@ -713,9 +966,89 @@ void assembly_generation::process(const tacky::zero_extend &i)
 {
     m_instructions.emplace_back(mov_zero_extend{ process(i.src), process(i.dst) });
 }
+identifier assembly_generation::get_new_label()
+{
+    return { fmt::format("asm_label_{}", m_label_counter++) };
+}
+
+std::array<std::vector<std::pair<assembly_type, operand>>, 3> assembly_generation::classify_parameters(
+  const std::vector<tacky::val> &params)
+{
+    std::vector<std::pair<assembly_type, operand>> double_regs_args;
+    std::vector<std::pair<assembly_type, operand>> int_regs_args;
+    std::vector<std::pair<assembly_type, operand>> stack_args;
+    for (const auto &i : params)
+    {
+        auto op = process(i);
+        auto type = get_assembly_type(i, m_table);
+
+        std::pair a{ type, op };
+        if (std::holds_alternative<wccff::double_asm>(type))
+        {
+            if (double_regs_args.size() < 8)
+            {
+                double_regs_args.emplace_back(type, op);
+            }
+            else
+            {
+                stack_args.emplace_back(type, op);
+            }
+        }
+        else
+        {
+            if (int_regs_args.size() < 6)
+            {
+                int_regs_args.emplace_back(type, op);
+            }
+            else
+            {
+                stack_args.emplace_back(type, op);
+            }
+        }
+    }
+    return { int_regs_args, double_regs_args, stack_args };
+}
 
 std::optional<std::vector<instruction>> fixing_up_instructions11(const mov_instruction &n)
 {
+    if (std::holds_alternative<double_asm>(n.type))
+    {
+        if (is_memory_operand(n.src) && is_memory_operand(n.dst))
+        {
+            std::vector<instruction> ret_insts;
+            mov_instruction m1{ n.src, XMM14{}, n.type };
+            mov_instruction m2{ XMM14{}, n.dst, n.type };
+            ret_insts.emplace_back(m1);
+            ret_insts.emplace_back(m2);
+            return ret_insts;
+        }
+
+        if (is_larger_immediate(n.src) && is_memory_operand(n.dst))
+        {
+            std::vector<instruction> ret_insts;
+            mov_instruction m1{ n.src, XMM14{}, double_asm{} };
+            mov_instruction m2{ XMM14{}, n.dst, n.type };
+            ret_insts.emplace_back(m1);
+            ret_insts.emplace_back(m2);
+            return ret_insts;
+        }
+
+        // This doesn't stricly need to happen, but it makes the assembly code better
+        // a movl, will not be able to carry an immediate bigger than 32 bits.
+        // The assembler will handle that correctly. But this makes the code more easier to follow.
+        if (is_larger_immediate(n.src) && std::holds_alternative<long_word>(n.type))
+        {
+            auto i = std::get<immediate>(n.src);
+            auto new_value = static_cast<int32_t>(i.value);
+
+            std::vector<instruction> ret_insts;
+            mov_instruction m1{ immediate{ new_value }, n.dst, n.type };
+            ret_insts.emplace_back(m1);
+            return ret_insts;
+        }
+        return std::nullopt;
+    }
+
     if (is_memory_operand(n.src) && is_memory_operand(n.dst))
     {
         std::vector<instruction> ret_insts;
@@ -814,6 +1147,36 @@ std::optional<std::vector<instruction>> fixing_up_instructions11(const movx &n)
 
 std::optional<std::vector<instruction>> fixing_up_instructions11(const cmp &n)
 {
+    if (std::holds_alternative<double_asm>(n.type))
+    {
+        if (std::holds_alternative<immediate>(n.lhs) && is_memory_operand(n.rhs))
+        {
+            std::vector<instruction> ret_insts;
+            ret_insts.emplace_back(mov_instruction{ n.rhs, XMM15{}, n.type });
+            ret_insts.emplace_back(mov_instruction{ n.lhs, XMM14{}, n.type });
+            ret_insts.emplace_back(cmp{ XMM14{}, XMM15{}, n.type });
+            return ret_insts;
+        }
+
+        if (is_memory_operand(n.rhs))
+        {
+            std::vector<instruction> ret_insts;
+            ret_insts.emplace_back(mov_instruction{ n.rhs, XMM15{}, n.type });
+            ret_insts.emplace_back(cmp{ n.lhs, XMM15{}, n.type });
+            return ret_insts;
+        }
+
+        if (std::holds_alternative<immediate>(n.lhs))
+        {
+            std::vector<instruction> ret_insts;
+            ret_insts.emplace_back(mov_instruction{ n.lhs, XMM14{}, n.type });
+            ret_insts.emplace_back(cmp{ XMM14{}, n.rhs, n.type });
+            return ret_insts;
+        }
+
+        return std::nullopt;
+    }
+
     if (is_memory_operand(n.lhs) && is_memory_operand(n.rhs))
     {
         std::vector<instruction> ret_insts;
@@ -859,8 +1222,69 @@ std::optional<std::vector<instruction>> fixing_up_instructions11(const cmp &n)
     return std::nullopt;
 }
 
+std::optional<std::vector<instruction>> fixing_up_instructions11(const cvtsi2sd &n)
+{
+    if (is_memory_operand(n.dst) && std::holds_alternative<immediate>(n.src))
+    {
+        std::vector<instruction> ret_insts;
+        ret_insts.emplace_back(mov_instruction{ .src = n.src, .dst = R10{}, .type = n.src_type });
+        ret_insts.emplace_back(cvtsi2sd{ .src = R10{}, .dst = XMM15{}, .src_type = n.src_type });
+        ret_insts.emplace_back(mov_instruction{ .src = XMM15{}, .dst = n.dst, .type = double_asm{} });
+        return ret_insts;
+    }
+
+    if (is_memory_operand(n.dst))
+    {
+        std::vector<instruction> ret_insts;
+        ret_insts.emplace_back(cvtsi2sd{ .src = n.src, .dst = XMM15{}, .src_type = n.src_type });
+        ret_insts.emplace_back(mov_instruction{ .src = XMM15{}, .dst = n.dst, .type = double_asm{} });
+        return ret_insts;
+    }
+
+    if (std::holds_alternative<immediate>(n.src))
+    {
+        std::vector<instruction> ret_insts;
+        ret_insts.emplace_back(mov_instruction{ .src = n.src, .dst = R10{}, .type = n.src_type });
+        ret_insts.emplace_back(cvtsi2sd{ .src = R10{}, .dst = n.dst, .src_type = n.src_type });
+        return ret_insts;
+    }
+
+    return std::nullopt;
+}
+
+std::optional<std::vector<instruction>> fixing_up_instructions11(const cvttsd2si &n)
+{
+    if (is_memory_operand(n.dst))
+    {
+        std::vector<instruction> ret_insts;
+        ret_insts.emplace_back(cvttsd2si{ .src = n.src, .dst = R11{}, .dst_type = n.dst_type });
+        ret_insts.emplace_back(mov_instruction{ .src = R11{}, .dst = n.dst, .type = n.dst_type });
+        return ret_insts;
+    }
+    return std::nullopt;
+}
+
 std::optional<std::vector<instruction>> fixing_up_instructions_binary(const binary &n)
 {
+    if (std::holds_alternative<double_asm>(n.type))
+    {
+        if (std::holds_alternative<add>(n.op) || std::holds_alternative<sub>(n.op) ||
+            std::holds_alternative<mul>(n.op) || std::holds_alternative<div_double>(n.op) ||
+            std::holds_alternative<binary_xor>(n.op))
+        {
+            if (is_memory_operand(n.dst))
+            {
+                std::vector<instruction> ret_insts;
+                ret_insts.emplace_back(mov_instruction{ n.dst, XMM15{}, n.type });
+                ret_insts.emplace_back(binary{ n.op, n.src, XMM15{}, n.type });
+                ret_insts.emplace_back(mov_instruction{ XMM15{}, n.dst, n.type });
+                return ret_insts;
+            }
+            return std::nullopt;
+        }
+        return std::nullopt;
+    }
+
     if (std::holds_alternative<add>(n.op) || std::holds_alternative<sub>(n.op) ||
         std::holds_alternative<binary_and>(n.op) || std::holds_alternative<binary_or>(n.op) ||
         std::holds_alternative<binary_xor>(n.op))
@@ -992,6 +1416,8 @@ std::optional<std::vector<instruction>> fixing_up_instructions1(const instructio
         [](const unary &) -> std::optional<std::vector<instruction>> { return std::nullopt; },
         [](const binary &i) -> std::optional<std::vector<instruction>> { return fixing_up_instructions_binary(i); },
         [](const cmp &i) -> std::optional<std::vector<instruction>> { return fixing_up_instructions11(i); },
+        [](const cvtsi2sd &i) -> std::optional<std::vector<instruction>> { return fixing_up_instructions11(i); },
+        [](const cvttsd2si &i) -> std::optional<std::vector<instruction>> { return fixing_up_instructions11(i); },
         [](const idiv &i) -> std::optional<std::vector<instruction>> { return fixing_up_instructions_idiv(i); },
         [](const div &i) -> std::optional<std::vector<instruction>> { return fixing_up_instructions_idiv(i); },
         [](const cdq &) -> std::optional<std::vector<instruction>> { return std::nullopt; },
@@ -1059,6 +1485,7 @@ std::string pretty_print(const assembly_type &node)
     return std::visit(visitor{
                         [](const long_word) { return "long_word"; },
                         [](const quad_word) { return "quad_word"; },
+                        [](const double_asm) { return "double_asm"; },
                       },
                       node);
 }
@@ -1085,6 +1512,7 @@ std::string pretty_print(const binary_operator &node)
                         [](const right_shift &) { return "Right Shift"; },
                         [](const left_shift_aritmetic &) { return "Left Shift Arithmetic"; },
                         [](const right_shift_aritmetic &) { return "Right Shift Arithmetic"; },
+                        [](const div_double &) { return "Double Division"; },
                       },
                       node);
 }
@@ -1122,6 +1550,20 @@ std::string pretty_print(const cond_code &node)
                         [](BE) { return "BE"; },
                       },
                       node);
+}
+std::string pretty_print(const cvtsi2sd &node)
+{
+    return fmt::format("CVTSI2SD(type({}), src({}), dst({}))",
+                       pretty_print(node.src_type),
+                       pretty_print(node.src),
+                       pretty_print(node.dst));
+}
+std::string pretty_print(const cvttsd2si &node)
+{
+    return fmt::format("CVTTSD2SI(type({}), src({}), dst({}))",
+                       pretty_print(node.dst_type),
+                       pretty_print(node.src),
+                       pretty_print(node.dst));
 }
 
 std::string pretty_print(const data &node)
@@ -1167,6 +1609,8 @@ std::string pretty_print(const instruction &node)
                         [](const unary &n) { return pretty_print(n); },
                         [](const binary &n) { return pretty_print(n); },
                         [](const cmp &n) { return pretty_print(n); },
+                        [](const cvtsi2sd &n) { return pretty_print(n); },
+                        [](const cvttsd2si &n) { return pretty_print(n); },
                         [](const idiv &n) { return pretty_print(n); },
                         [](const div &n) { return pretty_print(n); },
                         [](const cdq &n) { return pretty_print(n); },
@@ -1249,16 +1693,17 @@ std::string pretty_print(const push &node)
 std::string pretty_print(const reg &node)
 {
     return std::visit(visitor{
-                        [](const ax &) { return "ax"; },
-                        [](const cx &) { return "cx"; },
-                        [](const dx &) { return "dx"; },
-                        [](const di &) { return "di"; },
-                        [](const si &) { return "si"; },
-                        [](const R8 &) { return "R8d"; },
-                        [](const R9 &) { return "R9d"; },
-                        [](const R10 &) { return "R10d"; },
-                        [](const R11 &) { return "R11d"; },
-                        [](const SP &) { return "sp"; },
+                        [](const ax &) { return "ax"; },          [](const cx &) { return "cx"; },
+                        [](const dx &) { return "dx"; },          [](const di &) { return "di"; },
+                        [](const si &) { return "si"; },          [](const R8 &) { return "R8d"; },
+                        [](const R9 &) { return "R9d"; },         [](const R10 &) { return "R10d"; },
+                        [](const R11 &) { return "R11d"; },       [](const SP &) { return "sp"; },
+                        [](const XMM0 &) { return "XMM0"; },      [](const XMM1 &) { return "XMM1"; },
+                        [](const XMM2 &) { return "XMM2"; },      [](const XMM3 &) { return "XMM3"; },
+                        [](const XMM4 &) { return "XMM4"; },      [](const XMM5 &) { return "XMM5"; },
+                        [](const XMM6 &) { return "XMM6"; },      [](const XMM7 &) { return "XMM7"; },
+                        [](const XMM14 &) { return "XMM14"; },    [](const XMM15 &) { return "XMM15"; },
+                        [](const auto &) { return "WRONG_REG"; },
                       },
                       node);
 }
@@ -1275,14 +1720,25 @@ std::string pretty_print(const setcc &node)
 
 std::string pretty_print(const top_level &node)
 {
-    return std::visit(visitor{ [](const function &n) { return pretty_print(n); },
-                               [](const static_variable &n) { return pretty_print(n); } },
+    return std::visit(visitor{
+                        [](const function &n) { return pretty_print(n); },
+                        [](const static_variable &n) { return pretty_print(n); },
+                        [](const static_constant &n) -> std::string { return pretty_print(n); },
+                      },
                       node);
 }
 
 std::string pretty_print(const stack &node)
 {
     return fmt::format("Stack({})", pretty_print(node.value));
+}
+
+std::string pretty_print(const static_constant &node)
+{
+    return fmt::format("StaticConstant(name({}), align({}), initial({}))",
+                       pretty_print(node.name),
+                       node.alignment,
+                       pretty_print(node.init));
 }
 
 std::string pretty_print(const static_variable &node)

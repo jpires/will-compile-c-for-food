@@ -1,0 +1,77 @@
+----fun_name = no_params; global = false; params = NONE; body = int_body
+Function(name(no_params), is_global(false), stack_size(0)
+	insts:
+		Mov(type(long_word), src(Imm(1)), dst(ax))
+		Ret
+)
+----fun_name = one_param; global = true; params = int_var_1; body = int_body
+Function(name(one_param), is_global(true), stack_size(0)
+	insts:
+		Mov(type(long_word), src(di), dst(Pseudo(int_var_1)))
+		Mov(type(long_word), src(Imm(1)), dst(ax))
+		Ret
+)
+----fun_name = one_param; global = false; params = long_var_1; body = long_body
+Function(name(one_param), is_global(false), stack_size(0)
+	insts:
+		Mov(type(quad_word), src(di), dst(Pseudo(long_var_1)))
+		Mov(type(quad_word), src(Imm(1)), dst(ax))
+		Ret
+)
+----fun_name = six_params; global = false; params = int_var_1, int_var_2, long_var_1, long_var_2, uint_var_1, uint_var_2; body = long_body
+Function(name(six_params), is_global(false), stack_size(0)
+	insts:
+		Mov(type(long_word), src(di), dst(Pseudo(int_var_1)))
+		Mov(type(long_word), src(si), dst(Pseudo(int_var_2)))
+		Mov(type(quad_word), src(dx), dst(Pseudo(long_var_1)))
+		Mov(type(quad_word), src(cx), dst(Pseudo(long_var_2)))
+		Mov(type(long_word), src(R8d), dst(Pseudo(unsigned_int_var_1)))
+		Mov(type(long_word), src(R9d), dst(Pseudo(unsigned_int_var_2)))
+		Mov(type(quad_word), src(Imm(1)), dst(ax))
+		Ret
+)
+----fun_name = seven_params; global = false; params = int_var_1, int_var_2, long_var_1, long_var_2, uint_var_1, uint_var_2, ulong_var_1; body = long_body
+Function(name(seven_params), is_global(false), stack_size(0)
+	insts:
+		Mov(type(long_word), src(di), dst(Pseudo(int_var_1)))
+		Mov(type(long_word), src(si), dst(Pseudo(int_var_2)))
+		Mov(type(quad_word), src(dx), dst(Pseudo(long_var_1)))
+		Mov(type(quad_word), src(cx), dst(Pseudo(long_var_2)))
+		Mov(type(long_word), src(R8d), dst(Pseudo(unsigned_int_var_1)))
+		Mov(type(long_word), src(R9d), dst(Pseudo(unsigned_int_var_2)))
+		Mov(type(quad_word), src(Stack(Imm(16))), dst(Pseudo(unsigned_long_var_1)))
+		Mov(type(quad_word), src(Imm(1)), dst(ax))
+		Ret
+)----fun_name = no_params; global = false; params = NONE; body = double_body
+Function(name(no_params), is_global(false), stack_size(0)
+	insts:
+		Mov(type(double_asm), src(Data(double_constant_0)), dst(XMM0))
+		Ret
+)----fun_name = eight_params; global = false; params = double_var_1, double_var_2, double_var_3, double_var_4, double_var_5, double_var_6, double_var_7, double_var_8; body = double_body
+Function(name(eight_params), is_global(false), stack_size(0)
+	insts:
+		Mov(type(double_asm), src(XMM0), dst(Pseudo(double_var_1)))
+		Mov(type(double_asm), src(XMM1), dst(Pseudo(double_var_2)))
+		Mov(type(double_asm), src(XMM2), dst(Pseudo(double_var_3)))
+		Mov(type(double_asm), src(XMM3), dst(Pseudo(double_var_4)))
+		Mov(type(double_asm), src(XMM4), dst(Pseudo(double_var_5)))
+		Mov(type(double_asm), src(XMM5), dst(Pseudo(double_var_6)))
+		Mov(type(double_asm), src(XMM6), dst(Pseudo(double_var_7)))
+		Mov(type(double_asm), src(XMM7), dst(Pseudo(double_var_8)))
+		Mov(type(double_asm), src(Data(double_constant_0)), dst(XMM0))
+		Ret
+)----fun_name = nine_params; global = false; params = double_var_1, double_var_2, double_var_3, double_var_4, double_var_5, double_var_6, double_var_7, double_var_8, double_var_8; body = double_body
+Function(name(nine_params), is_global(false), stack_size(0)
+	insts:
+		Mov(type(double_asm), src(XMM0), dst(Pseudo(double_var_1)))
+		Mov(type(double_asm), src(XMM1), dst(Pseudo(double_var_2)))
+		Mov(type(double_asm), src(XMM2), dst(Pseudo(double_var_3)))
+		Mov(type(double_asm), src(XMM3), dst(Pseudo(double_var_4)))
+		Mov(type(double_asm), src(XMM4), dst(Pseudo(double_var_5)))
+		Mov(type(double_asm), src(XMM5), dst(Pseudo(double_var_6)))
+		Mov(type(double_asm), src(XMM6), dst(Pseudo(double_var_7)))
+		Mov(type(double_asm), src(XMM7), dst(Pseudo(double_var_8)))
+		Mov(type(double_asm), src(Stack(Imm(16))), dst(Pseudo(double_var_9)))
+		Mov(type(double_asm), src(Data(double_constant_0)), dst(XMM0))
+		Ret
+)

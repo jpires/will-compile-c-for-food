@@ -28,6 +28,7 @@ operand_size get_operand_size(const assembly_type &t)
     return std::visit(visitor{
                         [](const long_word &) { return operand_size::four_bytes; },
                         [](const quad_word &) { return operand_size::eight_bytes; },
+                        [](const double_asm &) { return operand_size::eight_bytes; },
                       },
                       t);
 }
@@ -55,7 +56,8 @@ std::string process_register(const assembly_generation::reg &node, operand_size 
                                    [](const assembly_generation::R9 &) { return "%r9d"; },
                                    [](const assembly_generation::R10 &) { return "%r10d"; },
                                    [](const assembly_generation::R11 &) { return "%r11d"; },
-                                   [](const assembly_generation::SP &) { return "%esp"; } },
+                                   [](const assembly_generation::SP &) { return "%esp"; },
+                                   [](const auto &) { return "%esp"; } },
                           node);
     }
     else if (size == operand_size::eight_bytes)
@@ -71,6 +73,7 @@ std::string process_register(const assembly_generation::reg &node, operand_size 
                             [](const assembly_generation::R10 &) { return "%r10"; },
                             [](const assembly_generation::R11 &) { return "%r11"; },
                             [](const assembly_generation::SP &) { return "%rsp"; },
+                            [](const auto &) { return "%rsp"; },
                           },
                           node);
     }
@@ -85,6 +88,7 @@ std::string process_register(const assembly_generation::reg &node, operand_size 
                         [](const assembly_generation::R10 &) { return "%r10b"; },
                         [](const assembly_generation::R11 &) { return "%r11b"; },
                         [](const assembly_generation::SP &) { return "%sp"; },
+                        [](const auto &) { return "%sp"; },
                       },
                       node);
 }
@@ -135,6 +139,7 @@ std::string_view process_assembly_type(const assembly_type &t)
     return std::visit(visitor{
                         [](const long_word &) { return "l"; },
                         [](const quad_word &) { return "q"; },
+                        [](const double_asm &) { return "q"; },
                       },
                       t);
 }
@@ -180,6 +185,7 @@ std::string process_binary_operator(const assembly_generation::binary_operator &
                                 [](const assembly_generation::right_shift &) { return "sar"; },
                                 [](const assembly_generation::left_shift_aritmetic &) { return "shl"; },
                                 [](const assembly_generation::right_shift_aritmetic &) { return "shr"; },
+                                [](const auto &) { return "shr"; },
                               },
                               node);
 
@@ -365,6 +371,9 @@ std::string process_top_level(const assembly_generation::top_level &t)
     return std::visit(visitor{
                         [](const assembly_generation::function &f) { return process_function(f); },
                         [](const assembly_generation::static_variable &f) { return process_static_variable(f); },
+                        [](const assembly_generation::static_constant &f) -> std::string {
+                            throw std::runtime_error("Not implemented");
+                        },
                       },
                       t);
 }

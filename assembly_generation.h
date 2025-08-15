@@ -71,8 +71,39 @@ struct R11
 struct SP
 {
 };
+struct XMM0
+{
+};
+struct XMM1
+{
+};
+struct XMM2
+{
+};
+struct XMM3
+{
+};
+struct XMM4
+{
+};
+struct XMM5
+{
+};
+struct XMM6
+{
+};
+struct XMM7
+{
+};
+struct XMM14
+{
+};
+struct XMM15
+{
+};
 
-using reg = std::variant<ax, cx, dx, di, si, R8, R9, R10, R11, SP>;
+using reg =
+  std::variant<ax, cx, dx, di, si, R8, R9, R10, R11, SP, XMM0, XMM1, XMM2, XMM3, XMM4, XMM5, XMM6, XMM7, XMM14, XMM15>;
 
 struct pseudo
 {
@@ -129,6 +160,9 @@ struct left_shift_aritmetic
 struct right_shift_aritmetic
 {
 };
+struct div_double
+{
+};
 using binary_operator = std::variant<add,
                                      sub,
                                      mul,
@@ -138,7 +172,8 @@ using binary_operator = std::variant<add,
                                      left_shift,
                                      right_shift,
                                      left_shift_aritmetic,
-                                     right_shift_aritmetic>;
+                                     right_shift_aritmetic,
+                                     div_double>;
 
 struct A
 {
@@ -191,6 +226,20 @@ struct cmp
     operand lhs;
     operand rhs;
     assembly_type type;
+};
+
+struct cvtsi2sd
+{
+    operand src;
+    operand dst;
+    assembly_type src_type;
+};
+
+struct cvttsd2si
+{
+    operand src;
+    operand dst;
+    assembly_type dst_type;
 };
 
 struct div
@@ -263,6 +312,8 @@ using instruction = std::variant<mov_instruction,
                                  unary,
                                  binary,
                                  cmp,
+                                 cvtsi2sd,
+                                 cvttsd2si,
                                  idiv,
                                  div,
                                  cdq,
@@ -282,6 +333,13 @@ struct function
     bool is_global;
 };
 
+struct static_constant
+{
+    identifier name;
+    int alignment;
+    wccff::initial init;
+};
+
 struct static_variable
 {
     identifier name;
@@ -290,7 +348,7 @@ struct static_variable
     wccff::initial init;
 };
 
-using top_level = std::variant<function, static_variable>;
+using top_level = std::variant<function, static_constant, static_variable>;
 struct program
 {
     std::vector<top_level> functions;
@@ -311,16 +369,23 @@ class assembly_generation
 {
   public:
     explicit assembly_generation(const wccff::symbol_table::symbol_table &table_)
-      : m_table(table_)
+      : m_constant_count{ 0 }
+      , m_label_counter{ 0 }
+      , m_table(table_)
     {
     }
 
+    void process_binary_statement_double(const tacky::binary_statement &stmt);
     void process(const tacky::binary_statement &stmt);
     operand process(const constant &n);
     void process(const tacky::copy_statement &stmt);
+    operand process(const double_constant &stmt);
+    void process(const tacky::double_to_int &stmt);
+    void process(const tacky::double_to_uint &stmt);
     void process(const tacky::fun_call &i);
     function process(const tacky::function_definition &f);
     identifier process(const tacky::identifier &id);
+    void process(const tacky::int_to_double &stmt);
     void process(const tacky::instruction &i);
     void process(const tacky::jump_if_not_zero_statement &stmt);
     void process(const tacky::jump_if_zero_statement &stmt);
@@ -332,6 +397,7 @@ class assembly_generation
     static_variable process(const tacky::static_variable &f);
     top_level process(const tacky::top_level &f);
     void process(const tacky::truncate &i);
+    void process(const tacky::uint_to_double &stmt);
     void process(const tacky::unary_statement &stmt);
     operand process(const wccff::tacky::val &v);
     void process(const std::vector<tacky::instruction> &s);
@@ -341,6 +407,14 @@ class assembly_generation
     void reset_instructions() { m_instructions.clear(); }
 
   private:
+    identifier get_new_label();
+    std::array<std::vector<std::pair<assembly_type, operand>>, 3> classify_parameters(
+      const std::vector<tacky::val> &params);
+
+    std::unordered_map<initial, static_constant> m_constants_map;
+    int32_t m_constant_count;
+    int32_t m_label_counter;
+
     std::vector<instruction> m_instructions;
     const wccff::symbol_table::symbol_table &m_table;
 };
@@ -350,6 +424,8 @@ void replace_pseudo_registers(program &node, symbol_table::backend_symbol_table 
 std::optional<std::vector<instruction>> fixing_up_instructions_binary(const binary &n);
 
 std::optional<std::vector<instruction>> fixing_up_instructions11(const cmp &n);
+std::optional<std::vector<instruction>> fixing_up_instructions11(const cvtsi2sd &n);
+std::optional<std::vector<instruction>> fixing_up_instructions11(const cvttsd2si &n);
 std::optional<std::vector<instruction>> fixing_up_instructions11(const mov_instruction &n);
 std::optional<std::vector<instruction>> fixing_up_instructions11(const mov_zero_extend &n);
 std::optional<std::vector<instruction>> fixing_up_instructions11(const movx &n);
@@ -366,6 +442,8 @@ std::string pretty_print(const call &node);
 std::string pretty_print(const cdq &node);
 std::string pretty_print(const cmp &node);
 std::string pretty_print(const cond_code &node);
+std::string pretty_print(const cvtsi2sd &node);
+std::string pretty_print(const cvttsd2si &node);
 std::string pretty_print(const data &node);
 std::string pretty_print(const div &node);
 std::string pretty_print(const function &node);
@@ -388,6 +466,7 @@ std::string pretty_print(const ret_instruction &node);
 std::string pretty_print(const setcc &node);
 std::string pretty_print(const top_level &node);
 std::string pretty_print(const stack &node);
+std::string pretty_print(const static_constant &node);
 std::string pretty_print(const static_variable &node);
 std::string pretty_print(const std::vector<instruction> &node);
 std::string pretty_print(const unary &node);

@@ -1,0 +1,31 @@
+--src1 = double_const--
+		Mov(type(double_asm), src(Data(double_constant_0)), dst(XMM0))
+		Ret
+--src1 = double_var--
+		Mov(type(double_asm), src(Pseudo(double_var)), dst(XMM0))
+		Ret
+--src1 = int_const--
+		Mov(type(long_word), src(Imm(1)), dst(ax))
+		Ret
+--src1 = int_var--
+		Mov(type(long_word), src(Pseudo(int_var)), dst(ax))
+		Ret
+--src1 = long_const--
+		Mov(type(quad_word), src(Imm(1)), dst(ax))
+		Ret
+--src1 = long_var--
+		Mov(type(quad_word), src(Pseudo(long_var)), dst(ax))
+		Ret
+--src1 = uint_const--
+		Mov(type(long_word), src(Imm(1)), dst(ax))
+		Ret
+--src1 = uint_var--
+		Mov(type(long_word), src(Pseudo(unsigned_int_var)), dst(ax))
+		Ret
+--src1 = ulong_const--
+		Mov(type(quad_word), src(Imm(1)), dst(ax))
+		Ret
+--src1 = ulong_var--
+		Mov(type(quad_word), src(Pseudo(unsigned_long_var)), dst(ax))
+		Ret
+

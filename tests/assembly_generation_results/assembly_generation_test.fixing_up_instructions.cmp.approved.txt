@@ -47,3 +47,29 @@
 		Mov(type(quad_word), src(Imm(2147483649)), dst(R11d))
 		Cmp(type(quad_word), lhs(R10d), rhs(R11d))
 
+--lhs = reg; rhs = data; type = double_asm--
+		Mov(type(double_asm), src(Data(data_dst)), dst(XMM15))
+		Cmp(type(double_asm), lhs(XMM0), rhs(XMM15))
+
+--lhs = reg; rhs = stack; type = double_asm--
+		Mov(type(double_asm), src(Stack(Imm(16))), dst(XMM15))
+		Cmp(type(double_asm), lhs(XMM0), rhs(XMM15))
+
+--lhs = immediate; rhs = data; type = double_asm--
+		Mov(type(double_asm), src(Data(data_dst)), dst(XMM15))
+		Mov(type(double_asm), src(Imm(8)), dst(XMM14))
+		Cmp(type(double_asm), lhs(XMM14), rhs(XMM15))
+
+--lhs = immediate; rhs = stack; type = double_asm--
+		Mov(type(double_asm), src(Stack(Imm(16))), dst(XMM15))
+		Mov(type(double_asm), src(Imm(8)), dst(XMM14))
+		Cmp(type(double_asm), lhs(XMM14), rhs(XMM15))
+
+--lhs = data; rhs = data; type = double_asm--
+		Mov(type(double_asm), src(Data(data_dst)), dst(XMM15))
+		Cmp(type(double_asm), lhs(Data(data_src)), rhs(XMM15))
+
+--lhs = data; rhs = stack; type = double_asm--
+		Mov(type(double_asm), src(Stack(Imm(16))), dst(XMM15))
+		Cmp(type(double_asm), lhs(Data(data_src)), rhs(XMM15))
+

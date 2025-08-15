@@ -78,18 +78,156 @@ TEST_CASE("Types", "[common]")
     }
 }
 
-// int, long, uint, ulong
+TEST_CASE("initial", "[common]")
+{
+    SECTION("double_initial")
+    {
+        using wccff::double_initial;
 
-// int, int     ->  Done
-// int, long    ->  Done
-// int, uint    ->  Done
-// int, ulong   ->  Done
+        auto pos_zero = double_initial(0.0);
+        auto neg_zero = double_initial(-0.0);
+        auto pos_one = double_initial(1.0);
+        auto neg_one = double_initial(-1.0);
 
-// long, long   ->  Done
-// long, uint
-// long, ulong
+        REQUIRE(pos_one == pos_one);
+        REQUIRE(pos_one != neg_one);
 
-// uint, uint   ->  Done
-// uint, ulong
+        REQUIRE(pos_one != pos_zero);
 
-// ulong, ulong ->  Done
+        REQUIRE(pos_zero == pos_zero);
+        REQUIRE(neg_zero == neg_zero);
+        REQUIRE(pos_zero != neg_zero);
+
+        auto pos_zero_hash = std::hash<double_initial>{}(pos_zero);
+        auto neg_zero_hash = std::hash<double_initial>{}(neg_zero);
+        auto pos_one_hash = std::hash<double_initial>{}(pos_one);
+        REQUIRE(pos_zero_hash != neg_zero_hash);
+        REQUIRE(pos_zero_hash != pos_one_hash);
+    }
+
+    SECTION("int_initial")
+    {
+        using wccff::int_initial;
+
+        auto zero = int_initial(0);
+        auto one = int_initial(1);
+
+        REQUIRE(zero == zero);
+        REQUIRE(one == one);
+        REQUIRE(zero != one);
+
+        auto zero_hash = std::hash<int_initial>{}(zero);
+        auto one_hash = std::hash<int_initial>{}(one);
+        REQUIRE(zero_hash == zero_hash);
+        REQUIRE(one_hash == one_hash);
+        REQUIRE(zero_hash != one_hash);
+    }
+
+    SECTION("long_initial")
+    {
+        using wccff::long_initial;
+
+        auto zero = long_initial(0);
+        auto one = long_initial(1);
+
+        REQUIRE(zero == zero);
+        REQUIRE(one == one);
+        REQUIRE(zero != one);
+
+        auto zero_hash = std::hash<long_initial>{}(zero);
+        auto one_hash = std::hash<long_initial>{}(one);
+        REQUIRE(zero_hash == zero_hash);
+        REQUIRE(one_hash == one_hash);
+        REQUIRE(zero_hash != one_hash);
+    }
+
+    SECTION("unsigned_int_initial")
+    {
+        using wccff::unsigned_int_initial;
+
+        auto zero = unsigned_int_initial(0);
+        auto one = unsigned_int_initial(1);
+
+        REQUIRE(zero == zero);
+        REQUIRE(one == one);
+        REQUIRE(zero != one);
+
+        auto zero_hash = std::hash<unsigned_int_initial>{}(zero);
+        auto one_hash = std::hash<unsigned_int_initial>{}(one);
+        REQUIRE(zero_hash == zero_hash);
+        REQUIRE(one_hash == one_hash);
+        REQUIRE(zero_hash != one_hash);
+    }
+
+    SECTION("unsigned_long_initial")
+    {
+        using wccff::unsigned_long_initial;
+
+        auto zero = unsigned_long_initial(0);
+        auto one = unsigned_long_initial(1);
+
+        REQUIRE(zero == zero);
+        REQUIRE(one == one);
+        REQUIRE(zero != one);
+
+        auto zero_hash = std::hash<unsigned_long_initial>{}(zero);
+        auto one_hash = std::hash<unsigned_long_initial>{}(one);
+        REQUIRE(zero_hash == zero_hash);
+        REQUIRE(one_hash == one_hash);
+        REQUIRE(zero_hash != one_hash);
+    }
+
+    SECTION("initial")
+    {
+        using wccff::double_initial;
+        using wccff::initial;
+        using wccff::int_initial;
+        using wccff::long_initial;
+        using wccff::unsigned_int_initial;
+        using wccff::unsigned_long_initial;
+
+        auto double_init = initial{ double_initial(0.0) };
+        auto int_init = initial{ int_initial(0) };
+        auto long_init = initial{ long_initial(0) };
+        auto unsigned_int_init = initial{ unsigned_int_initial(0) };
+        auto unsigned_long_init = initial{ unsigned_long_initial(0) };
+
+        REQUIRE(double_init == double_init);
+        REQUIRE(int_init == int_init);
+        REQUIRE(long_init == long_init);
+        REQUIRE(unsigned_int_init == unsigned_int_init);
+        REQUIRE(unsigned_long_init == unsigned_long_init);
+
+        REQUIRE(double_init != int_init);
+        REQUIRE(double_init != long_init);
+        REQUIRE(double_init != unsigned_int_init);
+        REQUIRE(double_init != unsigned_long_init);
+
+        REQUIRE(int_init != double_init);
+        REQUIRE(int_init != long_init);
+        REQUIRE(int_init != unsigned_int_init);
+        REQUIRE(int_init != unsigned_long_init);
+
+        REQUIRE(long_init != double_init);
+        REQUIRE(long_init != int_init);
+        REQUIRE(long_init != unsigned_int_init);
+        REQUIRE(long_init != unsigned_long_init);
+
+        REQUIRE(unsigned_int_init != double_init);
+        REQUIRE(unsigned_int_init != int_init);
+        REQUIRE(unsigned_int_init != long_init);
+        REQUIRE(unsigned_int_init != unsigned_long_init);
+
+        REQUIRE(unsigned_long_init != double_init);
+        REQUIRE(unsigned_long_init != int_init);
+        REQUIRE(unsigned_long_init != long_init);
+        REQUIRE(unsigned_long_init != unsigned_int_init);
+
+        REQUIRE(std::hash<initial>{}(double_init) == std::hash<double_initial>{}(double_initial(0.0)));
+        REQUIRE(std::hash<initial>{}(int_init) == std::hash<int_initial>{}(int_initial(0)));
+        REQUIRE(std::hash<initial>{}(long_init) == std::hash<long_initial>{}(long_initial(0)));
+        REQUIRE(std::hash<initial>{}(unsigned_int_init) == std::hash<unsigned_int_initial>{}(unsigned_int_initial(0)));
+        REQUIRE(std::hash<initial>{}(unsigned_long_init) ==
+                std::hash<unsigned_long_initial>{}(unsigned_long_initial(0)));
+    }
+}

@@ -1,0 +1,31 @@
+--src = double_constant; dst = uint_var--
+		CVTTSD2SI(type(quad_word), src(Data(double_constant_0)), dst(ax))
+		Mov(type(long_word), src(ax), dst(Pseudo(unsigned_int_var)))
+--src = double_var; dst = uint_var--
+		CVTTSD2SI(type(quad_word), src(Pseudo(double_var)), dst(ax))
+		Mov(type(long_word), src(ax), dst(Pseudo(unsigned_int_var)))
+--src = double_constant; dst = ulong_var--
+		Cmp(type(double_asm), lhs(Data(double_constant_1)), rhs(Data(double_constant_0)))
+		JmpCC(cond(AE), target(asm_label_0))
+		CVTTSD2SI(type(quad_word), src(Data(double_constant_0)), dst(Pseudo(unsigned_long_var)))
+		Jmp(target(asm_label_1))
+		Label(asm_label_0)
+		Mov(type(double_asm), src(Data(double_constant_0)), dst(XMM15))
+		Binary(type(double_asm), op(Sub), src(Data(double_constant_1)), dst(XMM15))
+		CVTTSD2SI(type(quad_word), src(XMM15), dst(Pseudo(unsigned_long_var)))
+		Mov(type(quad_word), src(Imm(-9223372036854775808)), dst(ax))
+		Binary(type(quad_word), op(Add), src(ax), dst(Pseudo(unsigned_long_var)))
+		Label(asm_label_1)
+--src = double_var; dst = ulong_var--
+		Cmp(type(double_asm), lhs(Data(double_constant_1)), rhs(Pseudo(double_var)))
+		JmpCC(cond(AE), target(asm_label_2))
+		CVTTSD2SI(type(quad_word), src(Pseudo(double_var)), dst(Pseudo(unsigned_long_var)))
+		Jmp(target(asm_label_3))
+		Label(asm_label_2)
+		Mov(type(double_asm), src(Pseudo(double_var)), dst(XMM15))
+		Binary(type(double_asm), op(Sub), src(Data(double_constant_1)), dst(XMM15))
+		CVTTSD2SI(type(quad_word), src(XMM15), dst(Pseudo(unsigned_long_var)))
+		Mov(type(quad_word), src(Imm(-9223372036854775808)), dst(ax))
+		Binary(type(quad_word), op(Add), src(ax), dst(Pseudo(unsigned_long_var)))
+		Label(asm_label_3)
+

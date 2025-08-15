@@ -38,6 +38,7 @@ void backend_symbol_table::build(const symbol_table &table)
 assembly_type backend_symbol_table::get_assembly_type(const wccff::type &t)
 {
     return std::visit(visitor{
+                        [](const double_type &) -> assembly_type { return double_asm{}; },
                         [](const int_type &) -> assembly_type { return long_word{}; },
                         [](const long_type &) -> assembly_type { return quad_word{}; },
                         [](const unsigned_int_type &) -> assembly_type { return long_word{}; },
@@ -52,6 +53,7 @@ int32_t backend_symbol_table::calculate_offset(const assembly_type &t)
     return std::visit(visitor{
                         [](const long_word &) { return 4; },
                         [&](const quad_word &) { return m_offset % 8 == 0 ? 8 : (8 + std::abs(m_offset) % 8); },
+                        [&](const double_asm &) { return m_offset % 8 == 0 ? 8 : (8 + std::abs(m_offset) % 8); },
                       },
                       t);
 }

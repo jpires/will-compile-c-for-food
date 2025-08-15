@@ -1,0 +1,67 @@
+---Jump If Not Zero---
+--condition = double_constant; target = jump_target--
+		Binary(type(double_asm), op(Binary Xor), src(XMM0), dst(XMM0))
+		Cmp(type(double_asm), lhs(XMM0), rhs(Data(double_constant_0)))
+		JmpCC(cond(NE), target(jump_target))
+--condition = double_var; target = jump_target--
+		Binary(type(double_asm), op(Binary Xor), src(XMM0), dst(XMM0))
+		Cmp(type(double_asm), lhs(XMM0), rhs(Pseudo(double_var)))
+		JmpCC(cond(NE), target(jump_target))
+--condition = int_constant; target = jump_target--
+		Cmp(type(long_word), lhs(Imm(0)), rhs(Imm(1)))
+		JmpCC(cond(NE), target(jump_target))
+--condition = int_var; target = jump_target--
+		Cmp(type(long_word), lhs(Imm(0)), rhs(Pseudo(int_var)))
+		JmpCC(cond(NE), target(jump_target))
+--condition = long_constant; target = jump_target--
+		Cmp(type(quad_word), lhs(Imm(0)), rhs(Imm(1)))
+		JmpCC(cond(NE), target(jump_target))
+--condition = long_var; target = jump_target--
+		Cmp(type(quad_word), lhs(Imm(0)), rhs(Pseudo(long_var)))
+		JmpCC(cond(NE), target(jump_target))
+--condition = unsigned_int_constant; target = jump_target--
+		Cmp(type(long_word), lhs(Imm(0)), rhs(Imm(1)))
+		JmpCC(cond(NE), target(jump_target))
+--condition = unsigned_int_var; target = jump_target--
+		Cmp(type(long_word), lhs(Imm(0)), rhs(Pseudo(unsigned_int_var)))
+		JmpCC(cond(NE), target(jump_target))
+--condition = unsigned_long_constant; target = jump_target--
+		Cmp(type(quad_word), lhs(Imm(0)), rhs(Imm(1)))
+		JmpCC(cond(NE), target(jump_target))
+--condition = unsigned_long_var; target = jump_target--
+		Cmp(type(quad_word), lhs(Imm(0)), rhs(Pseudo(unsigned_long_var)))
+		JmpCC(cond(NE), target(jump_target))
+---Jump If Zero---
+--condition = double_constant; target = jump_target--
+		Binary(type(double_asm), op(Binary Xor), src(XMM0), dst(XMM0))
+		Cmp(type(double_asm), lhs(XMM0), rhs(Data(double_constant_0)))
+		JmpCC(cond(E), target(jump_target))
+--condition = double_var; target = jump_target--
+		Binary(type(double_asm), op(Binary Xor), src(XMM0), dst(XMM0))
+		Cmp(type(double_asm), lhs(XMM0), rhs(Pseudo(double_var)))
+		JmpCC(cond(E), target(jump_target))
+--condition = int_constant; target = jump_target--
+		Cmp(type(long_word), lhs(Imm(0)), rhs(Imm(1)))
+		JmpCC(cond(E), target(jump_target))
+--condition = int_var; target = jump_target--
+		Cmp(type(long_word), lhs(Imm(0)), rhs(Pseudo(int_var)))
+		JmpCC(cond(E), target(jump_target))
+--condition = long_constant; target = jump_target--
+		Cmp(type(quad_word), lhs(Imm(0)), rhs(Imm(1)))
+		JmpCC(cond(E), target(jump_target))
+--condition = long_var; target = jump_target--
+		Cmp(type(quad_word), lhs(Imm(0)), rhs(Pseudo(long_var)))
+		JmpCC(cond(E), target(jump_target))
+--condition = unsigned_int_constant; target = jump_target--
+		Cmp(type(long_word), lhs(Imm(0)), rhs(Imm(1)))
+		JmpCC(cond(E), target(jump_target))
+--condition = unsigned_int_var; target = jump_target--
+		Cmp(type(long_word), lhs(Imm(0)), rhs(Pseudo(unsigned_int_var)))
+		JmpCC(cond(E), target(jump_target))
+--condition = unsigned_long_constant; target = jump_target--
+		Cmp(type(quad_word), lhs(Imm(0)), rhs(Imm(1)))
+		JmpCC(cond(E), target(jump_target))
+--condition = unsigned_long_var; target = jump_target--
+		Cmp(type(quad_word), lhs(Imm(0)), rhs(Pseudo(unsigned_long_var)))
+		JmpCC(cond(E), target(jump_target))
+

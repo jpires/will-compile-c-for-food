@@ -1,0 +1,117 @@
+----fun_name = no_params; params = NONE; dst = tacky-1
+		Call no_params
+		Mov(type(long_word), src(ax), dst(Pseudo(tacky-1)))
+----fun_name = one_param; params = int_const; dst = tacky-1
+		Binary(type(quad_word), op(Sub), src(Imm(8)), dst(sp))
+		Mov(type(long_word), src(Imm(1)), dst(di))
+		Call one_param
+		Binary(type(quad_word), op(Add), src(Imm(8)), dst(sp))
+		Mov(type(long_word), src(ax), dst(Pseudo(tacky-1)))
+----fun_name = one_param; params = int_var; dst = tacky-1
+		Binary(type(quad_word), op(Sub), src(Imm(8)), dst(sp))
+		Mov(type(long_word), src(Pseudo(int_var)), dst(di))
+		Call one_param
+		Binary(type(quad_word), op(Add), src(Imm(8)), dst(sp))
+		Mov(type(long_word), src(ax), dst(Pseudo(tacky-1)))
+----fun_name = one_param; params = long_const; dst = tacky-1
+		Binary(type(quad_word), op(Sub), src(Imm(8)), dst(sp))
+		Mov(type(quad_word), src(Imm(1)), dst(di))
+		Call one_param
+		Binary(type(quad_word), op(Add), src(Imm(8)), dst(sp))
+		Mov(type(long_word), src(ax), dst(Pseudo(tacky-1)))
+----fun_name = one_param; params = long_var; dst = tacky-1
+		Binary(type(quad_word), op(Sub), src(Imm(8)), dst(sp))
+		Mov(type(quad_word), src(Pseudo(long_var)), dst(di))
+		Call one_param
+		Binary(type(quad_word), op(Add), src(Imm(8)), dst(sp))
+		Mov(type(long_word), src(ax), dst(Pseudo(tacky-1)))
+----fun_name = one_param; params = uint_const; dst = tacky-1
+		Binary(type(quad_word), op(Sub), src(Imm(8)), dst(sp))
+		Mov(type(long_word), src(Imm(1)), dst(di))
+		Call one_param
+		Binary(type(quad_word), op(Add), src(Imm(8)), dst(sp))
+		Mov(type(long_word), src(ax), dst(Pseudo(tacky-1)))
+----fun_name = one_param; params = uint_var; dst = tacky-1
+		Binary(type(quad_word), op(Sub), src(Imm(8)), dst(sp))
+		Mov(type(long_word), src(Pseudo(unsigned_int_var)), dst(di))
+		Call one_param
+		Binary(type(quad_word), op(Add), src(Imm(8)), dst(sp))
+		Mov(type(long_word), src(ax), dst(Pseudo(tacky-1)))
+----fun_name = one_param; params = ulong_var; dst = tacky-1
+		Binary(type(quad_word), op(Sub), src(Imm(8)), dst(sp))
+		Mov(type(quad_word), src(Pseudo(unsigned_long_var)), dst(di))
+		Call one_param
+		Binary(type(quad_word), op(Add), src(Imm(8)), dst(sp))
+		Mov(type(long_word), src(ax), dst(Pseudo(tacky-1)))
+----fun_name = six_params; params = int_const, int_var, long_const, long_var, uint_const, uint_var; dst = tacky-1
+		Mov(type(long_word), src(Imm(1)), dst(di))
+		Mov(type(long_word), src(Pseudo(int_var)), dst(si))
+		Mov(type(quad_word), src(Pseudo(long_var)), dst(dx))
+		Mov(type(quad_word), src(Imm(1)), dst(cx))
+		Mov(type(long_word), src(Imm(1)), dst(R8d))
+		Mov(type(long_word), src(Pseudo(unsigned_int_var)), dst(R9d))
+		Call six_params
+		Mov(type(long_word), src(ax), dst(Pseudo(tacky-1)))
+----fun_name = seven_params; params = int_const, int_var, long_const, long_var, uint_const, uint_var; dst = tacky-1
+		Binary(type(quad_word), op(Sub), src(Imm(8)), dst(sp))
+		Mov(type(long_word), src(Imm(1)), dst(di))
+		Mov(type(long_word), src(Pseudo(int_var)), dst(si))
+		Mov(type(quad_word), src(Imm(1)), dst(dx))
+		Mov(type(quad_word), src(Pseudo(long_var)), dst(cx))
+		Mov(type(long_word), src(Imm(1)), dst(R8d))
+		Mov(type(long_word), src(Pseudo(unsigned_int_var)), dst(R9d))
+		Push(Imm(1))
+		Call seven_params
+		Binary(type(quad_word), op(Add), src(Imm(16)), dst(sp))
+		Mov(type(long_word), src(ax), dst(Pseudo(tacky-1)))
+----fun_name = eight_params; params = int_const, int_var, long_const, long_var, uint_const, uint_var; dst = tacky-1
+		Mov(type(long_word), src(Imm(1)), dst(di))
+		Mov(type(long_word), src(Pseudo(int_var)), dst(si))
+		Mov(type(quad_word), src(Imm(1)), dst(dx))
+		Mov(type(quad_word), src(Pseudo(long_var)), dst(cx))
+		Mov(type(long_word), src(Imm(1)), dst(R8d))
+		Mov(type(long_word), src(Pseudo(unsigned_int_var)), dst(R9d))
+		Push(Pseudo(unsigned_long_var))
+		Push(Imm(1))
+		Call eight_params
+		Binary(type(quad_word), op(Add), src(Imm(16)), dst(sp))
+		Mov(type(long_word), src(ax), dst(Pseudo(tacky-1)))
+----fun_name = one_param; params = double_const; dst = tacky-1
+		Binary(type(quad_word), op(Sub), src(Imm(8)), dst(sp))
+		Mov(type(double_asm), src(Data(double_constant_0)), dst(XMM0))
+		Call one_param
+		Binary(type(quad_word), op(Add), src(Imm(8)), dst(sp))
+		Mov(type(long_word), src(ax), dst(Pseudo(tacky-1)))
+----fun_name = one_param; params = double_var; dst = tacky-1
+		Binary(type(quad_word), op(Sub), src(Imm(8)), dst(sp))
+		Mov(type(double_asm), src(Pseudo(double_var)), dst(XMM0))
+		Call one_param
+		Binary(type(quad_word), op(Add), src(Imm(8)), dst(sp))
+		Mov(type(long_word), src(ax), dst(Pseudo(tacky-1)))
+----fun_name = eight_params; params = (double_const; dst = tacky-1
+		Mov(type(double_asm), src(Data(double_constant_0)), dst(XMM0))
+		Mov(type(double_asm), src(Pseudo(double_var)), dst(XMM1))
+		Mov(type(double_asm), src(Data(double_constant_1)), dst(XMM2))
+		Mov(type(double_asm), src(Pseudo(double_var)), dst(XMM3))
+		Mov(type(double_asm), src(Data(double_constant_0)), dst(XMM4))
+		Mov(type(double_asm), src(Pseudo(double_var)), dst(XMM5))
+		Mov(type(double_asm), src(Data(double_constant_1)), dst(XMM6))
+		Mov(type(double_asm), src(Pseudo(double_var)), dst(XMM7))
+		Call eight_params
+		Binary(type(quad_word), op(Add), src(Imm(16)), dst(sp))
+		Mov(type(long_word), src(ax), dst(Pseudo(tacky-1)))
+----fun_name = nine_params; params = (double_const; dst = tacky-1
+		Binary(type(quad_word), op(Sub), src(Imm(8)), dst(sp))
+		Mov(type(double_asm), src(Data(double_constant_0)), dst(XMM0))
+		Mov(type(double_asm), src(Pseudo(double_var)), dst(XMM1))
+		Mov(type(double_asm), src(Data(double_constant_1)), dst(XMM2))
+		Mov(type(double_asm), src(Pseudo(double_var)), dst(XMM3))
+		Mov(type(double_asm), src(Data(double_constant_0)), dst(XMM4))
+		Mov(type(double_asm), src(Pseudo(double_var)), dst(XMM5))
+		Mov(type(double_asm), src(Data(double_constant_1)), dst(XMM6))
+		Mov(type(double_asm), src(Pseudo(double_var)), dst(XMM7))
+		Push(Pseudo(double_var))
+		Call nine_params
+		Binary(type(quad_word), op(Add), src(Imm(32)), dst(sp))
+		Mov(type(long_word), src(ax), dst(Pseudo(tacky-1)))
+
