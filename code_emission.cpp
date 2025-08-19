@@ -47,48 +47,60 @@ std::string process_register(const assembly_generation::reg &node, operand_size 
 {
     if (size == operand_size::four_bytes)
     {
-        return std::visit(visitor{ [](const assembly_generation::ax &) { return "%eax"; },
-                                   [](const assembly_generation::cx &) { return "%ecx"; },
-                                   [](const assembly_generation::dx &) { return "%edx"; },
-                                   [](const assembly_generation::di &) { return "%edi"; },
-                                   [](const assembly_generation::si &) { return "%esi"; },
-                                   [](const assembly_generation::R8 &) { return "%r8d"; },
-                                   [](const assembly_generation::R9 &) { return "%r9d"; },
-                                   [](const assembly_generation::R10 &) { return "%r10d"; },
-                                   [](const assembly_generation::R11 &) { return "%r11d"; },
-                                   [](const assembly_generation::SP &) { return "%esp"; },
-                                   [](const auto &) { return "%esp"; } },
+        return std::visit(visitor{
+                            [](const assembly_generation::ax &) -> std::string { return "%eax"; },
+                            [](const assembly_generation::cx &) -> std::string { return "%ecx"; },
+                            [](const assembly_generation::dx &) -> std::string { return "%edx"; },
+                            [](const assembly_generation::di &) -> std::string { return "%edi"; },
+                            [](const assembly_generation::si &) -> std::string { return "%esi"; },
+                            [](const assembly_generation::R8 &) -> std::string { return "%r8d"; },
+                            [](const assembly_generation::R9 &) -> std::string { return "%r9d"; },
+                            [](const assembly_generation::R10 &) -> std::string { return "%r10d"; },
+                            [](const assembly_generation::R11 &) -> std::string { return "%r11d"; },
+                            [](const assembly_generation::SP &) -> std::string { return "%esp"; },
+                            [](const auto &) -> std::string { throw std::runtime_error("Invalid register"); },
+                          },
                           node);
     }
     else if (size == operand_size::eight_bytes)
     {
         return std::visit(visitor{
-                            [](const assembly_generation::ax &) { return "%rax"; },
-                            [](const assembly_generation::cx &) { return "%rcx"; },
-                            [](const assembly_generation::dx &) { return "%rdx"; },
-                            [](const assembly_generation::di &) { return "%rdi"; },
-                            [](const assembly_generation::si &) { return "%rsi"; },
-                            [](const assembly_generation::R8 &) { return "%r8"; },
-                            [](const assembly_generation::R9 &) { return "%r9"; },
-                            [](const assembly_generation::R10 &) { return "%r10"; },
-                            [](const assembly_generation::R11 &) { return "%r11"; },
-                            [](const assembly_generation::SP &) { return "%rsp"; },
-                            [](const auto &) { return "%rsp"; },
+                            [](const assembly_generation::ax &) -> std::string { return "%rax"; },
+                            [](const assembly_generation::cx &) -> std::string { return "%rcx"; },
+                            [](const assembly_generation::dx &) -> std::string { return "%rdx"; },
+                            [](const assembly_generation::di &) -> std::string { return "%rdi"; },
+                            [](const assembly_generation::si &) -> std::string { return "%rsi"; },
+                            [](const assembly_generation::R8 &) -> std::string { return "%r8"; },
+                            [](const assembly_generation::R9 &) -> std::string { return "%r9"; },
+                            [](const assembly_generation::R10 &) -> std::string { return "%r10"; },
+                            [](const assembly_generation::R11 &) -> std::string { return "%r11"; },
+                            [](const assembly_generation::SP &) -> std::string { return "%rsp"; },
+                            [](const assembly_generation::XMM0 &) -> std::string { return "%xmm0"; },
+                            [](const assembly_generation::XMM1 &) -> std::string { return "%xmm1"; },
+                            [](const assembly_generation::XMM2 &) -> std::string { return "%xmm2"; },
+                            [](const assembly_generation::XMM3 &) -> std::string { return "%xmm3"; },
+                            [](const assembly_generation::XMM4 &) -> std::string { return "%xmm4"; },
+                            [](const assembly_generation::XMM5 &) -> std::string { return "%xmm5"; },
+                            [](const assembly_generation::XMM6 &) -> std::string { return "%xmm6"; },
+                            [](const assembly_generation::XMM7 &) -> std::string { return "%xmm7"; },
+                            [](const assembly_generation::XMM14 &) -> std::string { return "%xmm14"; },
+                            [](const assembly_generation::XMM15 &) -> std::string { return "%xmm15"; },
+                            [](const auto &) -> std::string { throw std::runtime_error("Invalid register"); },
                           },
                           node);
     }
     return std::visit(visitor{
-                        [](const assembly_generation::ax &) { return "%al"; },
-                        [](const assembly_generation::cx &) { return "%cl"; },
-                        [](const assembly_generation::dx &) { return "%dl"; },
-                        [](const assembly_generation::di &) { return "%di"; },
-                        [](const assembly_generation::si &) { return "%si"; },
-                        [](const assembly_generation::R8 &) { return "%r8b"; },
-                        [](const assembly_generation::R9 &) { return "%r9b"; },
-                        [](const assembly_generation::R10 &) { return "%r10b"; },
-                        [](const assembly_generation::R11 &) { return "%r11b"; },
-                        [](const assembly_generation::SP &) { return "%sp"; },
-                        [](const auto &) { return "%sp"; },
+                        [](const assembly_generation::ax &) -> std::string { return "%al"; },
+                        [](const assembly_generation::cx &) -> std::string { return "%cl"; },
+                        [](const assembly_generation::dx &) -> std::string { return "%dl"; },
+                        [](const assembly_generation::di &) -> std::string { return "%di"; },
+                        [](const assembly_generation::si &) -> std::string { return "%si"; },
+                        [](const assembly_generation::R8 &) -> std::string { return "%r8b"; },
+                        [](const assembly_generation::R9 &) -> std::string { return "%r9b"; },
+                        [](const assembly_generation::R10 &) -> std::string { return "%r10b"; },
+                        [](const assembly_generation::R11 &) -> std::string { return "%r11b"; },
+                        [](const assembly_generation::SP &) -> std::string { return "%sp"; },
+                        [](const auto &) -> std::string { throw std::runtime_error("Invalid register"); },
                       },
                       node);
 }
@@ -139,13 +151,19 @@ std::string_view process_assembly_type(const assembly_type &t)
     return std::visit(visitor{
                         [](const long_word &) { return "l"; },
                         [](const quad_word &) { return "q"; },
-                        [](const double_asm &) { return "q"; },
+                        [](const double_asm &) { return "sd"; },
                       },
                       t);
 }
 
 std::string process_mov_instruction(const assembly_generation::mov_instruction &mov)
 {
+    if (std::holds_alternative<wccff::double_asm>(mov.type))
+    {
+        return fmt::format("movsd {}, {}",
+                           process_operand(mov.src, operand_size::eight_bytes),
+                           process_operand(mov.dst, operand_size::eight_bytes));
+    }
     if (std::holds_alternative<wccff::quad_word>(mov.type))
     {
         return fmt::format("movq {}, {}",
@@ -185,6 +203,7 @@ std::string process_binary_operator(const assembly_generation::binary_operator &
                                 [](const assembly_generation::right_shift &) { return "sar"; },
                                 [](const assembly_generation::left_shift_aritmetic &) { return "shl"; },
                                 [](const assembly_generation::right_shift_aritmetic &) { return "shr"; },
+                                [](const assembly_generation::div_double &) { return "div"; },
                                 [](const auto &) { return "shr"; },
                               },
                               node);
@@ -209,6 +228,23 @@ std::string process_unary(const assembly_generation::unary &node)
 }
 std::string process_binary(const assembly_generation::binary &node)
 {
+    if (std::holds_alternative<double_asm>(node.type))
+    {
+        if (std::holds_alternative<assembly_generation::binary_xor>(node.op))
+        {
+            return fmt::format("xorpd {}, {}",
+                               process_operand(node.src, get_operand_size(node.type)),
+                               process_operand(node.dst, get_operand_size(node.type)));
+        }
+
+        if (std::holds_alternative<assembly_generation::mul>(node.op))
+        {
+            return fmt::format("mulsd {}, {}",
+                               process_operand(node.src, get_operand_size(node.type)),
+                               process_operand(node.dst, get_operand_size(node.type)));
+        }
+    }
+
     if (std::holds_alternative<assembly_generation::left_shift>(node.op) ||
         std::holds_alternative<assembly_generation::right_shift>(node.op) ||
         std::holds_alternative<assembly_generation::left_shift_aritmetic>(node.op) ||
@@ -228,10 +264,32 @@ std::string process_binary(const assembly_generation::binary &node)
 
 std::string process_cmp(const assembly_generation::cmp &node)
 {
+    if (std::holds_alternative<double_asm>(node.type))
+    {
+        return fmt::format("comisd {}, {}",
+                           process_operand(node.lhs, get_operand_size(node.type)),
+                           process_operand(node.rhs, get_operand_size(node.type)));
+    }
     return fmt::format("cmp{} {}, {}",
                        process_assembly_type(node.type),
                        process_operand(node.lhs, get_operand_size(node.type)),
                        process_operand(node.rhs, get_operand_size(node.type)));
+}
+
+std::string process_cmp(const assembly_generation::cvtsi2sd &node)
+{
+    return fmt::format("cvtsi2sd{} {}, {}",
+                       process_assembly_type(node.src_type),
+                       process_operand(node.src, get_operand_size(node.src_type)),
+                       process_operand(node.dst, operand_size::eight_bytes));
+}
+
+std::string process_cmp(const assembly_generation::cvttsd2si &node)
+{
+    return fmt::format("cvttsd2si{} {}, {}",
+                       process_assembly_type(node.dst_type),
+                       process_operand(node.src, operand_size::eight_bytes),
+                       process_operand(node.dst, get_operand_size(node.dst_type)));
 }
 
 std::string process_div(const assembly_generation::div &node)
@@ -288,6 +346,8 @@ std::string process_instruction(const assembly_generation::instruction &instruct
                         [](const assembly_generation::unary &node) { return process_unary(node); },
                         [](const assembly_generation::binary &node) { return process_binary(node); },
                         [](const assembly_generation::cmp &node) { return process_cmp(node); },
+                        [](const assembly_generation::cvtsi2sd &node) { return process_cmp(node); },
+                        [](const assembly_generation::cvttsd2si &node) { return process_cmp(node); },
                         [](const assembly_generation::div &node) { return process_div(node); },
                         [](const assembly_generation::idiv &node) { return process_idiv(node); },
                         [](const assembly_generation::cdq &node) { return process_cdq(node); },
@@ -354,6 +414,7 @@ std::string process_static_variable(const assembly_generation::static_variable &
                                        }
                                        return fmt::format(".quad {}", i.value);
                                    },
+                                   [](const double_initial &i) { return fmt::format(".double {}", i.value); },
                                    [](const auto &) -> std::string { throw std::runtime_error("Not implemented"); } },
                           init);
     };
@@ -366,14 +427,25 @@ std::string process_static_variable(const assembly_generation::static_variable &
     return fmt::format("\t{}\n\t{}\n\t.balign {}\n{}:\n\t{}\n", globl, section, f.alignment, function_name, init_value);
 }
 
+std::string process_static_constant(const assembly_generation::static_constant &f)
+{
+    auto init = std::get<double_initial>(f.init);
+    if (f.alignment == 8)
+    {
+        return fmt::format("\t.literal8\n\t.balign 8\n_{}:\n\t.double {}\n", f.name.name, init.value);
+    }
+    else
+    {
+        return fmt::format("\t.literal16\n\t.balign 16\n_{}:\n\t.double {}\n.quad 0\n", f.name.name, init.value);
+    }
+}
+
 std::string process_top_level(const assembly_generation::top_level &t)
 {
     return std::visit(visitor{
                         [](const assembly_generation::function &f) { return process_function(f); },
                         [](const assembly_generation::static_variable &f) { return process_static_variable(f); },
-                        [](const assembly_generation::static_constant &f) -> std::string {
-                            throw std::runtime_error("Not implemented");
-                        },
+                        [](const assembly_generation::static_constant &f) { return process_static_constant(f); },
                       },
                       t);
 }
