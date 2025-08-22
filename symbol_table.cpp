@@ -32,7 +32,7 @@ void backend_symbol_table::build(const symbol_table &table)
           },
           entry.second.attrs);
 
-        add(parser::identifier{ entry.first }, s);
+        add(identifier{ entry.first }, s);
     }
 }
 assembly_type backend_symbol_table::get_assembly_type(const wccff::type &t)

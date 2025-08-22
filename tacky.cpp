@@ -91,7 +91,7 @@ identifier get_loop_break_label(identifier n)
 var make_temporary_variable(const type &t, symbol_table::symbol_table &table)
 {
     auto name = get_temporary_name();
-    table.add(parser::identifier{ name }, t, symbol_table::local_attributes{});
+    table.add(identifier{ name }, t, symbol_table::local_attributes{});
     return var{ name };
 }
 
@@ -103,7 +103,7 @@ val process_assignment_node(const std::unique_ptr<parser::assignment_node> &node
     // The previous pass ensures that the left side of an assignment is a var.
     // If it's not, then terminate.
     auto &left = std::get<parser::var>(node->lhs);
-    auto dst = var{ process_identifier(left.name) };
+    auto dst = var{ left.name };
     instructions.emplace_back(copy_statement{ right, dst });
     return dst;
 }
@@ -148,11 +148,6 @@ constant process_constant(const constant &node)
                         [](const auto &) -> constant { throw std::runtime_error{ "Not Implemented" }; },
                       },
                       node);
-}
-
-identifier process_identifier(const parser::identifier &id)
-{
-    return { id.name };
 }
 
 void process_if(const std::unique_ptr<parser::if_node> &node,
@@ -384,7 +379,7 @@ val process_expression(const wccff::parser::expression &exp,
 {
     return std::visit(visitor{
                         [](const constant &c) -> val { return process_constant(c); },
-                        [](const parser::var &c) -> val { return var{ process_identifier(c.name) }; },
+                        [](const parser::var &c) -> val { return var{ c.name }; },
                         [&instructions, &table](const std::unique_ptr<parser::unary_node> &n) -> val {
                             return process_unary_node(n, instructions, table);
                         },
@@ -457,7 +452,7 @@ void process_block_item(const parser::block_item &s,
 
 void process_break_statement(const parser::break_statement &node, std::vector<instruction> &instructions)
 {
-    identifier label = get_loop_break_label(process_identifier(node.label));
+    identifier label = get_loop_break_label(node.label);
     instructions.emplace_back(jump_statement{ label });
 }
 
@@ -524,7 +519,7 @@ void process_compound_statement(const std::unique_ptr<parser::compound_statement
 
 void process_continue_statement(const parser::continue_statement &node, std::vector<instruction> &instructions)
 {
-    identifier label = get_loop_continue_label(process_identifier(node.label));
+    identifier label = get_loop_continue_label(node.label);
     instructions.emplace_back(jump_statement{ label });
 }
 
@@ -551,8 +546,8 @@ void process_do_while_statement(const std::unique_ptr<parser::do_while_statement
                                 symbol_table::symbol_table &table)
 {
     auto start_label = identifier{ fmt::format("start_{}", node->label.name) };
-    auto continue_label = get_loop_continue_label(process_identifier(node->label));
-    auto break_label = get_loop_break_label(process_identifier(node->label));
+    auto continue_label = get_loop_continue_label(node->label);
+    auto break_label = get_loop_break_label(node->label);
 
     instructions.emplace_back(label_statement{ start_label });
     process_statement(node->body, instructions, table);
@@ -585,8 +580,8 @@ void process_for_statement(const std::unique_ptr<parser::for_statement> &node,
                            symbol_table::symbol_table &table)
 {
     auto start_label = identifier{ fmt::format("start_{}", node->label.name) };
-    auto continue_label = get_loop_continue_label(process_identifier(node->label));
-    auto break_label = get_loop_break_label(process_identifier(node->label));
+    auto continue_label = get_loop_continue_label(node->label);
+    auto break_label = get_loop_break_label(node->label);
 
     process_for_init(node->init, instructions, table);
     instructions.emplace_back(label_statement{ start_label });
@@ -621,7 +616,7 @@ val process_function_call(const std::unique_ptr<parser::function_call> &f,
     }
 
     auto dst = make_temporary_variable(get_type(f), table);
-    instructions.emplace_back(fun_call{ process_identifier(f->name), std::move(arguments), dst });
+    instructions.emplace_back(fun_call{ f->name, std::move(arguments), dst });
 
     return dst;
 }
@@ -636,17 +631,14 @@ std::optional<function_definition> process_function_definition(const parser::fun
 
         for (const auto &p : f.arguments)
         {
-            params.emplace_back(process_identifier(p));
+            params.emplace_back(p);
         }
 
         process_block(f.body.value(), instructions, table);
         instructions.emplace_back(return_statement{ int_constant{ 0 } });
 
         auto attrs = std::get<symbol_table::func_attributes>(table.get(f.name)->attrs);
-        return function_definition{ process_identifier(f.name),
-                                    attrs.is_global,
-                                    std::move(params),
-                                    std::move(instructions) };
+        return function_definition{ f.name, attrs.is_global, std::move(params), std::move(instructions) };
     }
 
     return std::nullopt;
@@ -654,7 +646,7 @@ std::optional<function_definition> process_function_definition(const parser::fun
 
 void process_goto_statement(const parser::goto_statement &node, std::vector<instruction> &instructions)
 {
-    instructions.emplace_back(jump_statement{ process_identifier(node.label) });
+    instructions.emplace_back(jump_statement{ node.label });
 }
 
 void process_labeled_statement(const std::unique_ptr<parser::labelled_statement> &id,
@@ -691,12 +683,12 @@ program process(const parser::program &input, symbol_table::symbol_table &table)
             {
                 auto initial = std::get<wccff::initial>(attrs.init);
                 tacky_definition.push_back(
-                  static_variable{ process_identifier(symbol.name), attrs.is_global, copy_type(symbol.type), initial });
+                  static_variable{ symbol.name, attrs.is_global, copy_type(symbol.type), initial });
             }
             else if (std::holds_alternative<symbol_table::tentative>(attrs.init))
             {
 
-                tacky_definition.push_back(static_variable{ process_identifier(symbol.name),
+                tacky_definition.push_back(static_variable{ symbol.name,
                                                             attrs.is_global,
                                                             copy_type(symbol.type),
                                                             get_default_initial(symbol.type) });
@@ -726,7 +718,7 @@ void process_variable_declaration(const wccff::parser::variable_declaration &s,
     }
 
     auto src = process_expression(s.init.value(), instructions, table);
-    auto dst = var{ process_identifier(s.name) };
+    auto dst = var{ s.name };
     instructions.emplace_back(copy_statement{ src, dst });
 }
 
@@ -734,8 +726,8 @@ void process_while_statement(const std::unique_ptr<parser::while_statement> &nod
                              std::vector<instruction> &instructions,
                              symbol_table::symbol_table &table)
 {
-    auto continue_label = get_loop_continue_label(process_identifier(node->label));
-    auto break_label = get_loop_break_label(process_identifier(node->label));
+    auto continue_label = get_loop_continue_label(node->label);
+    auto break_label = get_loop_break_label(node->label);
 
     instructions.emplace_back(label_statement{ continue_label });
     auto result = process_expression(node->condition, instructions, table);

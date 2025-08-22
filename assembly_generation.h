@@ -30,12 +30,6 @@
 
 namespace wccff::assembly_generation {
 
-struct identifier
-{
-    std::string name;
-    bool operator==(const identifier &) const = default;
-};
-
 struct immediate
 {
     int64_t value;
@@ -384,7 +378,6 @@ class assembly_generation
     void process(const tacky::double_to_uint &stmt);
     void process(const tacky::fun_call &i);
     function process(const tacky::function_definition &f);
-    identifier process(const tacky::identifier &id);
     void process(const tacky::int_to_double &stmt);
     void process(const tacky::instruction &i);
     void process(const tacky::jump_if_not_zero_statement &stmt);

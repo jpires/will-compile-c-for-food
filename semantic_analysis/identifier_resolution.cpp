@@ -319,7 +319,7 @@ auto process_function_declaration(const parser::function_declaration &node, iden
 
     variable_map.create_scope();
 
-    std::vector<parser::identifier> args;
+    std::vector<identifier> args;
     for (const auto &a : node.arguments)
     {
         if (variable_map.find(a, identifier_map::scopes::current_scope).has_value())
@@ -553,7 +553,7 @@ auto process_variable_declaration(const parser::variable_declaration &node,
                                                  node.storage_class };
         }
 
-        parser::identifier unique_name = variable_map.add(node.name);
+        identifier unique_name = variable_map.add(node.name);
         std::optional<parser::expression> init;
         if (node.init.has_value())
         {

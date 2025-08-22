@@ -35,11 +35,6 @@ struct tacky_error
     std::string error_message;
 };
 
-struct identifier
-{
-    std::string name;
-};
-
 struct binary_and_operator
 {
 };
@@ -402,7 +397,6 @@ std::optional<function_definition> process_function_definition(const parser::fun
                                                                symbol_table::symbol_table &table);
 
 void process_goto_statement(const parser::goto_statement &node, std::vector<instruction> &instructions);
-identifier process_identifier(const parser::identifier &id);
 void process_if(const std::unique_ptr<parser::if_node> &id,
                 std::vector<instruction> &instructions,
                 symbol_table::symbol_table &table);

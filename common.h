@@ -23,6 +23,7 @@
 #include "visitor.h"
 #include <cmath>
 #include <cstdint>
+#include <fmt/format.h>
 #include <memory>
 #include <optional>
 #include <source_location>
@@ -32,6 +33,12 @@
 namespace wccff {
 
 std::string get_not_implemented_message(std::source_location loc = std::source_location::current());
+
+struct identifier
+{
+    std::string name;
+    bool operator==(const identifier &other) const = default;
+};
 
 struct double_type
 {
@@ -253,6 +260,17 @@ struct std::hash<wccff::initial>
             [](const wccff::double_initial &k1) { return std::hash<wccff::double_initial>()(k1); },
           },
           k);
+    }
+};
+
+template<>
+struct fmt::formatter<wccff::identifier> : formatter<string_view>
+{
+    template<typename FormatContext>
+    auto format(const wccff::identifier &id, FormatContext &ctx) const
+    {
+        auto str = fmt::format("{}", id.name);
+        return formatter<string_view>::format(str, ctx);
     }
 };
 

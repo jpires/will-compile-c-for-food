@@ -25,7 +25,7 @@
 
 TEST_CASE("Variable Map", "[variable_map]")
 {
-    using wccff::parser::identifier;
+    using wccff::identifier;
 
     wccff::sema::identifier_map vm;
 

@@ -47,7 +47,7 @@ assembly_type get_assembly_type(const tacky::val &v, const wccff::symbol_table::
 }
 assembly_type get_assembly_type(const tacky::var &v, const wccff::symbol_table::symbol_table &t)
 {
-    auto s = t.get(parser::identifier{ v.id.name });
+    auto s = t.get(v.id);
     if (s.has_value() == false)
     {
         throw std::logic_error("Variable not found");
@@ -88,7 +88,7 @@ type get_type(const tacky::val &v, const wccff::symbol_table::symbol_table &tabl
 }
 type get_type(const tacky::var &v, const wccff::symbol_table::symbol_table &table)
 {
-    auto s = table.get(parser::identifier{ v.id.name });
+    auto s = table.get(v.id);
     if (s.has_value() == false)
     {
         throw std::logic_error("Variable not found");
@@ -185,7 +185,7 @@ binary_operator process_binary_operator(const wccff::tacky::binary_operator &op,
 
 operand convert_pseudo(pseudo &r, wccff::symbol_table::backend_symbol_table &t)
 {
-    auto s = t.get(parser::identifier{ r.name.name });
+    auto s = t.get(r.name);
     if (s.has_value() == false)
     {
         throw std::logic_error(fmt::format("Pseudo {} doesn't have an entry on the backend_symbol_table", r.name.name));
@@ -196,7 +196,7 @@ operand convert_pseudo(pseudo &r, wccff::symbol_table::backend_symbol_table &t)
         return data{ r.name };
     }
 
-    return stack{ t.get_symbol_offset(parser::identifier{ r.name.name }) };
+    return stack{ t.get_symbol_offset(r.name) };
 }
 
 void replace_pseudo_registers(mov_instruction &i, wccff::symbol_table::backend_symbol_table &t)
@@ -698,7 +698,7 @@ void assembly_generation::process(const tacky::fun_call &i)
         }
     }
 
-    m_instructions.emplace_back(call{ process(i.fun_name) });
+    m_instructions.emplace_back(call{ i.fun_name });
 
     if (int to_remove = (stack_args * 8) + stack_padding; to_remove != 0)
     {
@@ -746,12 +746,7 @@ function assembly_generation::process(const tacky::function_definition &f)
     }
 
     process(f.instructions);
-    return function{ .name = process(f.name), .instructions = std::move(m_instructions), .is_global = f.global };
-}
-
-identifier assembly_generation::process(const wccff::tacky::identifier &id)
-{
-    return { id.name };
+    return function{ .name = f.name, .instructions = std::move(m_instructions), .is_global = f.global };
 }
 
 void assembly_generation::process(const tacky::int_to_double &stmt)
@@ -790,12 +785,12 @@ void assembly_generation::process(const tacky::jump_if_not_zero_statement &stmt)
     {
         m_instructions.emplace_back(binary{ binary_xor{}, XMM0{}, XMM0{}, double_asm{} });
         m_instructions.emplace_back(cmp{ XMM0{}, process(stmt.condition), asm_type });
-        m_instructions.emplace_back(jmpcc{ NE{}, process(stmt.target) });
+        m_instructions.emplace_back(jmpcc{ NE{}, stmt.target });
     }
     else
     {
         m_instructions.emplace_back(cmp{ immediate{ 0 }, process(stmt.condition), asm_type });
-        m_instructions.emplace_back(jmpcc{ NE{}, process(stmt.target) });
+        m_instructions.emplace_back(jmpcc{ NE{}, stmt.target });
     }
 }
 void assembly_generation::process(const tacky::jump_if_zero_statement &stmt)
@@ -806,21 +801,21 @@ void assembly_generation::process(const tacky::jump_if_zero_statement &stmt)
     {
         m_instructions.emplace_back(binary{ binary_xor{}, XMM0{}, XMM0{}, double_asm{} });
         m_instructions.emplace_back(cmp{ XMM0{}, process(stmt.condition), asm_type });
-        m_instructions.emplace_back(jmpcc{ E{}, process(stmt.target) });
+        m_instructions.emplace_back(jmpcc{ E{}, stmt.target });
     }
     else
     {
         m_instructions.emplace_back(cmp{ immediate{ 0 }, process(stmt.condition), asm_type });
-        m_instructions.emplace_back(jmpcc{ E{}, process(stmt.target) });
+        m_instructions.emplace_back(jmpcc{ E{}, stmt.target });
     }
 }
 void assembly_generation::process(const tacky::jump_statement &stmt)
 {
-    m_instructions.emplace_back(jmp{ process(stmt.target) });
+    m_instructions.emplace_back(jmp{ stmt.target });
 }
 void assembly_generation::process(const tacky::label_statement &stmt)
 {
-    m_instructions.emplace_back(label{ process(stmt.target) });
+    m_instructions.emplace_back(label{ stmt.target });
 }
 program assembly_generation::process(const tacky::program &program)
 {
@@ -864,8 +859,8 @@ static_variable assembly_generation::process(const tacky::static_variable &f)
                               [](const wccff::unsigned_long_type &) { return 8; },
                               [](const auto &) -> int32_t { throw std::logic_error("Not implemented"); },
                             },
-                            m_table.get(parser::identifier{ f.name.name }).value().type);
-    return { process(f.name), f.global, align, f.init };
+                            m_table.get(f.name).value().type);
+    return { f.name, f.global, align, f.init };
 }
 top_level assembly_generation::process(const tacky::top_level &f)
 {
@@ -950,7 +945,7 @@ operand assembly_generation::process(const wccff::tacky::val &v)
 {
     return std::visit(visitor{
                         [&](const constant &n) -> operand { return process(n); },
-                        [&](const tacky::var &n) -> operand { return pseudo{ process(n.id) }; },
+                        [&](const tacky::var &n) -> operand { return pseudo{ n.id }; },
                       },
                       v);
 }

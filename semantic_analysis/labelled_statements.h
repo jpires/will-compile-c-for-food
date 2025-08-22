@@ -37,11 +37,11 @@ namespace wccff::sema::labelled_statements {
 class labelled_statement_map
 {
   public:
-    explicit labelled_statement_map(parser::identifier function_name)
+    explicit labelled_statement_map(identifier function_name)
       : m_function_name(std::move(function_name))
     {
     }
-    std::expected<parser::identifier, semantic_error> add_label(const parser::identifier &l)
+    std::expected<identifier, semantic_error> add_label(const identifier &l)
     {
         if (std::find(m_labels.begin(), m_labels.end(), l.name) != m_labels.end())
         {
@@ -51,7 +51,7 @@ class labelled_statement_map
         m_labels.push_back(l.name);
         return generate_unique_name(l);
     }
-    parser::identifier add_goto(const parser::identifier &l)
+    identifier add_goto(const identifier &l)
     {
         m_gotos.push_back(l.name);
         return generate_unique_name(l);
@@ -70,11 +70,11 @@ class labelled_statement_map
     }
 
   private:
-    parser::identifier generate_unique_name(const parser::identifier &l)
+    identifier generate_unique_name(const identifier &l)
     {
-        return parser::identifier(fmt::format("label_{}._{}", m_function_name.name, l.name));
+        return identifier(fmt::format("label_{}._{}", m_function_name, l));
     }
-    parser::identifier m_function_name;
+    identifier m_function_name;
     std::vector<std::string> m_labels;
     std::vector<std::string> m_gotos;
 };

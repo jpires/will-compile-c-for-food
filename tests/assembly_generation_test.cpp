@@ -7,6 +7,7 @@
 
 TEST_CASE("Binary Operations", "[assembly_generation]")
 {
+    using wccff::identifier;
     using wccff::assembly_generation::pretty_print;
     auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("assembly_generation_results");
 
@@ -17,20 +18,12 @@ TEST_CASE("Binary Operations", "[assembly_generation]")
     wccff::tacky::var ulong_var{ "unsigned_long_var" };
 
     wccff::symbol_table::symbol_table table;
-    table.add(wccff::parser::identifier{ "tacky-1" }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ int_var.id.name }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ long_var.id.name },
-              wccff::long_type{},
-              wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ uint_var.id.name },
-              wccff::unsigned_int_type{},
-              wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ ulong_var.id.name },
-              wccff::unsigned_long_type{},
-              wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ double_var.id.name },
-              wccff::double_type{},
-              wccff::symbol_table::local_attributes{});
+    table.add(identifier{ "tacky-1" }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ int_var.id.name }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ long_var.id.name }, wccff::long_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ uint_var.id.name }, wccff::unsigned_int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ ulong_var.id.name }, wccff::unsigned_long_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ double_var.id.name }, wccff::double_type{}, wccff::symbol_table::local_attributes{});
 
     auto ams_process = wccff::assembly_generation::assembly_generation(table);
     std::string result;
@@ -246,6 +239,7 @@ TEST_CASE("Binary Operations", "[assembly_generation]")
 
 TEST_CASE("Double to Uint", "[assembly_generation]")
 {
+    using wccff::identifier;
     using wccff::assembly_generation::pretty_print;
     auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("assembly_generation_results");
 
@@ -256,20 +250,12 @@ TEST_CASE("Double to Uint", "[assembly_generation]")
     wccff::tacky::var ulong_var{ "unsigned_long_var" };
 
     wccff::symbol_table::symbol_table table;
-    table.add(wccff::parser::identifier{ "tacky-1" }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ int_var.id.name }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ long_var.id.name },
-              wccff::long_type{},
-              wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ uint_var.id.name },
-              wccff::unsigned_int_type{},
-              wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ ulong_var.id.name },
-              wccff::unsigned_long_type{},
-              wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ double_var.id.name },
-              wccff::double_type{},
-              wccff::symbol_table::local_attributes{});
+    table.add(identifier{ "tacky-1" }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ int_var.id.name }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ long_var.id.name }, wccff::long_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ uint_var.id.name }, wccff::unsigned_int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ ulong_var.id.name }, wccff::unsigned_long_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ double_var.id.name }, wccff::double_type{}, wccff::symbol_table::local_attributes{});
 
     auto ams_process = wccff::assembly_generation::assembly_generation(table);
     std::string result;
@@ -306,6 +292,7 @@ TEST_CASE("Double to Uint", "[assembly_generation]")
 
 TEST_CASE("Function Call", "[assembly_generation]")
 {
+    using wccff::identifier;
     using wccff::assembly_generation::pretty_print;
     auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("assembly_generation_results");
 
@@ -316,20 +303,12 @@ TEST_CASE("Function Call", "[assembly_generation]")
     wccff::tacky::var ulong_var{ "unsigned_long_var" };
 
     wccff::symbol_table::symbol_table table;
-    table.add(wccff::parser::identifier{ "tacky-1" }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ int_var.id.name }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ long_var.id.name },
-              wccff::long_type{},
-              wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ uint_var.id.name },
-              wccff::unsigned_int_type{},
-              wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ ulong_var.id.name },
-              wccff::unsigned_long_type{},
-              wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ double_var.id.name },
-              wccff::double_type{},
-              wccff::symbol_table::local_attributes{});
+    table.add(identifier{ "tacky-1" }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ int_var.id.name }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ long_var.id.name }, wccff::long_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ uint_var.id.name }, wccff::unsigned_int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ ulong_var.id.name }, wccff::unsigned_long_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ double_var.id.name }, wccff::double_type{}, wccff::symbol_table::local_attributes{});
 
     auto ams_process = wccff::assembly_generation::assembly_generation(table);
     std::string result;
@@ -346,12 +325,12 @@ TEST_CASE("Function Call", "[assembly_generation]")
     wccff::unsigned_long_constant ulong_const_2{ 2 };
     wccff::tacky::var dst{ "tacky-1" };
 
-    wccff::tacky::identifier no_params{ "no_params" };
-    wccff::tacky::identifier one_param{ "one_param" };
-    wccff::tacky::identifier six_params{ "six_params" };
-    wccff::tacky::identifier seven_params{ "seven_params" };
-    wccff::tacky::identifier eight_params{ "eight_params" };
-    wccff::tacky::identifier nine_params{ "nine_params" };
+    identifier no_params{ "no_params" };
+    identifier one_param{ "one_param" };
+    identifier six_params{ "six_params" };
+    identifier seven_params{ "seven_params" };
+    identifier eight_params{ "eight_params" };
+    identifier nine_params{ "nine_params" };
 
     result += "----fun_name = no_params; params = NONE; dst = tacky-1\n";
     wccff::tacky::fun_call stmt1{ no_params, {}, dst };
@@ -506,46 +485,47 @@ TEST_CASE("Function Call", "[assembly_generation]")
 
 TEST_CASE("Function Definition", "[assembly_generation]")
 {
+    using wccff::identifier;
     using wccff::assembly_generation::pretty_print;
     using wccff::symbol_table::local_attributes;
     auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("assembly_generation_results");
 
-    wccff::tacky::identifier double_var_1{ "double_var_1" };
-    wccff::tacky::identifier double_var_2{ "double_var_2" };
-    wccff::tacky::identifier double_var_3{ "double_var_3" };
-    wccff::tacky::identifier double_var_4{ "double_var_4" };
-    wccff::tacky::identifier double_var_5{ "double_var_5" };
-    wccff::tacky::identifier double_var_6{ "double_var_6" };
-    wccff::tacky::identifier double_var_7{ "double_var_7" };
-    wccff::tacky::identifier double_var_8{ "double_var_8" };
-    wccff::tacky::identifier double_var_9{ "double_var_9" };
-    wccff::tacky::identifier int_var_1{ "int_var_1" };
-    wccff::tacky::identifier int_var_2{ "int_var_2" };
-    wccff::tacky::identifier long_var_1{ "long_var_1" };
-    wccff::tacky::identifier long_var_2{ "long_var_2" };
-    wccff::tacky::identifier uint_var_1{ "unsigned_int_var_1" };
-    wccff::tacky::identifier uint_var_2{ "unsigned_int_var_2" };
-    wccff::tacky::identifier ulong_var_1{ "unsigned_long_var_1" };
-    wccff::tacky::identifier ulong_var_2{ "unsigned_long_var_2" };
+    identifier double_var_1{ "double_var_1" };
+    identifier double_var_2{ "double_var_2" };
+    identifier double_var_3{ "double_var_3" };
+    identifier double_var_4{ "double_var_4" };
+    identifier double_var_5{ "double_var_5" };
+    identifier double_var_6{ "double_var_6" };
+    identifier double_var_7{ "double_var_7" };
+    identifier double_var_8{ "double_var_8" };
+    identifier double_var_9{ "double_var_9" };
+    identifier int_var_1{ "int_var_1" };
+    identifier int_var_2{ "int_var_2" };
+    identifier long_var_1{ "long_var_1" };
+    identifier long_var_2{ "long_var_2" };
+    identifier uint_var_1{ "unsigned_int_var_1" };
+    identifier uint_var_2{ "unsigned_int_var_2" };
+    identifier ulong_var_1{ "unsigned_long_var_1" };
+    identifier ulong_var_2{ "unsigned_long_var_2" };
 
     wccff::symbol_table::symbol_table table;
-    table.add(wccff::parser::identifier{ double_var_1.name }, wccff::double_type{}, local_attributes{});
-    table.add(wccff::parser::identifier{ double_var_2.name }, wccff::double_type{}, local_attributes{});
-    table.add(wccff::parser::identifier{ double_var_3.name }, wccff::double_type{}, local_attributes{});
-    table.add(wccff::parser::identifier{ double_var_4.name }, wccff::double_type{}, local_attributes{});
-    table.add(wccff::parser::identifier{ double_var_5.name }, wccff::double_type{}, local_attributes{});
-    table.add(wccff::parser::identifier{ double_var_6.name }, wccff::double_type{}, local_attributes{});
-    table.add(wccff::parser::identifier{ double_var_7.name }, wccff::double_type{}, local_attributes{});
-    table.add(wccff::parser::identifier{ double_var_8.name }, wccff::double_type{}, local_attributes{});
-    table.add(wccff::parser::identifier{ double_var_9.name }, wccff::double_type{}, local_attributes{});
-    table.add(wccff::parser::identifier{ int_var_1.name }, wccff::int_type{}, local_attributes{});
-    table.add(wccff::parser::identifier{ int_var_2.name }, wccff::int_type{}, local_attributes{});
-    table.add(wccff::parser::identifier{ long_var_1.name }, wccff::long_type{}, local_attributes{});
-    table.add(wccff::parser::identifier{ long_var_2.name }, wccff::long_type{}, local_attributes{});
-    table.add(wccff::parser::identifier{ uint_var_1.name }, wccff::unsigned_int_type{}, local_attributes{});
-    table.add(wccff::parser::identifier{ uint_var_2.name }, wccff::unsigned_int_type{}, local_attributes{});
-    table.add(wccff::parser::identifier{ ulong_var_1.name }, wccff::unsigned_long_type{}, local_attributes{});
-    table.add(wccff::parser::identifier{ ulong_var_2.name }, wccff::unsigned_long_type{}, local_attributes{});
+    table.add(identifier{ double_var_1.name }, wccff::double_type{}, local_attributes{});
+    table.add(identifier{ double_var_2.name }, wccff::double_type{}, local_attributes{});
+    table.add(identifier{ double_var_3.name }, wccff::double_type{}, local_attributes{});
+    table.add(identifier{ double_var_4.name }, wccff::double_type{}, local_attributes{});
+    table.add(identifier{ double_var_5.name }, wccff::double_type{}, local_attributes{});
+    table.add(identifier{ double_var_6.name }, wccff::double_type{}, local_attributes{});
+    table.add(identifier{ double_var_7.name }, wccff::double_type{}, local_attributes{});
+    table.add(identifier{ double_var_8.name }, wccff::double_type{}, local_attributes{});
+    table.add(identifier{ double_var_9.name }, wccff::double_type{}, local_attributes{});
+    table.add(identifier{ int_var_1.name }, wccff::int_type{}, local_attributes{});
+    table.add(identifier{ int_var_2.name }, wccff::int_type{}, local_attributes{});
+    table.add(identifier{ long_var_1.name }, wccff::long_type{}, local_attributes{});
+    table.add(identifier{ long_var_2.name }, wccff::long_type{}, local_attributes{});
+    table.add(identifier{ uint_var_1.name }, wccff::unsigned_int_type{}, local_attributes{});
+    table.add(identifier{ uint_var_2.name }, wccff::unsigned_int_type{}, local_attributes{});
+    table.add(identifier{ ulong_var_1.name }, wccff::unsigned_long_type{}, local_attributes{});
+    table.add(identifier{ ulong_var_2.name }, wccff::unsigned_long_type{}, local_attributes{});
 
     auto ams_process = wccff::assembly_generation::assembly_generation(table);
     std::string result;
@@ -564,12 +544,12 @@ TEST_CASE("Function Definition", "[assembly_generation]")
     std::vector<wccff::tacky::instruction> long_body;
     long_body.emplace_back(wccff::tacky::return_statement{ long_const });
 
-    wccff::tacky::identifier no_params{ "no_params" };
-    wccff::tacky::identifier one_param{ "one_param" };
-    wccff::tacky::identifier six_params{ "six_params" };
-    wccff::tacky::identifier seven_params{ "seven_params" };
-    wccff::tacky::identifier eight_params{ "eight_params" };
-    wccff::tacky::identifier nine_params{ "nine_params" };
+    identifier no_params{ "no_params" };
+    identifier one_param{ "one_param" };
+    identifier six_params{ "six_params" };
+    identifier seven_params{ "seven_params" };
+    identifier eight_params{ "eight_params" };
+    identifier nine_params{ "nine_params" };
 
     result += "----fun_name = no_params; global = false; params = NONE; body = int_body\n";
     wccff::tacky::function_definition stmt1{ no_params, false, {}, int_body };
@@ -644,6 +624,7 @@ TEST_CASE("Function Definition", "[assembly_generation]")
 
 TEST_CASE("Others", "[assembly_generation]")
 {
+    using wccff::identifier;
     using wccff::assembly_generation::pretty_print;
     auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("assembly_generation_results");
 
@@ -654,20 +635,12 @@ TEST_CASE("Others", "[assembly_generation]")
     wccff::tacky::var ulong_var{ "unsigned_long_var" };
 
     wccff::symbol_table::symbol_table table;
-    table.add(wccff::parser::identifier{ "tacky-1" }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ int_var.id.name }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ long_var.id.name },
-              wccff::long_type{},
-              wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ uint_var.id.name },
-              wccff::unsigned_int_type{},
-              wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ ulong_var.id.name },
-              wccff::unsigned_long_type{},
-              wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ double_var.id.name },
-              wccff::double_type{},
-              wccff::symbol_table::local_attributes{});
+    table.add(identifier{ "tacky-1" }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ int_var.id.name }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ long_var.id.name }, wccff::long_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ uint_var.id.name }, wccff::unsigned_int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ ulong_var.id.name }, wccff::unsigned_long_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ double_var.id.name }, wccff::double_type{}, wccff::symbol_table::local_attributes{});
 
     auto ams_process = wccff::assembly_generation::assembly_generation(table);
     std::string result;
@@ -679,7 +652,7 @@ TEST_CASE("Others", "[assembly_generation]")
     wccff::unsigned_long_constant ulong_const{ 1 };
     wccff::tacky::var dst{ "tacky-1" };
 
-    wccff::tacky::identifier target{ "jump_target" };
+    identifier target{ "jump_target" };
 
     {
         result += "---Jump If Not Zero---\n";
@@ -810,6 +783,7 @@ TEST_CASE("Others", "[assembly_generation]")
 
 TEST_CASE("Return Statement", "[assembly_generation]")
 {
+    using wccff::identifier;
     using wccff::assembly_generation::pretty_print;
     auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("assembly_generation_results");
 
@@ -820,20 +794,12 @@ TEST_CASE("Return Statement", "[assembly_generation]")
     wccff::tacky::var ulong_var{ "unsigned_long_var" };
 
     wccff::symbol_table::symbol_table table;
-    table.add(wccff::parser::identifier{ "tacky-1" }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ int_var.id.name }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ long_var.id.name },
-              wccff::long_type{},
-              wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ uint_var.id.name },
-              wccff::unsigned_int_type{},
-              wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ ulong_var.id.name },
-              wccff::unsigned_long_type{},
-              wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ double_var.id.name },
-              wccff::double_type{},
-              wccff::symbol_table::local_attributes{});
+    table.add(identifier{ "tacky-1" }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ int_var.id.name }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ long_var.id.name }, wccff::long_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ uint_var.id.name }, wccff::unsigned_int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ ulong_var.id.name }, wccff::unsigned_long_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ double_var.id.name }, wccff::double_type{}, wccff::symbol_table::local_attributes{});
 
     auto ams_process = wccff::assembly_generation::assembly_generation(table);
     std::string result;
@@ -910,6 +876,7 @@ TEST_CASE("Return Statement", "[assembly_generation]")
 
 TEST_CASE("Unary Operators", "[assembly_generation]")
 {
+    using wccff::identifier;
     using wccff::assembly_generation::pretty_print;
     auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("assembly_generation_results");
 
@@ -920,20 +887,12 @@ TEST_CASE("Unary Operators", "[assembly_generation]")
     wccff::tacky::var ulong_var{ "unsigned_long_var" };
 
     wccff::symbol_table::symbol_table table;
-    table.add(wccff::parser::identifier{ "tacky-1" }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ int_var.id.name }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ long_var.id.name },
-              wccff::long_type{},
-              wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ uint_var.id.name },
-              wccff::unsigned_int_type{},
-              wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ ulong_var.id.name },
-              wccff::unsigned_long_type{},
-              wccff::symbol_table::local_attributes{});
-    table.add(wccff::parser::identifier{ double_var.id.name },
-              wccff::double_type{},
-              wccff::symbol_table::local_attributes{});
+    table.add(identifier{ "tacky-1" }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ int_var.id.name }, wccff::int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ long_var.id.name }, wccff::long_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ uint_var.id.name }, wccff::unsigned_int_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ ulong_var.id.name }, wccff::unsigned_long_type{}, wccff::symbol_table::local_attributes{});
+    table.add(identifier{ double_var.id.name }, wccff::double_type{}, wccff::symbol_table::local_attributes{});
 
     auto ams_process = wccff::assembly_generation::assembly_generation(table);
     std::string result;
@@ -1734,6 +1693,7 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
 
 TEST_CASE("pretty_print", "[assembly_generation]")
 {
+    using wccff::identifier;
     using wccff::long_word;
     using wccff::quad_word;
     using wccff::assembly_generation::A;
@@ -1750,7 +1710,6 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     using wccff::assembly_generation::function;
     using wccff::assembly_generation::G;
     using wccff::assembly_generation::GE;
-    using wccff::assembly_generation::identifier;
     using wccff::assembly_generation::immediate;
     using wccff::assembly_generation::L;
     using wccff::assembly_generation::LE;

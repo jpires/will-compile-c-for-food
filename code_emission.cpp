@@ -33,9 +33,9 @@ operand_size get_operand_size(const assembly_type &t)
                       t);
 }
 
-std::string process_identifier(const assembly_generation::identifier &identifier)
+std::string process_identifier(const identifier &identifier)
 {
-    return fmt::format("_{}", identifier.name);
+    return fmt::format("_{}", identifier);
 }
 
 std::string process_immediate(const assembly_generation::immediate &immediate)

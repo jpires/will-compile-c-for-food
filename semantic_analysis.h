@@ -53,7 +53,7 @@ class identifier_map
 
     struct symbol
     {
-        symbol(parser::identifier name, parser::identifier unique_name, linkage link)
+        symbol(identifier name, identifier unique_name, linkage link)
           : linkage(link)
           , name(std::move(name))
           , unique_name(std::move(unique_name))
@@ -61,18 +61,18 @@ class identifier_map
         }
 
         linkage linkage;
-        parser::identifier name;
-        parser::identifier unique_name;
+        identifier name;
+        identifier unique_name;
     };
 
     identifier_map() { m_map.emplace_back(); }
-    parser::identifier add(const parser::identifier &name, linkage link = linkage::internal);
+    identifier add(const identifier &name, linkage link = linkage::internal);
     void create_scope();
     void destroy_scope();
-    std::optional<symbol> find(const parser::identifier &name, scopes on_current_scope = scopes::all_scopes) const;
+    std::optional<symbol> find(const identifier &name, scopes on_current_scope = scopes::all_scopes) const;
 
   private:
-    parser::identifier generate_unique_name(const parser::identifier &name);
+    identifier generate_unique_name(const identifier &name);
 
     std::vector<std::unordered_map<std::string, symbol>> m_map;
     int32_t m_counter = 0;

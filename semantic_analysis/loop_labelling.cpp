@@ -23,13 +23,13 @@
 
 namespace wccff::sema::loop_labelling {
 
-static parser::identifier generate_loop_label()
+static identifier generate_loop_label()
 {
     static int32_t counter = 0;
-    return parser::identifier(fmt::format("loop_{}", counter++));
+    return identifier(fmt::format("loop_{}", counter++));
 }
 
-auto process_block(const parser::block &node, const std::optional<parser::identifier> &label)
+auto process_block(const parser::block &node, const std::optional<identifier> &label)
   -> std::expected<parser::block, semantic_error>
 {
     std::vector<parser::block_item> items;
@@ -46,7 +46,7 @@ auto process_block(const parser::block &node, const std::optional<parser::identi
     return parser::block{ std::move(items) };
 }
 
-auto process_block_item(const parser::block_item &node, const std::optional<parser::identifier> &label)
+auto process_block_item(const parser::block_item &node, const std::optional<identifier> &label)
   -> std::expected<parser::block_item, semantic_error>
 {
     return std::visit(visitor{
@@ -63,7 +63,7 @@ auto process_block_item(const parser::block_item &node, const std::optional<pars
                       node);
 }
 
-auto process_break_statement(const std::optional<parser::identifier> &label)
+auto process_break_statement(const std::optional<identifier> &label)
   -> std::expected<parser::break_statement, semantic_error>
 {
     if (label.has_value() == false)
@@ -74,7 +74,7 @@ auto process_break_statement(const std::optional<parser::identifier> &label)
 }
 
 auto process_compound_statement(const std::unique_ptr<parser::compound_statement> &node,
-                                const std::optional<parser::identifier> &label)
+                                const std::optional<identifier> &label)
   -> std::expected<std::unique_ptr<parser::compound_statement>, semantic_error>
 {
     auto tmp = process_block(node->block, label);
@@ -85,7 +85,7 @@ auto process_compound_statement(const std::unique_ptr<parser::compound_statement
     return std::make_unique<parser::compound_statement>(std::move(tmp.value()));
 }
 
-auto process_continue_statement(const std::optional<parser::identifier> &label)
+auto process_continue_statement(const std::optional<identifier> &label)
   -> std::expected<parser::continue_statement, semantic_error>
 {
     if (label.has_value() == false)
@@ -110,10 +110,10 @@ auto process_declaration(const parser::declaration &node) -> std::expected<parse
 }
 
 auto process_do_while_statement(const std::unique_ptr<parser::do_while_statement> &node,
-                                const std::optional<parser::identifier> &label)
+                                const std::optional<identifier> &label)
   -> std::expected<std::unique_ptr<parser::do_while_statement>, semantic_error>
 {
-    parser::identifier new_label = generate_loop_label();
+    identifier new_label = generate_loop_label();
     auto body = process_statement(node->body, new_label);
     if (body.has_value() == false)
     {
@@ -124,11 +124,10 @@ auto process_do_while_statement(const std::unique_ptr<parser::do_while_statement
     return std::make_unique<parser::do_while_statement>(std::move(body.value()), std::move(condition), new_label);
 }
 
-auto process_for_statement(const std::unique_ptr<parser::for_statement> &node,
-                           const std::optional<parser::identifier> &label)
+auto process_for_statement(const std::unique_ptr<parser::for_statement> &node, const std::optional<identifier> &label)
   -> std::expected<std::unique_ptr<parser::for_statement>, semantic_error>
 {
-    parser::identifier new_label = generate_loop_label();
+    identifier new_label = generate_loop_label();
     parser::for_init init = std::visit(visitor{
                                          [](const parser::init_declaration &n) -> parser::for_init {
                                              return parser::init_declaration{ parser::copy_declaration(n.decl) };
@@ -183,7 +182,7 @@ auto process_function_declaration(const parser::function_declaration &node)
                                          node.storage_class };
 }
 
-auto process_if_node(const std::unique_ptr<parser::if_node> &node, const std::optional<parser::identifier> &label)
+auto process_if_node(const std::unique_ptr<parser::if_node> &node, const std::optional<identifier> &label)
   -> std::expected<std::unique_ptr<parser::if_node>, semantic_error>
 {
     auto then_stmt = process_statement(node->then_stmt, label);
@@ -208,7 +207,7 @@ auto process_if_node(const std::unique_ptr<parser::if_node> &node, const std::op
                                              std::move(else_stmt));
 }
 auto process_labelled_statement(const std::unique_ptr<parser::labelled_statement> &node,
-                                const std::optional<parser::identifier> &label)
+                                const std::optional<identifier> &label)
   -> std::expected<std::unique_ptr<parser::labelled_statement>, semantic_error>
 {
     auto body = process_statement(node->body, label);
@@ -236,7 +235,7 @@ auto process_program(const parser::program &node) -> std::expected<parser::progr
     return parser::program{ std::move(functions) };
 }
 
-auto process_statement(const parser::statement &node, const std::optional<parser::identifier> &label)
+auto process_statement(const parser::statement &node, const std::optional<identifier> &label)
   -> std::expected<parser::statement, semantic_error>
 {
     return std::visit(
@@ -277,10 +276,10 @@ auto process_statement(const parser::statement &node, const std::optional<parser
 }
 
 auto process_while_statement(const std::unique_ptr<parser::while_statement> &node,
-                             const std::optional<parser::identifier> &label)
+                             const std::optional<identifier> &label)
   -> std::expected<std::unique_ptr<parser::while_statement>, semantic_error>
 {
-    parser::identifier new_label = generate_loop_label();
+    identifier new_label = generate_loop_label();
     auto condition = parser::copy_expression(node->condition);
 
     auto body = process_statement(node->body, new_label);

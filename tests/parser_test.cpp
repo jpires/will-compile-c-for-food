@@ -1118,7 +1118,7 @@ TEST_CASE("parse_function_declaration", "[parser]")
 TEST_CASE("parse_params_list", "[parser]")
 {
     using namespace wccff;
-    using parser::identifier;
+    using wccff::identifier;
     using wccff::int_type;
     using wccff::long_type;
     using wccff::void_type;
@@ -1325,9 +1325,9 @@ TEST_CASE("parser_pretty_printers", "[parser]")
 
     SECTION("block")
     {
+        using wccff::identifier;
         using wccff::int_constant;
         using wccff::parser::block;
-        using wccff::parser::identifier;
         using wccff::parser::return_node;
         using wccff::parser::variable_declaration;
         std::vector<wccff::parser::block_item> items;
@@ -1344,8 +1344,8 @@ TEST_CASE("parser_pretty_printers", "[parser]")
 
     SECTION("break")
     {
+        using wccff::identifier;
         using wccff::parser::break_statement;
-        using wccff::parser::identifier;
         identifier var_name{ "label_name" };
 
         break_statement b{ var_name };
@@ -1355,11 +1355,11 @@ TEST_CASE("parser_pretty_printers", "[parser]")
 
     SECTION("cast_expression")
     {
+        using wccff::identifier;
         using wccff::int_type;
         using wccff::long_constant;
         using wccff::long_type;
         using wccff::parser::cast_expression;
-        using wccff::parser::identifier;
         using wccff::parser::var;
         using wccff::testing::get_binary_node;
         using wccff::testing::get_long_constant;
@@ -1380,10 +1380,10 @@ TEST_CASE("parser_pretty_printers", "[parser]")
     }
     SECTION("compound_statement")
     {
+        using wccff::identifier;
         using wccff::int_constant;
         using wccff::parser::block;
         using wccff::parser::compound_statement;
-        using wccff::parser::identifier;
         using wccff::parser::return_node;
         using wccff::parser::variable_declaration;
         std::vector<wccff::parser::block_item> items;
@@ -1401,8 +1401,8 @@ TEST_CASE("parser_pretty_printers", "[parser]")
 
     SECTION("continue")
     {
+        using wccff::identifier;
         using wccff::parser::continue_statement;
-        using wccff::parser::identifier;
         identifier var_name{ "label_name" };
 
         continue_statement b{ var_name };
@@ -1412,11 +1412,11 @@ TEST_CASE("parser_pretty_printers", "[parser]")
 
     SECTION("do_while")
     {
+        using wccff::identifier;
         using wccff::int_constant;
         using wccff::parser::binary_node;
         using wccff::parser::do_while_statement;
         using wccff::parser::equals_operator;
-        using wccff::parser::identifier;
         using wccff::parser::return_node;
 
         auto loop_name = identifier("loop_name");
@@ -1429,8 +1429,8 @@ TEST_CASE("parser_pretty_printers", "[parser]")
 
     SECTION("function")
     {
+        using wccff::identifier;
         using wccff::parser::function;
-        using wccff::parser::identifier;
 
         auto name = identifier("var_name");
         SECTION("without_items")
@@ -1453,13 +1453,13 @@ TEST_CASE("parser_pretty_printers", "[parser]")
 
     SECTION("for_loop")
     {
+        using wccff::identifier;
         using wccff::int_constant;
         using wccff::parser::binary_node;
         using wccff::parser::equals_operator;
         using wccff::parser::expression;
         using wccff::parser::for_init;
         using wccff::parser::for_statement;
-        using wccff::parser::identifier;
         using wccff::parser::init_expression;
         using wccff::parser::plus_operator;
         using wccff::parser::return_node;
@@ -1590,6 +1590,7 @@ TEST_CASE("parser_pretty_printers", "[parser]")
 
     SECTION("function_declaration")
     {
+        using wccff::identifier;
         using wccff::int_constant;
         using wccff::int_type;
         using wccff::long_type;
@@ -1597,7 +1598,6 @@ TEST_CASE("parser_pretty_printers", "[parser]")
         using wccff::parser::block;
         using wccff::parser::block_item;
         using wccff::parser::function_declaration;
-        using wccff::parser::identifier;
         using wccff::parser::return_node;
         using wccff::testing::get_block;
         using wccff::testing::get_function_type;
@@ -1625,9 +1625,9 @@ TEST_CASE("parser_pretty_printers", "[parser]")
 
         std::string result;
 
-        std::vector<wccff::parser::identifier> arguments;
-        arguments.emplace_back(wccff::parser::identifier{ "param_1" });
-        arguments.emplace_back(wccff::parser::identifier{ "param_2" });
+        std::vector<wccff::identifier> arguments;
+        arguments.emplace_back(wccff::identifier{ "param_1" });
+        arguments.emplace_back(wccff::identifier{ "param_2" });
 
         result += pretty_print(
           function_declaration{ get_identifier("function_name"),
@@ -1663,7 +1663,7 @@ TEST_CASE("parser_pretty_printers", "[parser]")
 
     SECTION("identifier")
     {
-        using wccff::parser::identifier;
+        using wccff::identifier;
         REQUIRE(pretty_print(identifier{ "var_name" }) == "var_name");
         REQUIRE(pretty_print(identifier{ "var_name" }, 4) == "    var_name");
     }
@@ -1677,8 +1677,8 @@ TEST_CASE("parser_pretty_printers", "[parser]")
 
     SECTION("labbeled_statement")
     {
+        using wccff::identifier;
         using wccff::int_constant;
-        using wccff::parser::identifier;
         using wccff::parser::labelled_statement;
         using wccff::parser::return_node;
         using wccff::parser::statement;
@@ -1758,9 +1758,9 @@ TEST_CASE("parser_pretty_printers", "[parser]")
 
     SECTION("variable_declaration")
     {
+        using wccff::identifier;
         using wccff::int_type;
         using wccff::long_type;
-        using wccff::parser::identifier;
         using wccff::parser::storage_class;
         using wccff::parser::variable_declaration;
         using wccff::testing::get_identifier;
@@ -1785,10 +1785,10 @@ TEST_CASE("parser_pretty_printers", "[parser]")
 
     SECTION("while")
     {
+        using wccff::identifier;
         using wccff::int_constant;
         using wccff::parser::binary_node;
         using wccff::parser::equals_operator;
-        using wccff::parser::identifier;
         using wccff::parser::return_node;
         using wccff::parser::while_statement;
 

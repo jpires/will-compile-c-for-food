@@ -24,49 +24,48 @@
 #include "semantic_analysis.h"
 
 namespace wccff::sema::loop_labelling {
-auto process_block(const parser::block &node, const std::optional<parser::identifier> &label)
+auto process_block(const parser::block &node, const std::optional<identifier> &label)
   -> std::expected<parser::block, semantic_error>;
 
-auto process_block_item(const parser::block_item &node, const std::optional<parser::identifier> &label)
+auto process_block_item(const parser::block_item &node, const std::optional<identifier> &label)
   -> std::expected<parser::block_item, semantic_error>;
 
-auto process_break_statement(const std::optional<parser::identifier> &label)
+auto process_break_statement(const std::optional<identifier> &label)
   -> std::expected<parser::break_statement, semantic_error>;
 
 auto process_compound_statement(const std::unique_ptr<parser::compound_statement> &node,
-                                const std::optional<parser::identifier> &label)
+                                const std::optional<identifier> &label)
   -> std::expected<std::unique_ptr<parser::compound_statement>, semantic_error>;
 
-auto process_continue_statement(const std::optional<parser::identifier> &label)
+auto process_continue_statement(const std::optional<identifier> &label)
   -> std::expected<parser::continue_statement, semantic_error>;
 
 auto process_declaration(const parser::declaration &node) -> std::expected<parser::declaration, semantic_error>;
 
 auto process_do_while_statement(const std::unique_ptr<parser::do_while_statement> &node,
-                                const std::optional<parser::identifier> &label)
+                                const std::optional<identifier> &label)
   -> std::expected<std::unique_ptr<parser::do_while_statement>, semantic_error>;
 
-auto process_for_statement(const std::unique_ptr<parser::for_statement> &node,
-                           const std::optional<parser::identifier> &label)
+auto process_for_statement(const std::unique_ptr<parser::for_statement> &node, const std::optional<identifier> &label)
   -> std::expected<std::unique_ptr<parser::for_statement>, semantic_error>;
 
 auto process_function_declaration(const parser::function_declaration &node)
   -> std::expected<parser::function_declaration, semantic_error>;
 
-auto process_if_node(const std::unique_ptr<parser::if_node> &node, const std::optional<parser::identifier> &label)
+auto process_if_node(const std::unique_ptr<parser::if_node> &node, const std::optional<identifier> &label)
   -> std::expected<std::unique_ptr<parser::if_node>, semantic_error>;
 
 auto process_labelled_statement(const std::unique_ptr<parser::labelled_statement> &node,
-                                const std::optional<parser::identifier> &label)
+                                const std::optional<identifier> &label)
   -> std::expected<std::unique_ptr<parser::labelled_statement>, semantic_error>;
 
 auto process_program(const parser::program &node) -> std::expected<parser::program, semantic_error>;
 
-auto process_statement(const parser::statement &node, const std::optional<parser::identifier> &label)
+auto process_statement(const parser::statement &node, const std::optional<identifier> &label)
   -> std::expected<parser::statement, semantic_error>;
 
 auto process_while_statement(const std::unique_ptr<parser::while_statement> &node,
-                             const std::optional<parser::identifier> &label)
+                             const std::optional<identifier> &label)
   -> std::expected<std::unique_ptr<parser::while_statement>, semantic_error>;
 } // namespace wccff::sema::loop_labelling
 

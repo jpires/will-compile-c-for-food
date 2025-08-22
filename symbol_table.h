@@ -54,7 +54,7 @@ using identifier_attributes = std::variant<func_attributes, local_attributes, st
 struct symbol
 {
     symbol() = default;
-    symbol(identifier_attributes attrs, parser::identifier name, type type)
+    symbol(identifier_attributes attrs, identifier name, type type)
       : attrs(attrs)
       , name(std::move(name))
       , type(std::move(type))
@@ -88,20 +88,20 @@ struct symbol
     }
 
     identifier_attributes attrs;
-    parser::identifier name;
+    identifier name;
     type type;
 };
 
 class symbol_table
 {
   public:
-    void add(const parser::identifier &name, const type &type, identifier_attributes attrs)
+    void add(const identifier &name, const type &type, identifier_attributes attrs)
     {
         symbol s{ attrs, name, copy_type(type) };
         m_table[name.name] = s;
     }
 
-    std::optional<symbol> get(const parser::identifier &name) const
+    std::optional<symbol> get(const identifier &name) const
     {
         const auto it = m_table.find(name.name);
         if (it == m_table.end())
@@ -119,7 +119,7 @@ class symbol_table
     std::unordered_map<std::string, symbol>::const_iterator end() const { return m_table.end(); }
     std::unordered_map<std::string, symbol>::const_iterator cend() const { return m_table.cend(); }
 
-    parser::identifier current_processing_function;
+    identifier current_processing_function;
 
   private:
     std::unordered_map<std::string, symbol> m_table;
@@ -141,10 +141,10 @@ using asm_symbtab_entry = std::variant<obj_entry, fun_entry>;
 
 struct backend_symbol_table
 {
-    void add(const parser::identifier &name, const asm_symbtab_entry &entry) { m_table[name.name] = entry; }
+    void add(const identifier &name, const asm_symbtab_entry &entry) { m_table[name.name] = entry; }
     void build(const symbol_table &table);
 
-    std::optional<asm_symbtab_entry> get(const parser::identifier &name) const
+    std::optional<asm_symbtab_entry> get(const identifier &name) const
     {
         const auto it = m_table.find(name.name);
         if (it == m_table.end())
@@ -155,7 +155,7 @@ struct backend_symbol_table
         return it->second;
     };
 
-    int32_t get_symbol_offset(const parser::identifier &name)
+    int32_t get_symbol_offset(const identifier &name)
     {
         const auto it = m_table.find(name.name);
         if (it == m_table.end())

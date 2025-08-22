@@ -29,13 +29,13 @@
 
 namespace wccff::sema {
 
-static std::unexpected<semantic_error> generate_unknown_variable(parser::identifier var_name)
+static std::unexpected<semantic_error> generate_unknown_variable(identifier var_name)
 {
-    auto msg = fmt::format("Unknown variable '{}'", var_name.name);
+    auto msg = fmt::format("Unknown variable '{}'", var_name);
     return std::unexpected<semantic_error>(msg);
 }
 
-parser::identifier identifier_map::add(const parser::identifier &name, linkage link)
+identifier identifier_map::add(const identifier &name, linkage link)
 {
     auto unique_name = link == linkage::internal ? generate_unique_name(name) : name;
     symbol s{ name, unique_name, link };
@@ -57,8 +57,7 @@ void identifier_map::destroy_scope()
     m_scope_counter--;
 }
 
-std::optional<identifier_map::symbol> identifier_map::find(const parser::identifier &name,
-                                                           scopes on_current_scope) const
+std::optional<identifier_map::symbol> identifier_map::find(const identifier &name, scopes on_current_scope) const
 {
     // Lambda to check if an identifier with the expected linkage exists in a scope.
     auto f = [&name](const std::unordered_map<std::string, symbol> &map) -> std::optional<symbol> {
@@ -89,7 +88,7 @@ std::optional<identifier_map::symbol> identifier_map::find(const parser::identif
     // return std::ranges::any_of(m_map, [&](const auto &map) { return f(map); });
 }
 
-parser::identifier identifier_map::generate_unique_name(const parser::identifier &name)
+identifier identifier_map::generate_unique_name(const identifier &name)
 {
     return { fmt::format("var.{}.{}", name.name, m_counter++) };
 }

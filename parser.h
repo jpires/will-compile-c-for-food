@@ -70,12 +70,6 @@ struct parser_error
     std::string message;
 };
 
-struct identifier
-{
-    std::string name;
-    bool operator==(const identifier &other) const = default;
-};
-
 struct bitwise_complement_operator
 {
 };
@@ -551,16 +545,5 @@ std::string pretty_print(const var &node, int32_t ident = 0);
 std::string pretty_print(const variable_declaration &node, int32_t ident = 0);
 
 } // namespace wccff::parser
-
-template<>
-struct fmt::formatter<wccff::parser::identifier> : formatter<string_view>
-{
-    template<typename FormatContext>
-    auto format(const wccff::parser::identifier &id, FormatContext &ctx) const
-    {
-        auto str = fmt::format("{}", id.name);
-        return formatter<string_view>::format(str, ctx);
-    }
-};
 
 #endif // PARSER_H
