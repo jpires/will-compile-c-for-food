@@ -103,18 +103,18 @@ auto process_binary_node(const std::unique_ptr<parser::binary_node> &node, symbo
         // 6.5.10:2 Bitwise AND operator
         // 6.5.11:2 Bitwise exclusive OR operator
         // 6.5.12:2 Bitwise inclusive OR operator
-        if (std::holds_alternative<parser::remainder_operator>(node->op) ||
-            std::holds_alternative<parser::compound_remainder_operator>(node->op) ||
-            std::holds_alternative<parser::left_shift_operator>(node->op) ||
-            std::holds_alternative<parser::compound_left_shift_operator>(node->op) ||
-            std::holds_alternative<parser::right_shift_operator>(node->op) ||
-            std::holds_alternative<parser::compound_right_shift_operator>(node->op) ||
-            std::holds_alternative<parser::bitwise_and_operator>(node->op) ||
-            std::holds_alternative<parser::compound_bitwise_and_operator>(node->op) ||
-            std::holds_alternative<parser::bitwise_xor_operator>(node->op) ||
-            std::holds_alternative<parser::compound_bitwise_xor_operator>(node->op) ||
-            std::holds_alternative<parser::bitwise_or_operator>(node->op) ||
-            std::holds_alternative<parser::compound_bitwise_or_operator>(node->op))
+        if (std::holds_alternative<remainder_operator>(node->op) ||
+            std::holds_alternative<compound_remainder_operator>(node->op) ||
+            std::holds_alternative<left_shift_operator>(node->op) ||
+            std::holds_alternative<compound_left_shift_operator>(node->op) ||
+            std::holds_alternative<right_shift_operator>(node->op) ||
+            std::holds_alternative<compound_right_shift_operator>(node->op) ||
+            std::holds_alternative<bitwise_and_operator>(node->op) ||
+            std::holds_alternative<compound_bitwise_and_operator>(node->op) ||
+            std::holds_alternative<bitwise_xor_operator>(node->op) ||
+            std::holds_alternative<compound_bitwise_xor_operator>(node->op) ||
+            std::holds_alternative<bitwise_or_operator>(node->op) ||
+            std::holds_alternative<compound_bitwise_or_operator>(node->op))
         {
             auto msg = fmt::format("Operation '{}' cannot be applied to a double", pretty_print(node->op));
             return std::unexpected{ semantic_error{ msg } };
@@ -125,14 +125,11 @@ auto process_binary_node(const std::unique_ptr<parser::binary_node> &node, symbo
     auto converted_left = convert_to(left.value(), common_type);
     auto converted_right = convert_to(right.value(), common_type);
 
-    if (std::holds_alternative<parser::plus_operator>(node->op) ||
-        std::holds_alternative<parser::subtract_operator>(node->op) ||
-        std::holds_alternative<parser::multiply_operator>(node->op) ||
-        std::holds_alternative<parser::divide_operator>(node->op) ||
-        std::holds_alternative<parser::remainder_operator>(node->op) ||
-        std::holds_alternative<parser::bitwise_and_operator>(node->op) ||
-        std::holds_alternative<parser::bitwise_or_operator>(node->op) ||
-        std::holds_alternative<parser::bitwise_xor_operator>(node->op))
+    if (std::holds_alternative<plus_operator>(node->op) || std::holds_alternative<subtract_operator>(node->op) ||
+        std::holds_alternative<multiply_operator>(node->op) || std::holds_alternative<divide_operator>(node->op) ||
+        std::holds_alternative<remainder_operator>(node->op) ||
+        std::holds_alternative<bitwise_and_operator>(node->op) ||
+        std::holds_alternative<bitwise_or_operator>(node->op) || std::holds_alternative<bitwise_xor_operator>(node->op))
     {
         return std::make_unique<parser::binary_node>(node->op,
                                                      std::move(converted_left),
@@ -143,8 +140,7 @@ auto process_binary_node(const std::unique_ptr<parser::binary_node> &node, symbo
     // The result of the shift operators is equals to the type of the left side.
     // It needs to be treated different than the other binary operator and relational operators
     // 6.5.7 Bitwise shift operators
-    if (std::holds_alternative<parser::left_shift_operator>(node->op) ||
-        std::holds_alternative<parser::right_shift_operator>(node->op))
+    if (std::holds_alternative<left_shift_operator>(node->op) || std::holds_alternative<right_shift_operator>(node->op))
     {
         return std::make_unique<parser::binary_node>(node->op,
                                                      parser::copy_expression(left.value()),
@@ -627,14 +623,14 @@ auto process_unary_node(const std::unique_ptr<parser::unary_node> &node, symbol_
         return std::unexpected{ exp.error() };
     }
 
-    if (std::holds_alternative<parser::bitwise_complement_operator>(node->op) && get_type(exp.value()) == double_type{})
+    if (std::holds_alternative<bitwise_complement_operator>(node->op) && get_type(exp.value()) == double_type{})
     {
         auto msg = fmt::format("Bitwise complement '~' cannot be applied to a double");
         return std::unexpected{ semantic_error{ msg } };
     }
 
-    if (std::holds_alternative<parser::negate_operator>(node->op) ||
-        std::holds_alternative<parser::bitwise_complement_operator>(node->op))
+    if (std::holds_alternative<negate_operator>(node->op) ||
+        std::holds_alternative<bitwise_complement_operator>(node->op))
     {
         return std::make_unique<parser::unary_node>(node->op,
                                                     std::move(exp.value()),

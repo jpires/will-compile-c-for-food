@@ -18,6 +18,7 @@
  */
 
 #include "common.h"
+#include "utils.h"
 #include <fmt/format.h>
 
 namespace wccff {
@@ -25,6 +26,60 @@ namespace wccff {
 std::string get_not_implemented_message(std::source_location loc)
 {
     return fmt::format("{}: Not implemented", loc.function_name());
+}
+
+std::string pretty_print(const binary_operator &node, int32_t ident)
+{
+    using wccff::format_indented;
+    return std::visit(
+      wccff::visitor{
+        [ident](const assignment_operator &) { return format_indented(ident, "Assignment"); },
+        [ident](const bitwise_and_operator &) { return format_indented(ident, "Bitwise And"); },
+        [ident](const bitwise_or_operator &) { return format_indented(ident, "Bitwise Or"); },
+        [ident](const bitwise_xor_operator &) { return format_indented(ident, "Bitwise Xor"); },
+        [ident](const compound_bitwise_and_operator &) { return format_indented(ident, "Compound Bitwise And"); },
+        [ident](const compound_bitwise_or_operator &) { return format_indented(ident, "Compound Bitwise Or"); },
+        [ident](const compound_bitwise_xor_operator &) { return format_indented(ident, "Compound Bitwise Xor"); },
+        [ident](const compound_divide_operator &) { return format_indented(ident, "Compound Division"); },
+        [ident](const compound_left_shift_operator &) { return format_indented(ident, "Compound Left Shift"); },
+        [ident](const compound_multiply_operator &) { return format_indented(ident, "Compound Multiplication"); },
+        [ident](const compound_plus_operator &) { return format_indented(ident, "Compound Plus"); },
+        [ident](const compound_remainder_operator &) { return format_indented(ident, "Compound Remainder"); },
+        [ident](const compound_right_shift_operator &) { return format_indented(ident, "Compound Right Shift"); },
+        [ident](const compound_subtract_operator &) { return format_indented(ident, "Compound Minus"); },
+        [ident](const divide_operator &) { return format_indented(ident, "Divide"); },
+        [ident](const equals_operator &) { return format_indented(ident, "Equals"); },
+        [ident](const greater_than_operator &) { return format_indented(ident, "Greater Than"); },
+        [ident](const greater_than_or_equal_operator &) { return format_indented(ident, "Greater Than or Equals"); },
+        [ident](const left_shift_operator &) { return format_indented(ident, "Left Shift"); },
+        [ident](const less_than_operator &) { return format_indented(ident, "Less Than"); },
+        [ident](const less_than_or_equal_operator &) { return format_indented(ident, "Less Than or Equals"); },
+        [ident](const logical_and_operator &) { return format_indented(ident, "Logic And"); },
+        [ident](const logical_or_operator &) { return format_indented(ident, "Logic Or"); },
+        [ident](const multiply_operator &) { return format_indented(ident, "Multiply"); },
+        [ident](const not_equals_operator &) { return format_indented(ident, "Not Equals"); },
+        [ident](const plus_operator &) { return format_indented(ident, "Plus"); },
+        [ident](const remainder_operator &) { return format_indented(ident, "Remainder"); },
+        [ident](const right_shift_operator &) { return format_indented(ident, "Right Shift"); },
+        [ident](const subtract_operator &) { return format_indented(ident, "Subtract"); },
+      },
+      node);
+}
+
+std::string pretty_print(const unary_operator &node, int32_t ident)
+{
+    using wccff::format_indented;
+    return std::visit(
+      wccff::visitor{
+        [ident](const bitwise_complement_operator &) { return format_indented(ident, "Complement"); },
+        [ident](const logical_not_operator &) { return format_indented(ident, "Not"); },
+        [ident](const negate_operator &) { return format_indented(ident, "Negate"); },
+        [ident](const postfix_decrement_operator &) { return format_indented(ident, "Postfix Decrement"); },
+        [ident](const postfix_increment_operator &) { return format_indented(ident, "Postfix Increment"); },
+        [ident](const prefix_decrement_operator &) { return format_indented(ident, "Prefix Decrement"); },
+        [ident](const prefix_increment_operator &) { return format_indented(ident, "Prefix Increment"); },
+      },
+      node);
 }
 
 std::unique_ptr<fun_type> copy_fun_type(const std::unique_ptr<fun_type> &n)

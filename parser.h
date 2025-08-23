@@ -70,152 +70,6 @@ struct parser_error
     std::string message;
 };
 
-struct bitwise_complement_operator
-{
-};
-struct bitwise_and_operator
-{
-};
-struct bitwise_or_operator
-{
-};
-struct bitwise_xor_operator
-{
-};
-struct equals_operator
-{
-};
-struct greater_than_operator
-{
-};
-struct greater_than_or_equal_operator
-{
-};
-struct less_than_operator
-{
-};
-struct less_than_or_equal_operator
-{
-};
-struct logical_and_operator
-{
-};
-struct logical_not_operator
-{
-};
-struct logical_or_operator
-{
-};
-struct negate_operator
-{
-};
-struct not_equals_operator
-{
-};
-struct plus_operator
-{
-};
-struct subtract_operator
-{
-};
-struct multiply_operator
-{
-};
-struct divide_operator
-{
-};
-struct remainder_operator
-{
-};
-struct left_shift_operator
-{
-};
-struct right_shift_operator
-{
-};
-struct assignment_operator
-{
-};
-struct compound_plus_operator
-{
-};
-struct compound_subtract_operator
-{
-};
-struct compound_multiply_operator
-{
-};
-struct compound_divide_operator
-{
-};
-struct compound_remainder_operator
-{
-};
-struct compound_bitwise_and_operator
-{
-};
-struct compound_bitwise_or_operator
-{
-};
-struct compound_bitwise_xor_operator
-{
-};
-struct compound_left_shift_operator
-{
-};
-struct compound_right_shift_operator
-{
-};
-struct prefix_decrement_operator
-{
-};
-struct prefix_increment_operator
-{
-};
-struct postfix_decrement_operator
-{
-};
-struct postfix_increment_operator
-{
-};
-
-using unary_operator = std::variant<bitwise_complement_operator,
-                                    negate_operator,
-                                    logical_not_operator,
-                                    postfix_decrement_operator,
-                                    postfix_increment_operator,
-                                    prefix_decrement_operator,
-                                    prefix_increment_operator>;
-
-using binary_operator = std::variant<plus_operator,
-                                     subtract_operator,
-                                     multiply_operator,
-                                     divide_operator,
-                                     remainder_operator,
-                                     bitwise_and_operator,
-                                     bitwise_or_operator,
-                                     bitwise_xor_operator,
-                                     left_shift_operator,
-                                     right_shift_operator,
-                                     logical_and_operator,
-                                     logical_or_operator,
-                                     equals_operator,
-                                     not_equals_operator,
-                                     less_than_operator,
-                                     less_than_or_equal_operator,
-                                     greater_than_operator,
-                                     greater_than_or_equal_operator,
-                                     assignment_operator,
-                                     compound_plus_operator,
-                                     compound_subtract_operator,
-                                     compound_multiply_operator,
-                                     compound_divide_operator,
-                                     compound_remainder_operator,
-                                     compound_bitwise_and_operator,
-                                     compound_bitwise_or_operator,
-                                     compound_bitwise_xor_operator,
-                                     compound_left_shift_operator,
-                                     compound_right_shift_operator>;
 struct binary_node;
 struct do_while_statement;
 struct cast_expression;
@@ -502,7 +356,6 @@ std::expected<std::unique_ptr<while_statement>, parser_error> parse_while_statem
 
 std::expected<program, parser_error> parse(tokens &tokens);
 
-std::string pretty_print(const binary_operator &node, int32_t ident = 0);
 std::string pretty_print(const block &node, int32_t ident = 0);
 std::string pretty_print(const block_item &node, int32_t ident = 0);
 std::string pretty_print(const break_statement &node, int32_t ident = 0);
@@ -538,7 +391,6 @@ std::string pretty_print(const std::unique_ptr<labelled_statement> &node, int32_
 std::string pretty_print(const std::unique_ptr<unary_node> &node, int32_t ident = 0);
 std::string pretty_print(const std::unique_ptr<while_statement> &node, int32_t ident = 0);
 std::string pretty_print(const type &node, int32_t ident = 0);
-std::string pretty_print(const unary_operator &node, int32_t ident = 0);
 std::string pretty_print(const unsigned_int_constant &node, int32_t ident = 0);
 std::string pretty_print(const unsigned_long_constant &node, int32_t ident = 0);
 std::string pretty_print(const var &node, int32_t ident = 0);

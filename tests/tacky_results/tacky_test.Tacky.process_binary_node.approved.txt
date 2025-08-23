@@ -10,16 +10,16 @@ Binary(Left Shift, LongConstant(7), LongConstant(8), Var(tacky-8))
 
 Binary(Right Shift, LongConstant(7), LongConstant(8), Var(tacky-9))
 
-Binary(Equal, LongConstant(9), LongConstant(10), Var(tacky-10))
+Binary(Equals, LongConstant(9), LongConstant(10), Var(tacky-10))
 
-Binary(Not Equal, LongConstant(11), LongConstant(12), Var(tacky-11))
+Binary(Not Equals, LongConstant(11), LongConstant(12), Var(tacky-11))
 
 Binary(Less Than, LongConstant(13), LongConstant(14), Var(tacky-12))
 
-Binary(Less That or Equal, LongConstant(15), LongConstant(16), Var(tacky-13))
+Binary(Less Than or Equals, LongConstant(15), LongConstant(16), Var(tacky-13))
 
 Binary(Greater Than, LongConstant(17), LongConstant(18), Var(tacky-14))
 
-Binary(Greater That or Equal, LongConstant(19), LongConstant(20), Var(tacky-15))
+Binary(Greater Than or Equals, LongConstant(19), LongConstant(20), Var(tacky-15))
 
 

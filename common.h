@@ -40,6 +40,193 @@ struct identifier
     bool operator==(const identifier &other) const = default;
 };
 
+/// \brief =
+struct assignment_operator
+{
+};
+/// \brief &
+struct bitwise_and_operator
+{
+};
+/// \brief |
+struct bitwise_or_operator
+{
+};
+/// \brief ^
+struct bitwise_xor_operator
+{
+};
+/// \brief &=
+struct compound_bitwise_and_operator
+{
+};
+/// \brief |=
+struct compound_bitwise_or_operator
+{
+};
+/// \brief ^=
+struct compound_bitwise_xor_operator
+{
+};
+/// \brief /=
+struct compound_divide_operator
+{
+};
+/// \brief <<=
+struct compound_left_shift_operator
+{
+};
+/// \brief *=
+struct compound_multiply_operator
+{
+};
+/// \brief +=
+struct compound_plus_operator
+{
+};
+/// \brief %=
+struct compound_remainder_operator
+{
+};
+/// \brief >>=
+struct compound_right_shift_operator
+{
+};
+/// \brief -=
+struct compound_subtract_operator
+{
+};
+/// \brief /
+struct divide_operator
+{
+};
+/// \brief ==
+struct equals_operator
+{
+};
+/// \brief >
+struct greater_than_operator
+{
+};
+/// \brief >=
+struct greater_than_or_equal_operator
+{
+};
+/// \brief <<
+struct left_shift_operator
+{
+};
+/// \brief <
+struct less_than_operator
+{
+};
+/// \brief <=
+struct less_than_or_equal_operator
+{
+};
+/// \brief &&
+struct logical_and_operator
+{
+};
+/// \brief ||
+struct logical_or_operator
+{
+};
+/// \brief *
+struct multiply_operator
+{
+};
+/// \brief !=
+struct not_equals_operator
+{
+};
+/// \brief +
+struct plus_operator
+{
+};
+/// \brief %
+struct remainder_operator
+{
+};
+/// \brief >>
+struct right_shift_operator
+{
+};
+/// \brief -
+struct subtract_operator
+{
+};
+
+using binary_operator = std::variant<assignment_operator,
+                                     bitwise_and_operator,
+                                     bitwise_or_operator,
+                                     bitwise_xor_operator,
+                                     compound_bitwise_and_operator,
+                                     compound_bitwise_or_operator,
+                                     compound_bitwise_xor_operator,
+                                     compound_divide_operator,
+                                     compound_left_shift_operator,
+                                     compound_multiply_operator,
+                                     compound_plus_operator,
+                                     compound_remainder_operator,
+                                     compound_right_shift_operator,
+                                     compound_subtract_operator,
+                                     divide_operator,
+                                     equals_operator,
+                                     greater_than_operator,
+                                     greater_than_or_equal_operator,
+                                     left_shift_operator,
+                                     less_than_operator,
+                                     less_than_or_equal_operator,
+                                     logical_and_operator,
+                                     logical_or_operator,
+                                     multiply_operator,
+                                     not_equals_operator,
+                                     plus_operator,
+                                     remainder_operator,
+                                     right_shift_operator,
+                                     subtract_operator>;
+
+std::string pretty_print(const binary_operator &node, int32_t ident = 0);
+
+/// \brief ~
+struct bitwise_complement_operator
+{
+};
+/// \brief -
+struct negate_operator
+{
+};
+/// \brief !
+struct logical_not_operator
+{
+};
+/// \brief --
+struct prefix_decrement_operator
+{
+};
+/// \brief ++
+struct prefix_increment_operator
+{
+};
+/// \brief --
+struct postfix_decrement_operator
+{
+};
+/// \brief ++
+struct postfix_increment_operator
+{
+};
+using unary_operator = std::variant<bitwise_complement_operator,
+                                    logical_not_operator,
+                                    negate_operator,
+                                    postfix_decrement_operator,
+                                    postfix_increment_operator,
+                                    prefix_decrement_operator,
+                                    prefix_increment_operator>;
+
+std::string pretty_print(const unary_operator &node, int32_t ident = 0);
+
 struct double_type
 {
 };

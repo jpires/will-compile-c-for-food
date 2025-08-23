@@ -23,30 +23,29 @@ TEST_CASE("Tacky", "[tacky]")
     SECTION("process_unary_operator")
     {
         using namespace wccff;
-        using wccff::parser::bitwise_complement_operator;
-        using wccff::parser::negate_operator;
+        using wccff::bitwise_complement_operator;
+        using wccff::negate_operator;
         using wccff::tacky::process_unary_operator;
 
-        REQUIRE(std::holds_alternative<tacky::binary_complement_operator>(
-          process_unary_operator(bitwise_complement_operator{})));
-        REQUIRE(std::holds_alternative<tacky::not_operator>(process_unary_operator(parser::logical_not_operator{})));
-        REQUIRE(std::holds_alternative<tacky::negate_operator>(process_unary_operator(negate_operator{})));
-        REQUIRE_THROWS(process_unary_operator(parser::postfix_decrement_operator{}));
-        REQUIRE_THROWS(process_unary_operator(parser::postfix_increment_operator{}));
-        REQUIRE_THROWS(process_unary_operator(parser::prefix_decrement_operator{}));
-        REQUIRE_THROWS(process_unary_operator(parser::prefix_increment_operator{}));
+        REQUIRE(
+          std::holds_alternative<bitwise_complement_operator>(process_unary_operator(bitwise_complement_operator{})));
+        REQUIRE(std::holds_alternative<logical_not_operator>(process_unary_operator(logical_not_operator{})));
+        REQUIRE(std::holds_alternative<negate_operator>(process_unary_operator(negate_operator{})));
+        REQUIRE_THROWS(process_unary_operator(postfix_decrement_operator{}));
+        REQUIRE_THROWS(process_unary_operator(postfix_increment_operator{}));
+        REQUIRE_THROWS(process_unary_operator(prefix_decrement_operator{}));
+        REQUIRE_THROWS(process_unary_operator(prefix_increment_operator{}));
     }
     SECTION("process_binary_operator")
     {
         using namespace wccff;
         using wccff::tacky::process_binary_operator;
 
-        REQUIRE(std::holds_alternative<tacky::plus_operator>(process_binary_operator(parser::plus_operator{})));
-        REQUIRE(std::holds_alternative<tacky::subtract_operator>(process_binary_operator(parser::subtract_operator{})));
-        REQUIRE(std::holds_alternative<tacky::multiply_operator>(process_binary_operator(parser::multiply_operator{})));
-        REQUIRE(std::holds_alternative<tacky::divide_operator>(process_binary_operator(parser::divide_operator{})));
-        REQUIRE(
-          std::holds_alternative<tacky::remainder_operator>(process_binary_operator(parser::remainder_operator{})));
+        REQUIRE(std::holds_alternative<plus_operator>(process_binary_operator(wccff::plus_operator{})));
+        REQUIRE(std::holds_alternative<subtract_operator>(process_binary_operator(wccff::subtract_operator{})));
+        REQUIRE(std::holds_alternative<multiply_operator>(process_binary_operator(wccff::multiply_operator{})));
+        REQUIRE(std::holds_alternative<divide_operator>(process_binary_operator(wccff::divide_operator{})));
+        REQUIRE(std::holds_alternative<remainder_operator>(process_binary_operator(wccff::remainder_operator{})));
     }
 
     SECTION("process_unary_node")
@@ -55,7 +54,7 @@ TEST_CASE("Tacky", "[tacky]")
         using wccff::tacky::process_unary_node;
 
         std::vector<wccff::tacky::instruction> instructions;
-        auto node = std::make_unique<unary_node>(wccff::parser::bitwise_complement_operator{},
+        auto node = std::make_unique<unary_node>(wccff::bitwise_complement_operator{},
                                                  wccff::testing::get_int_constant(42),
                                                  wccff::int_type{});
         auto result = process_unary_node(node, instructions, table);
@@ -68,7 +67,7 @@ TEST_CASE("Tacky", "[tacky]")
         pretty_result += "\n";
 
         instructions.clear();
-        node = std::make_unique<unary_node>(wccff::parser::logical_not_operator{},
+        node = std::make_unique<unary_node>(wccff::logical_not_operator{},
                                             wccff::testing::get_long_constant(42),
                                             wccff::long_type{});
         result = process_unary_node(node, instructions, table);
@@ -81,9 +80,7 @@ TEST_CASE("Tacky", "[tacky]")
         pretty_result += "\n";
 
         instructions.clear();
-        node = std::make_unique<unary_node>(wccff::parser::negate_operator{},
-                                            wccff::testing::get_var(),
-                                            wccff::long_type{});
+        node = std::make_unique<unary_node>(wccff::negate_operator{}, wccff::testing::get_var(), wccff::long_type{});
         result = process_unary_node(node, instructions, table);
         REQUIRE(std::holds_alternative<wccff::tacky::var>(result));
         REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-3");
@@ -105,7 +102,7 @@ TEST_CASE("Tacky", "[tacky]")
 
         std::vector<wccff::tacky::instruction> instructions;
 
-        auto binary_expr = std::make_unique<binary_node>(wccff::parser::plus_operator{},
+        auto binary_expr = std::make_unique<binary_node>(wccff::plus_operator{},
                                                          get_int_constant(42),
                                                          get_int_constant(24),
                                                          wccff::int_type{});
@@ -119,7 +116,7 @@ TEST_CASE("Tacky", "[tacky]")
         pretty_result += "\n";
 
         instructions.clear();
-        binary_expr = std::make_unique<binary_node>(wccff::parser::bitwise_and_operator{},
+        binary_expr = std::make_unique<binary_node>(wccff::bitwise_and_operator{},
                                                     get_int_constant(1),
                                                     get_int_constant(2),
                                                     wccff::int_type{});
@@ -133,7 +130,7 @@ TEST_CASE("Tacky", "[tacky]")
         pretty_result += "\n";
 
         instructions.clear();
-        binary_expr = std::make_unique<binary_node>(wccff::parser::bitwise_or_operator{},
+        binary_expr = std::make_unique<binary_node>(wccff::bitwise_or_operator{},
                                                     get_long_constant(3),
                                                     get_int_constant(4),
                                                     wccff::long_type{});
@@ -147,7 +144,7 @@ TEST_CASE("Tacky", "[tacky]")
         pretty_result += "\n";
 
         instructions.clear();
-        binary_expr = std::make_unique<binary_node>(wccff::parser::bitwise_xor_operator{},
+        binary_expr = std::make_unique<binary_node>(wccff::bitwise_xor_operator{},
                                                     get_int_constant(5),
                                                     get_long_constant(6),
                                                     wccff::long_type{});
@@ -161,7 +158,7 @@ TEST_CASE("Tacky", "[tacky]")
         pretty_result += "\n";
 
         instructions.clear();
-        binary_expr = std::make_unique<binary_node>(wccff::parser::left_shift_operator{},
+        binary_expr = std::make_unique<binary_node>(wccff::left_shift_operator{},
                                                     get_long_constant(7),
                                                     get_long_constant(8),
                                                     wccff::long_type{});
@@ -175,7 +172,7 @@ TEST_CASE("Tacky", "[tacky]")
         pretty_result += "\n";
 
         instructions.clear();
-        binary_expr = std::make_unique<binary_node>(wccff::parser::right_shift_operator{},
+        binary_expr = std::make_unique<binary_node>(wccff::right_shift_operator{},
                                                     get_long_constant(7),
                                                     get_long_constant(8),
                                                     wccff::long_type{});
@@ -189,7 +186,7 @@ TEST_CASE("Tacky", "[tacky]")
         pretty_result += "\n";
 
         instructions.clear();
-        binary_expr = std::make_unique<binary_node>(wccff::parser::equals_operator{},
+        binary_expr = std::make_unique<binary_node>(wccff::equals_operator{},
                                                     get_long_constant(9),
                                                     get_long_constant(10),
                                                     wccff::long_type{});
@@ -203,7 +200,7 @@ TEST_CASE("Tacky", "[tacky]")
         pretty_result += "\n";
 
         instructions.clear();
-        binary_expr = std::make_unique<binary_node>(wccff::parser::not_equals_operator{},
+        binary_expr = std::make_unique<binary_node>(wccff::not_equals_operator{},
                                                     get_long_constant(11),
                                                     get_long_constant(12),
                                                     wccff::long_type{});
@@ -217,7 +214,7 @@ TEST_CASE("Tacky", "[tacky]")
         pretty_result += "\n";
 
         instructions.clear();
-        binary_expr = std::make_unique<binary_node>(wccff::parser::less_than_operator{},
+        binary_expr = std::make_unique<binary_node>(wccff::less_than_operator{},
                                                     get_long_constant(13),
                                                     get_long_constant(14),
                                                     wccff::long_type{});
@@ -231,7 +228,7 @@ TEST_CASE("Tacky", "[tacky]")
         pretty_result += "\n";
 
         instructions.clear();
-        binary_expr = std::make_unique<binary_node>(wccff::parser::less_than_or_equal_operator{},
+        binary_expr = std::make_unique<binary_node>(wccff::less_than_or_equal_operator{},
                                                     get_long_constant(15),
                                                     get_long_constant(16),
                                                     wccff::long_type{});
@@ -245,7 +242,7 @@ TEST_CASE("Tacky", "[tacky]")
         pretty_result += "\n";
 
         instructions.clear();
-        binary_expr = std::make_unique<binary_node>(wccff::parser::greater_than_operator{},
+        binary_expr = std::make_unique<binary_node>(wccff::greater_than_operator{},
                                                     get_long_constant(17),
                                                     get_long_constant(18),
                                                     wccff::long_type{});
@@ -259,7 +256,7 @@ TEST_CASE("Tacky", "[tacky]")
         pretty_result += "\n";
 
         instructions.clear();
-        binary_expr = std::make_unique<binary_node>(wccff::parser::greater_than_or_equal_operator{},
+        binary_expr = std::make_unique<binary_node>(wccff::greater_than_or_equal_operator{},
                                                     get_long_constant(19),
                                                     get_long_constant(20),
                                                     wccff::long_type{});

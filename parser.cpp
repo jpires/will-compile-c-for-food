@@ -1583,65 +1583,6 @@ std::expected<program, parser_error> parse(tokens &tokens)
     return p;
 }
 
-std::string pretty_print(const binary_operator &node, int32_t ident)
-{
-    return std::visit(
-      wccff::visitor{
-        [ident](const plus_operator &) { return wccff::format_indented(ident, "Plus"); },
-        [ident](const subtract_operator &) { return wccff::format_indented(ident, "Subtract"); },
-        [ident](const multiply_operator &) { return wccff::format_indented(ident, "Multiply"); },
-        [ident](const divide_operator &) { return wccff::format_indented(ident, "Divide"); },
-        [ident](const remainder_operator &) { return wccff::format_indented(ident, "Remainder"); },
-        [ident](const bitwise_and_operator &) { return wccff::format_indented(ident, "Bitwise And"); },
-        [ident](const bitwise_or_operator &) { return wccff::format_indented(ident, "Bitwise Or"); },
-        [ident](const bitwise_xor_operator &) { return wccff::format_indented(ident, "Bitwise Xor"); },
-        [ident](const left_shift_operator &) { return wccff::format_indented(ident, "Left Shift"); },
-        [ident](const right_shift_operator &) { return wccff::format_indented(ident, "Right Shift"); },
-        [ident](const logical_and_operator &) { return wccff::format_indented(ident, "Logic And"); },
-        [ident](const logical_or_operator &) { return wccff::format_indented(ident, "Logic Or"); },
-        [ident](const equals_operator &) { return wccff::format_indented(ident, "Equals"); },
-        [ident](const not_equals_operator &) { return wccff::format_indented(ident, "Not Equals"); },
-        [ident](const less_than_operator &) { return wccff::format_indented(ident, "Less Than"); },
-        [ident](const less_than_or_equal_operator &) { return wccff::format_indented(ident, "Less Than or Equals"); },
-        [ident](const greater_than_operator &) { return wccff::format_indented(ident, "Greater Than"); },
-        [ident](const greater_than_or_equal_operator &) {
-            return wccff::format_indented(ident, "Greater Than or Equals");
-        },
-        [ident](const assignment_operator &) { return wccff::format_indented(ident, "Assignment"); },
-        [ident](const parser::compound_plus_operator &) -> std::string {
-            return wccff::format_indented(ident, "Compound Plus");
-        },
-        [ident](const parser::compound_subtract_operator &) -> std::string {
-            return wccff::format_indented(ident, "Compound Minus");
-        },
-        [ident](const parser::compound_multiply_operator &) -> std::string {
-            return wccff::format_indented(ident, "Compound Multiplication");
-        },
-        [ident](const parser::compound_divide_operator &) -> std::string {
-            return wccff::format_indented(ident, "Compound Division");
-        },
-        [ident](const parser::compound_remainder_operator &) -> std::string {
-            return wccff::format_indented(ident, "Compound Remainder");
-        },
-        [ident](const parser::compound_bitwise_and_operator &) -> std::string {
-            return wccff::format_indented(ident, "Compound Bitwise And");
-        },
-        [ident](const parser::compound_bitwise_or_operator &) -> std::string {
-            return wccff::format_indented(ident, "Compound Bitwise Or");
-        },
-        [ident](const parser::compound_bitwise_xor_operator &) -> std::string {
-            return wccff::format_indented(ident, "Compound Bitwise Xor");
-        },
-        [ident](const parser::compound_left_shift_operator &) -> std::string {
-            return wccff::format_indented(ident, "Compound Left Shift");
-        },
-        [ident](const parser::compound_right_shift_operator &) -> std::string {
-            return wccff::format_indented(ident, "Compound Right Shift");
-        },
-      },
-      node);
-}
-
 std::string pretty_print(const block &node, int32_t ident)
 {
     std::string output;
@@ -2017,20 +1958,6 @@ std::string pretty_print(const type &node, int32_t ident)
                         [ident](const void_type) { return wccff::format_indented(ident, "Void"); },
                       },
                       node);
-}
-std::string pretty_print(const unary_operator &node, int32_t ident)
-{
-    return std::visit(
-      wccff::visitor{
-        [ident](const bitwise_complement_operator &) { return wccff::format_indented(ident, "Complement"); },
-        [ident](const negate_operator &) { return wccff::format_indented(ident, "Negate"); },
-        [ident](const logical_not_operator &) { return wccff::format_indented(ident, "Not"); },
-        [ident](const postfix_decrement_operator &) { return wccff::format_indented(ident, "Postfix Decrement"); },
-        [ident](const postfix_increment_operator &) { return wccff::format_indented(ident, "Postfix Increment"); },
-        [ident](const prefix_decrement_operator &) { return wccff::format_indented(ident, "Prefix Decrement"); },
-        [ident](const prefix_increment_operator &) { return wccff::format_indented(ident, "Prefix Increment"); },
-      },
-      node);
 }
 
 std::string pretty_print(const unsigned_int_constant &node, int32_t ident)

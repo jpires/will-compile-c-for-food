@@ -35,126 +35,6 @@ struct tacky_error
     std::string error_message;
 };
 
-struct binary_and_operator
-{
-};
-struct binary_complement_operator
-{
-};
-struct binary_or_operator
-{
-};
-struct binary_xor_operator
-{
-};
-struct negate_operator
-{
-};
-struct not_operator
-{
-};
-
-struct plus_operator
-{
-};
-struct subtract_operator
-{
-};
-struct multiply_operator
-{
-};
-struct divide_operator
-{
-};
-struct remainder_operator
-{
-};
-struct left_shift_operator
-{
-};
-struct right_shift_operator
-{
-};
-struct equal_operator
-{
-};
-struct not_equal_operator
-{
-};
-struct less_than_operator
-{
-};
-struct less_than_or_equal_operator
-{
-};
-struct greater_than_operator
-{
-};
-struct greater_than_or_equal_operator
-{
-};
-struct assignment_operator
-{
-};
-struct compound_plus_operator
-{
-};
-struct compound_minus_operator
-{
-};
-struct compound_multiplication_operator
-{
-};
-struct compound_division_operator
-{
-};
-struct compound_remainder_operator
-{
-};
-struct compound_bitwise_and_operator
-{
-};
-struct compound_bitwise_or_operator
-{
-};
-struct compound_bitwise_xor_operator
-{
-};
-struct compound_left_shift_operator
-{
-};
-struct compound_right_shift_operator
-{
-};
-
-using unary_operator = std::variant<binary_complement_operator, negate_operator, not_operator>;
-using binary_operator = std::variant<plus_operator,
-                                     subtract_operator,
-                                     multiply_operator,
-                                     divide_operator,
-                                     remainder_operator,
-                                     binary_and_operator,
-                                     binary_or_operator,
-                                     binary_xor_operator,
-                                     left_shift_operator,
-                                     right_shift_operator,
-                                     equal_operator,
-                                     not_equal_operator,
-                                     less_than_operator,
-                                     less_than_or_equal_operator,
-                                     greater_than_operator,
-                                     greater_than_or_equal_operator,
-                                     assignment_operator,
-                                     compound_plus_operator,
-                                     compound_minus_operator,
-                                     compound_multiplication_operator,
-                                     compound_division_operator,
-                                     compound_remainder_operator,
-                                     compound_bitwise_and_operator,
-                                     compound_bitwise_or_operator,
-                                     compound_bitwise_xor_operator,
-                                     compound_left_shift_operator,
-                                     compound_right_shift_operator>;
 struct var
 {
     identifier id;
@@ -343,7 +223,7 @@ val process_assignment_node(const std::unique_ptr<parser::assignment_node> &node
 val process_binary_node(const std::unique_ptr<parser::binary_node> &node,
                         std::vector<instruction> &instructions,
                         symbol_table::symbol_table &table);
-binary_operator process_binary_operator(const parser::binary_operator &op);
+wccff::binary_operator process_binary_operator(const wccff::binary_operator &op);
 void process_block(const parser::block &node,
                    std::vector<instruction> &instructions,
                    symbol_table::symbol_table &table);
@@ -423,7 +303,7 @@ void process_statement(const wccff::parser::statement &s,
 val process_unary_node(const std::unique_ptr<parser::unary_node> &node,
                        std::vector<instruction> &instructions,
                        symbol_table::symbol_table &table);
-unary_operator process_unary_operator(const parser::unary_operator &op);
+unary_operator process_unary_operator(const wccff::unary_operator &op);
 
 void process_variable_declaration(const wccff::parser::variable_declaration &s,
                                   std::vector<instruction> &instructions,
@@ -458,7 +338,6 @@ std::string pretty_print(const top_level &top, int32_t ident = 0);
 std::string pretty_print(const truncate &node, int32_t ident = 0);
 std::string pretty_print(const uint_to_double &instruction, int32_t ident = 0);
 std::string pretty_print(const unary_statement &instruction, int32_t ident = 0);
-std::string pretty_print(const unary_operator &val, int32_t ident = 0);
 std::string pretty_print(const var &val, int32_t ident = 0);
 std::string pretty_print(const val &val, int32_t ident = 0);
 std::string pretty_print(const zero_extend &node, int32_t ident = 0);

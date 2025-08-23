@@ -177,70 +177,50 @@ void process_if(const std::unique_ptr<parser::if_node> &node,
     }
 }
 
-unary_operator process_unary_operator(const parser::unary_operator &op)
+unary_operator process_unary_operator(const wccff::unary_operator &op)
 {
-    return std::visit(
-      visitor{
-        [](const parser::bitwise_complement_operator &) -> unary_operator { return binary_complement_operator{}; },
-        [](const parser::negate_operator &) -> unary_operator { return negate_operator{}; },
-        [](const parser::logical_not_operator &) -> unary_operator { return not_operator{}; },
-        [](const parser::postfix_decrement_operator &) -> unary_operator {
-            throw std::logic_error("logical_not_operator");
-        },
-        [](const parser::postfix_increment_operator &) -> unary_operator {
-            throw std::logic_error("logical_not_operator");
-        },
-        [](const parser::prefix_decrement_operator &) -> unary_operator {
-            throw std::logic_error("logical_not_operator");
-        },
-        [](const parser::prefix_increment_operator &) -> unary_operator {
-            throw std::logic_error("logical_not_operator");
-        },
-      },
-      op);
+    return std::visit(visitor{
+                        [](const wccff::postfix_decrement_operator &) -> unary_operator {
+                            throw std::logic_error("logical_not_operator");
+                        },
+                        [](const wccff::postfix_increment_operator &) -> unary_operator {
+                            throw std::logic_error("logical_not_operator");
+                        },
+                        [](const wccff::prefix_decrement_operator &) -> unary_operator {
+                            throw std::logic_error("logical_not_operator");
+                        },
+                        [](const wccff::prefix_increment_operator &) -> unary_operator {
+                            throw std::logic_error("logical_not_operator");
+                        },
+                        [](const auto &n) -> unary_operator { return n; },
+                      },
+                      op);
 }
 
-binary_operator process_binary_operator(const parser::binary_operator &op)
+wccff::binary_operator process_binary_operator(const wccff::binary_operator &op)
 {
     return std::visit(
       visitor{
-        [](const parser::plus_operator &) -> binary_operator { return plus_operator{}; },
-        [](const parser::subtract_operator &) -> binary_operator { return subtract_operator{}; },
-        [](const parser::multiply_operator &) -> binary_operator { return multiply_operator{}; },
-        [](const parser::divide_operator &) -> binary_operator { return divide_operator{}; },
-        [](const parser::remainder_operator &) -> binary_operator { return remainder_operator{}; },
-        [](const parser::bitwise_and_operator &) -> binary_operator { return binary_and_operator{}; },
-        [](const parser::bitwise_or_operator &) -> binary_operator { return binary_or_operator{}; },
-        [](const parser::bitwise_xor_operator &) -> binary_operator { return binary_xor_operator{}; },
-        [](const parser::left_shift_operator &) -> binary_operator { return left_shift_operator{}; },
-        [](const parser::right_shift_operator &) -> binary_operator { return right_shift_operator{}; },
-        [](const parser::logical_and_operator &) -> binary_operator {
+        [](const wccff::logical_and_operator &) -> binary_operator {
             throw std::logic_error("logical and operator Not implemented");
         },
-        [](const parser::logical_or_operator &) -> binary_operator {
+        [](const wccff::logical_or_operator &) -> binary_operator {
             throw std::logic_error("logical or operator Not implemented");
         },
-        [](const parser::equals_operator &) -> binary_operator { return equal_operator{}; },
-        [](const parser::not_equals_operator &) -> binary_operator { return not_equal_operator{}; },
-        [](const parser::less_than_operator &) -> binary_operator { return less_than_operator{}; },
-        [](const parser::less_than_or_equal_operator &) -> binary_operator { return less_than_or_equal_operator{}; },
-        [](const parser::greater_than_operator &) -> binary_operator { return greater_than_operator{}; },
-        [](const parser::greater_than_or_equal_operator &) -> binary_operator {
-            return greater_than_or_equal_operator{};
-        },
-        [](const parser::assignment_operator &) -> binary_operator {
+        [](const wccff::assignment_operator &) -> binary_operator {
             throw std::logic_error("Assignment operator not converted");
         },
-        [](const parser::compound_plus_operator &) -> binary_operator { return plus_operator{}; },
-        [](const parser::compound_subtract_operator &) -> binary_operator { return subtract_operator{}; },
-        [](const parser::compound_multiply_operator &) -> binary_operator { return multiply_operator{}; },
-        [](const parser::compound_divide_operator &) -> binary_operator { return divide_operator{}; },
-        [](const parser::compound_remainder_operator &) -> binary_operator { return remainder_operator{}; },
-        [](const parser::compound_bitwise_and_operator &) -> binary_operator { return binary_and_operator{}; },
-        [](const parser::compound_bitwise_or_operator &) -> binary_operator { return binary_or_operator{}; },
-        [](const parser::compound_bitwise_xor_operator &) -> binary_operator { return binary_xor_operator{}; },
-        [](const parser::compound_left_shift_operator &) -> binary_operator { return left_shift_operator{}; },
-        [](const parser::compound_right_shift_operator &) -> binary_operator { return right_shift_operator{}; },
+        [](const wccff::compound_plus_operator &) -> binary_operator { return plus_operator{}; },
+        [](const wccff::compound_subtract_operator &) -> binary_operator { return subtract_operator{}; },
+        [](const wccff::compound_multiply_operator &) -> binary_operator { return multiply_operator{}; },
+        [](const wccff::compound_divide_operator &) -> binary_operator { return divide_operator{}; },
+        [](const wccff::compound_remainder_operator &) -> binary_operator { return remainder_operator{}; },
+        [](const wccff::compound_bitwise_and_operator &) -> binary_operator { return bitwise_and_operator{}; },
+        [](const wccff::compound_bitwise_or_operator &) -> binary_operator { return bitwise_or_operator{}; },
+        [](const wccff::compound_bitwise_xor_operator &) -> binary_operator { return bitwise_xor_operator{}; },
+        [](const wccff::compound_left_shift_operator &) -> binary_operator { return left_shift_operator{}; },
+        [](const wccff::compound_right_shift_operator &) -> binary_operator { return right_shift_operator{}; },
+        [](const auto &n) -> binary_operator { return n; },
       },
       op);
 }
@@ -250,7 +230,7 @@ val process_prefix_unary(const std::unique_ptr<parser::unary_node> &node,
                          symbol_table::symbol_table &table)
 {
     binary_operator op;
-    if (std::holds_alternative<parser::prefix_increment_operator>(node->op))
+    if (std::holds_alternative<prefix_increment_operator>(node->op))
     {
         op = plus_operator{};
     }
@@ -271,7 +251,7 @@ val process_postfix_unary(const std::unique_ptr<parser::unary_node> &node,
                           symbol_table::symbol_table &table)
 {
     binary_operator op;
-    if (std::holds_alternative<parser::postfix_increment_operator>(node->op))
+    if (std::holds_alternative<postfix_increment_operator>(node->op))
     {
         op = plus_operator{};
     }
@@ -293,14 +273,14 @@ val process_unary_node(const std::unique_ptr<parser::unary_node> &node,
                        std::vector<instruction> &instructions,
                        symbol_table::symbol_table &table)
 {
-    if (std::holds_alternative<parser::prefix_increment_operator>(node->op) ||
-        std::holds_alternative<parser::prefix_decrement_operator>(node->op))
+    if (std::holds_alternative<prefix_increment_operator>(node->op) ||
+        std::holds_alternative<prefix_decrement_operator>(node->op))
     {
         return process_prefix_unary(node, instructions, table);
     }
 
-    if (std::holds_alternative<parser::postfix_increment_operator>(node->op) ||
-        std::holds_alternative<parser::postfix_decrement_operator>(node->op))
+    if (std::holds_alternative<postfix_increment_operator>(node->op) ||
+        std::holds_alternative<postfix_decrement_operator>(node->op))
     {
         return process_postfix_unary(node, instructions, table);
     }
@@ -356,11 +336,11 @@ val process_binary_node(const std::unique_ptr<parser::binary_node> &node,
                         std::vector<instruction> &instructions,
                         symbol_table::symbol_table &table)
 {
-    if (std::holds_alternative<parser::logical_and_operator>(node->op))
+    if (std::holds_alternative<logical_and_operator>(node->op))
     {
         return process_binary_and(node, instructions, table);
     }
-    if (std::holds_alternative<parser::logical_or_operator>(node->op))
+    if (std::holds_alternative<logical_or_operator>(node->op))
     {
         return process_binary_or(node, instructions, table);
     }
@@ -737,53 +717,6 @@ void process_while_statement(const std::unique_ptr<parser::while_statement> &nod
     instructions.emplace_back(label_statement{ break_label });
 }
 
-std::string pretty_print(const unary_operator &op, int32_t ident)
-{
-    return std::visit(
-      visitor{
-        [ident](const binary_complement_operator &) { return wccff::format_indented(ident, "Complement"); },
-        [ident](const negate_operator &) { return wccff::format_indented(ident, "Negate"); },
-        [ident](const not_operator &) { return wccff::format_indented(ident, "Not"); },
-      },
-      op);
-}
-std::string pretty_print(const binary_operator &op, int32_t ident)
-{
-    return std::visit(
-      visitor{
-        [ident](const plus_operator &) { return wccff::format_indented(ident, "Plus"); },
-        [ident](const subtract_operator &) { return wccff::format_indented(ident, "Subtract"); },
-        [ident](const multiply_operator &) { return wccff::format_indented(ident, "Multiply"); },
-        [ident](const divide_operator &) { return wccff::format_indented(ident, "Divide"); },
-        [ident](const remainder_operator &) { return wccff::format_indented(ident, "Remainder"); },
-        [ident](const binary_and_operator &) { return wccff::format_indented(ident, "Bitwise And"); },
-        [ident](const binary_or_operator &) { return wccff::format_indented(ident, "Bitwise Or"); },
-        [ident](const binary_xor_operator &) { return wccff::format_indented(ident, "Bitwise Xor"); },
-        [ident](const left_shift_operator &) { return wccff::format_indented(ident, "Left Shift"); },
-        [ident](const right_shift_operator &) { return wccff::format_indented(ident, "Right Shift"); },
-        [ident](const equal_operator &) { return wccff::format_indented(ident, "Equal"); },
-        [ident](const not_equal_operator &) { return wccff::format_indented(ident, "Not Equal"); },
-        [ident](const less_than_operator &) { return wccff::format_indented(ident, "Less Than"); },
-        [ident](const less_than_or_equal_operator &) { return wccff::format_indented(ident, "Less That or Equal"); },
-        [ident](const greater_than_operator &) { return wccff::format_indented(ident, "Greater Than"); },
-        [ident](const greater_than_or_equal_operator &) {
-            return wccff::format_indented(ident, "Greater That or Equal");
-        },
-        [ident](const assignment_operator &) { return wccff::format_indented(ident, "Greater Than"); },
-        [ident](const compound_plus_operator &) { return wccff::format_indented(ident, "Greater Than"); },
-        [ident](const compound_minus_operator &) { return wccff::format_indented(ident, "Greater Than"); },
-        [ident](const compound_multiplication_operator &) { return wccff::format_indented(ident, "Greater Than"); },
-        [ident](const compound_division_operator &) { return wccff::format_indented(ident, "Greater Than"); },
-        [ident](const compound_remainder_operator &) { return wccff::format_indented(ident, "Greater Than"); },
-        [ident](const compound_bitwise_and_operator &) { return wccff::format_indented(ident, "Greater Than"); },
-        [ident](const compound_bitwise_or_operator &) { return wccff::format_indented(ident, "Greater Than"); },
-        [ident](const compound_bitwise_xor_operator &) { return wccff::format_indented(ident, "Greater Than"); },
-        [ident](const compound_left_shift_operator &) { return wccff::format_indented(ident, "Greater Than"); },
-        [ident](const compound_right_shift_operator &) { return wccff::format_indented(ident, "Greater Than"); },
-
-      },
-      op);
-}
 std::string pretty_print(const constant &val, int32_t ident)
 {
     return std::visit(

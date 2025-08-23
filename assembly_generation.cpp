@@ -97,88 +97,38 @@ type get_type(const tacky::var &v, const wccff::symbol_table::symbol_table &tabl
     return copy_type(s.value().type);
 }
 
-unary_operator process_unary_operator(const wccff::tacky::unary_operator &op)
-{
-    return std::visit(visitor{
-                        [](const tacky::binary_complement_operator &) -> unary_operator { return not_op{}; },
-                        [](const tacky::negate_operator &) -> unary_operator { return neg_op{}; },
-                        [](const tacky::not_operator &) -> unary_operator {
-                            throw std::logic_error("logical not operator Not implemented");
-                        },
-                      },
-                      op);
-}
-
-binary_operator process_binary_operator(const wccff::tacky::binary_operator &op, const type &t)
+unary_operator process_unary_operator(const wccff::unary_operator &op)
 {
     return std::visit(
       visitor{
-        [](const tacky::plus_operator &) -> binary_operator { return add{}; },
-        [](const tacky::subtract_operator &) -> binary_operator { return sub{}; },
-        [](const tacky::multiply_operator &) -> binary_operator { return mul{}; },
-        [](const tacky::divide_operator &) -> binary_operator { return div_double{}; },
-        [](const tacky::remainder_operator &) -> binary_operator { return mul{}; },
-        [](const tacky::binary_and_operator &) -> binary_operator { return binary_and{}; },
-        [](const tacky::binary_or_operator &) -> binary_operator { return binary_or{}; },
-        [](const tacky::binary_xor_operator &) -> binary_operator { return binary_xor{}; },
-        [&t](const tacky::left_shift_operator &) -> binary_operator {
+        [](const bitwise_complement_operator &) -> unary_operator { return not_op{}; },
+        [](const negate_operator &) -> unary_operator { return neg_op{}; },
+        [](const auto &) -> unary_operator { throw std::logic_error("logical not operator Not implemented"); },
+      },
+      op);
+}
+
+binary_operator process_binary_operator(const wccff::binary_operator &op, const type &t)
+{
+    return std::visit(
+      visitor{
+        [](const plus_operator &) -> binary_operator { return add{}; },
+        [](const subtract_operator &) -> binary_operator { return sub{}; },
+        [](const multiply_operator &) -> binary_operator { return mul{}; },
+        [](const divide_operator &) -> binary_operator { return div_double{}; },
+        [](const remainder_operator &) -> binary_operator { return mul{}; },
+        [](const bitwise_and_operator &) -> binary_operator { return binary_and{}; },
+        [](const bitwise_or_operator &) -> binary_operator { return binary_or{}; },
+        [](const bitwise_xor_operator &) -> binary_operator { return binary_xor{}; },
+        [&t](const left_shift_operator &) -> binary_operator {
             return is_signed_type(t) ? binary_operator{ left_shift{} } : binary_operator{ left_shift_aritmetic{} };
         },
-        [&t](const tacky::right_shift_operator &) -> binary_operator {
+        [&t](const right_shift_operator &) -> binary_operator {
             return is_signed_type(t) ? binary_operator{ right_shift{} } : binary_operator{ right_shift_aritmetic{} };
         },
-        [](const tacky::equal_operator &) -> binary_operator {
+        [](const auto &) -> binary_operator {
             throw std::logic_error("Equal operator is not converted into a binary operator");
         },
-        [](const tacky::not_equal_operator &) -> binary_operator {
-            throw std::logic_error("Not Equal operator is not converted into a binary operator");
-        },
-        [](const tacky::less_than_operator &) -> binary_operator {
-            throw std::logic_error("Less Than operator is not converted into a binary operator");
-        },
-        [](const tacky::less_than_or_equal_operator &) -> binary_operator {
-            throw std::logic_error("Less Than or Equal operator is not converted into a binary operator");
-        },
-        [](const tacky::greater_than_operator &) -> binary_operator {
-            throw std::logic_error("Greater Than operator is not converted into a binary operator");
-        },
-        [](const tacky::greater_than_or_equal_operator &) -> binary_operator {
-            throw std::logic_error("Greater Than or Equal operator is not converted into a binary operator");
-        },
-        [](const tacky::assignment_operator &) -> binary_operator {
-            throw std::logic_error("Assignment operator is not converted into a binary operator");
-        },
-        [](const tacky::compound_plus_operator &) -> binary_operator {
-            throw std::logic_error("Compound Plus operator is not converted into a binary operator");
-        },
-        [](const tacky::compound_minus_operator &) -> binary_operator {
-            throw std::logic_error("Compound Minus operator is not converted into a binary operator");
-        },
-        [](const tacky::compound_multiplication_operator &) -> binary_operator {
-            throw std::logic_error("Compound Multiplication operator is not converted into a binary operator");
-        },
-        [](const tacky::compound_division_operator &) -> binary_operator {
-            throw std::logic_error("Compound Division operator is not converted into a binary operator");
-        },
-        [](const tacky::compound_remainder_operator &) -> binary_operator {
-            throw std::logic_error("Compound Remainder operator is not converted into a binary operator");
-        },
-        [](const tacky::compound_bitwise_and_operator &) -> binary_operator {
-            throw std::logic_error("Compound Bitwise And operator is not converted into a binary operator");
-        },
-        [](const tacky::compound_bitwise_or_operator &) -> binary_operator {
-            throw std::logic_error("Compound Bitwise Or operator is not converted into a binary operator");
-        },
-        [](const tacky::compound_bitwise_xor_operator &) -> binary_operator {
-            throw std::logic_error("Compound Bitwise Xor operator is not converted into a binary operator");
-        },
-        [](const tacky::compound_left_shift_operator &) -> binary_operator {
-            throw std::logic_error("Compound Left Shift operator is not converted into a binary operator");
-        },
-        [](const tacky::compound_right_shift_operator &) -> binary_operator {
-            throw std::logic_error("Compound Right Shift operator is not converted into a binary operator");
-        },
-
       },
       op);
 }
@@ -413,27 +363,27 @@ bool is_memory_operand(const operand &o)
 
 void assembly_generation::process_binary_statement_double(const tacky::binary_statement &stmt)
 {
-    auto is_relational_operator = [](tacky::binary_operator op) {
+    auto is_relational_operator = [](wccff::binary_operator op) {
         return std::visit(visitor{
-                            [](tacky::equal_operator) { return true; },
-                            [](tacky::not_equal_operator) { return true; },
-                            [](tacky::less_than_operator) { return true; },
-                            [](tacky::less_than_or_equal_operator) { return true; },
-                            [](tacky::greater_than_operator) { return true; },
-                            [](tacky::greater_than_or_equal_operator) { return true; },
+                            [](equals_operator) { return true; },
+                            [](not_equals_operator) { return true; },
+                            [](less_than_operator) { return true; },
+                            [](less_than_or_equal_operator) { return true; },
+                            [](greater_than_operator) { return true; },
+                            [](greater_than_or_equal_operator) { return true; },
                             [](auto) { return false; },
                           },
                           op);
     };
 
-    auto convert_tacky_op = [](tacky::binary_operator op) {
+    auto convert_tacky_op = [](wccff::binary_operator op) {
         return std::visit(visitor{
-                            [](tacky::equal_operator) -> cond_code { return E{}; },
-                            [](tacky::not_equal_operator) -> cond_code { return NE{}; },
-                            [](tacky::less_than_operator) -> cond_code { return B{}; },
-                            [](tacky::less_than_or_equal_operator) -> cond_code { return BE{}; },
-                            [](tacky::greater_than_operator) -> cond_code { return A{}; },
-                            [](tacky::greater_than_or_equal_operator) -> cond_code { return AE{}; },
+                            [](equals_operator) -> cond_code { return E{}; },
+                            [](not_equals_operator) -> cond_code { return NE{}; },
+                            [](less_than_operator) -> cond_code { return B{}; },
+                            [](less_than_or_equal_operator) -> cond_code { return BE{}; },
+                            [](greater_than_operator) -> cond_code { return A{}; },
+                            [](greater_than_or_equal_operator) -> cond_code { return AE{}; },
                             [](auto) -> cond_code {
                                 throw std::logic_error("Binary operator is not converted into a binary operator");
                             },
@@ -459,29 +409,29 @@ void assembly_generation::process_binary_statement_double(const tacky::binary_st
 }
 void assembly_generation::process(const tacky::binary_statement &stmt)
 {
-    auto is_relational_operator = [](tacky::binary_operator op) {
+    auto is_relational_operator = [](wccff::binary_operator op) {
         return std::visit(visitor{
-                            [](tacky::equal_operator) { return true; },
-                            [](tacky::not_equal_operator) { return true; },
-                            [](tacky::less_than_operator) { return true; },
-                            [](tacky::less_than_or_equal_operator) { return true; },
-                            [](tacky::greater_than_operator) { return true; },
-                            [](tacky::greater_than_or_equal_operator) { return true; },
+                            [](equals_operator) { return true; },
+                            [](not_equals_operator) { return true; },
+                            [](less_than_operator) { return true; },
+                            [](less_than_or_equal_operator) { return true; },
+                            [](greater_than_operator) { return true; },
+                            [](greater_than_or_equal_operator) { return true; },
                             [](auto) { return false; },
                           },
                           op);
     };
 
-    auto convert_tacky_op = [](tacky::binary_operator op, const wccff::type &t) {
+    auto convert_tacky_op = [](wccff::binary_operator op, const wccff::type &t) {
         if (is_signed_type(t))
         {
             return std::visit(visitor{
-                                [](tacky::equal_operator) -> cond_code { return E{}; },
-                                [](tacky::not_equal_operator) -> cond_code { return NE{}; },
-                                [](tacky::less_than_operator) -> cond_code { return L{}; },
-                                [](tacky::less_than_or_equal_operator) -> cond_code { return LE{}; },
-                                [](tacky::greater_than_operator) -> cond_code { return G{}; },
-                                [](tacky::greater_than_or_equal_operator) -> cond_code { return GE{}; },
+                                [](equals_operator) -> cond_code { return E{}; },
+                                [](not_equals_operator) -> cond_code { return NE{}; },
+                                [](less_than_operator) -> cond_code { return L{}; },
+                                [](less_than_or_equal_operator) -> cond_code { return LE{}; },
+                                [](greater_than_operator) -> cond_code { return G{}; },
+                                [](greater_than_or_equal_operator) -> cond_code { return GE{}; },
                                 [](auto) -> cond_code {
                                     throw std::logic_error("Binary operator is not converted into a binary operator");
                                 },
@@ -491,12 +441,12 @@ void assembly_generation::process(const tacky::binary_statement &stmt)
         else
         {
             return std::visit(visitor{
-                                [](tacky::equal_operator) -> cond_code { return E{}; },
-                                [](tacky::not_equal_operator) -> cond_code { return NE{}; },
-                                [](tacky::less_than_operator) -> cond_code { return B{}; },
-                                [](tacky::less_than_or_equal_operator) -> cond_code { return BE{}; },
-                                [](tacky::greater_than_operator) -> cond_code { return A{}; },
-                                [](tacky::greater_than_or_equal_operator) -> cond_code { return AE{}; },
+                                [](equals_operator) -> cond_code { return E{}; },
+                                [](not_equals_operator) -> cond_code { return NE{}; },
+                                [](less_than_operator) -> cond_code { return B{}; },
+                                [](less_than_or_equal_operator) -> cond_code { return BE{}; },
+                                [](greater_than_operator) -> cond_code { return A{}; },
+                                [](greater_than_or_equal_operator) -> cond_code { return AE{}; },
                                 [](auto) -> cond_code {
                                     throw std::logic_error("Binary operator is not converted into a binary operator");
                                 },
@@ -524,7 +474,7 @@ void assembly_generation::process(const tacky::binary_statement &stmt)
         return;
     }
 
-    if (std::holds_alternative<wccff::tacky::divide_operator>(stmt.op))
+    if (std::holds_alternative<wccff::divide_operator>(stmt.op))
     {
         auto op_type = get_type(stmt.src1, m_table);
         if (is_signed_type(op_type))
@@ -545,7 +495,7 @@ void assembly_generation::process(const tacky::binary_statement &stmt)
         }
     }
 
-    if (std::holds_alternative<wccff::tacky::remainder_operator>(stmt.op))
+    if (std::holds_alternative<wccff::remainder_operator>(stmt.op))
     {
         auto op_type = get_type(stmt.src1, m_table);
 
@@ -907,7 +857,7 @@ void assembly_generation::process(const tacky::uint_to_double &stmt)
 }
 void assembly_generation::process(const tacky::unary_statement &stmt)
 {
-    if (std::holds_alternative<tacky::not_operator>(stmt.op))
+    if (std::holds_alternative<logical_not_operator>(stmt.op))
     {
         if (std::holds_alternative<double_asm>(get_assembly_type(stmt.src, m_table)))
         {
@@ -926,7 +876,7 @@ void assembly_generation::process(const tacky::unary_statement &stmt)
         return;
     }
 
-    if (std::holds_alternative<tacky::negate_operator>(stmt.op) &&
+    if (std::holds_alternative<negate_operator>(stmt.op) &&
         std::holds_alternative<double_asm>(get_assembly_type(stmt.src, m_table)))
     {
         auto neg_zero = process(double_constant{ -0.0 });

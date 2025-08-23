@@ -32,7 +32,7 @@ TEST_CASE("Parser", "[parser]")
         auto r = wccff::parser::parse_unary_node(tokens);
 
         REQUIRE(r.has_value());
-        REQUIRE(std::holds_alternative<wccff::parser::negate_operator>(r.value()->op) == true);
+        REQUIRE(std::holds_alternative<wccff::negate_operator>(r.value()->op) == true);
         REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(r.value()->exp, 2));
     }
 
@@ -48,7 +48,7 @@ TEST_CASE("Parser", "[parser]")
         auto r = wccff::parser::parse_unary_node(tokens);
 
         REQUIRE(r.has_value());
-        REQUIRE(std::holds_alternative<wccff::parser::bitwise_complement_operator>(r.value()->op) == true);
+        REQUIRE(std::holds_alternative<wccff::bitwise_complement_operator>(r.value()->op) == true);
         REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(r.value()->exp, 2));
     }
 
@@ -67,11 +67,11 @@ TEST_CASE("Parser", "[parser]")
             auto r = wccff::parser::parse_unary_node(tokens);
 
             REQUIRE(r.has_value());
-            REQUIRE(std::holds_alternative<wccff::parser::bitwise_complement_operator>(r.value()->op) == true);
+            REQUIRE(std::holds_alternative<wccff::bitwise_complement_operator>(r.value()->op) == true);
             REQUIRE(std::holds_alternative<std::unique_ptr<wccff::parser::unary_node>>(r.value()->exp) == true);
 
             auto inner_expression = std::move(std::get<std::unique_ptr<wccff::parser::unary_node>>(r.value()->exp));
-            REQUIRE(std::holds_alternative<wccff::parser::bitwise_complement_operator>(inner_expression->op) == true);
+            REQUIRE(std::holds_alternative<wccff::bitwise_complement_operator>(inner_expression->op) == true);
             REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(inner_expression->exp, 2));
         }
 
@@ -88,11 +88,11 @@ TEST_CASE("Parser", "[parser]")
             auto r = wccff::parser::parse_unary_node(tokens);
 
             REQUIRE(r.has_value());
-            REQUIRE(std::holds_alternative<wccff::parser::negate_operator>(r.value()->op) == true);
+            REQUIRE(std::holds_alternative<wccff::negate_operator>(r.value()->op) == true);
             REQUIRE(std::holds_alternative<std::unique_ptr<wccff::parser::unary_node>>(r.value()->exp) == true);
 
             auto inner_expression = std::move(std::get<std::unique_ptr<wccff::parser::unary_node>>(r.value()->exp));
-            REQUIRE(std::holds_alternative<wccff::parser::bitwise_complement_operator>(inner_expression->op) == true);
+            REQUIRE(std::holds_alternative<wccff::bitwise_complement_operator>(inner_expression->op) == true);
             REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(inner_expression->exp, 2));
         }
     }
@@ -114,7 +114,7 @@ TEST_CASE("Parser", "[parser]")
             REQUIRE(std::holds_alternative<std::unique_ptr<wccff::parser::binary_node>>(r.value()) == true);
             auto &exp = std::get<std::unique_ptr<wccff::parser::binary_node>>(r.value());
 
-            REQUIRE(std::holds_alternative<wccff::parser::plus_operator>(exp->op));
+            REQUIRE(std::holds_alternative<wccff::plus_operator>(exp->op));
             REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(exp->left, 1));
             REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(exp->right, 2));
         }
@@ -134,7 +134,7 @@ TEST_CASE("Parser", "[parser]")
             REQUIRE(std::holds_alternative<std::unique_ptr<wccff::parser::binary_node>>(r.value()) == true);
             auto &exp = std::get<std::unique_ptr<wccff::parser::binary_node>>(r.value());
 
-            REQUIRE(std::holds_alternative<wccff::parser::subtract_operator>(exp->op));
+            REQUIRE(std::holds_alternative<wccff::subtract_operator>(exp->op));
             REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(exp->left, 2));
             REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(exp->right, 1));
         }
@@ -154,7 +154,7 @@ TEST_CASE("Parser", "[parser]")
             REQUIRE(std::holds_alternative<std::unique_ptr<wccff::parser::binary_node>>(r.value()) == true);
             auto &exp = std::get<std::unique_ptr<wccff::parser::binary_node>>(r.value());
 
-            REQUIRE(std::holds_alternative<wccff::parser::multiply_operator>(exp->op));
+            REQUIRE(std::holds_alternative<wccff::multiply_operator>(exp->op));
             REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(exp->left, 2));
             REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(exp->right, 1));
         }
@@ -182,12 +182,12 @@ TEST_CASE("Parser", "[parser]")
             REQUIRE(std::holds_alternative<std::unique_ptr<wccff::parser::binary_node>>(r.value()) == true);
             auto &exp = std::get<std::unique_ptr<wccff::parser::binary_node>>(r.value());
 
-            REQUIRE(std::holds_alternative<wccff::parser::subtract_operator>(exp->op));
+            REQUIRE(std::holds_alternative<wccff::subtract_operator>(exp->op));
 
             REQUIRE(std::holds_alternative<std::unique_ptr<wccff::parser::binary_node>>(exp->left));
             auto &left = std::get<std::unique_ptr<wccff::parser::binary_node>>(exp->left);
 
-            REQUIRE(std::holds_alternative<wccff::parser::plus_operator>(left->op));
+            REQUIRE(std::holds_alternative<wccff::plus_operator>(left->op));
 
             REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(left->left, 1));
             REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(left->right, 3));
@@ -217,12 +217,12 @@ TEST_CASE("Parser", "[parser]")
             REQUIRE(std::holds_alternative<std::unique_ptr<wccff::parser::binary_node>>(r.value()) == true);
             auto &exp = std::get<std::unique_ptr<wccff::parser::binary_node>>(r.value());
 
-            REQUIRE(std::holds_alternative<wccff::parser::subtract_operator>(exp->op));
+            REQUIRE(std::holds_alternative<wccff::subtract_operator>(exp->op));
 
             REQUIRE(std::holds_alternative<std::unique_ptr<wccff::parser::binary_node>>(exp->left));
             auto &left = std::get<std::unique_ptr<wccff::parser::binary_node>>(exp->left);
 
-            REQUIRE(std::holds_alternative<wccff::parser::multiply_operator>(left->op));
+            REQUIRE(std::holds_alternative<wccff::multiply_operator>(left->op));
 
             REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(left->left, 1));
             REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(left->right, 3));
@@ -252,7 +252,7 @@ TEST_CASE("Parser", "[parser]")
             REQUIRE(std::holds_alternative<std::unique_ptr<wccff::parser::binary_node>>(r.value()) == true);
             auto &exp = std::get<std::unique_ptr<wccff::parser::binary_node>>(r.value());
 
-            REQUIRE(std::holds_alternative<wccff::parser::plus_operator>(exp->op));
+            REQUIRE(std::holds_alternative<wccff::plus_operator>(exp->op));
             REQUIRE(std::holds_alternative<std::unique_ptr<wccff::parser::binary_node>>(exp->right));
             auto &right = std::get<std::unique_ptr<wccff::parser::binary_node>>(exp->right);
 
@@ -286,12 +286,12 @@ TEST_CASE("Parser", "[parser]")
             REQUIRE(std::holds_alternative<std::unique_ptr<wccff::parser::binary_node>>(r.value()) == true);
             auto &exp = std::get<std::unique_ptr<wccff::parser::binary_node>>(r.value());
 
-            REQUIRE(std::holds_alternative<wccff::parser::multiply_operator>(exp->op));
+            REQUIRE(std::holds_alternative<wccff::multiply_operator>(exp->op));
 
             REQUIRE(std::holds_alternative<std::unique_ptr<wccff::parser::binary_node>>(exp->left));
             auto &left = std::get<std::unique_ptr<wccff::parser::binary_node>>(exp->left);
 
-            REQUIRE(std::holds_alternative<wccff::parser::plus_operator>(left->op));
+            REQUIRE(std::holds_alternative<wccff::plus_operator>(left->op));
 
             REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(left->left, 1));
             REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(left->right, 3));
@@ -344,7 +344,7 @@ TEST_CASE("Binary Operators", "[parser]")
         REQUIRE(std::holds_alternative<std::unique_ptr<wccff::parser::binary_node>>(r.value()));
         const auto &exp = std::get<std::unique_ptr<wccff::parser::binary_node>>(r.value());
 
-        REQUIRE(std::holds_alternative<wccff::parser::bitwise_and_operator>(exp->op));
+        REQUIRE(std::holds_alternative<wccff::bitwise_and_operator>(exp->op));
         REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(exp->left, 1));
         REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(exp->right, 2));
     }
@@ -364,7 +364,7 @@ TEST_CASE("Binary Operators", "[parser]")
         REQUIRE(std::holds_alternative<std::unique_ptr<wccff::parser::binary_node>>(r.value()));
         const auto &exp = std::get<std::unique_ptr<wccff::parser::binary_node>>(r.value());
 
-        REQUIRE(std::holds_alternative<wccff::parser::bitwise_or_operator>(exp->op));
+        REQUIRE(std::holds_alternative<wccff::bitwise_or_operator>(exp->op));
         REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(exp->left, 1));
         REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(exp->right, 2));
     }
@@ -383,7 +383,7 @@ TEST_CASE("Binary Operators", "[parser]")
         REQUIRE(std::holds_alternative<std::unique_ptr<wccff::parser::binary_node>>(r.value()));
         const auto &exp = std::get<std::unique_ptr<wccff::parser::binary_node>>(r.value());
 
-        REQUIRE(std::holds_alternative<wccff::parser::bitwise_xor_operator>(exp->op));
+        REQUIRE(std::holds_alternative<wccff::bitwise_xor_operator>(exp->op));
         REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(exp->left, 1));
         REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(exp->right, 2));
     }
@@ -402,7 +402,7 @@ TEST_CASE("Binary Operators", "[parser]")
         REQUIRE(std::holds_alternative<std::unique_ptr<wccff::parser::binary_node>>(r.value()));
         const auto &exp = std::get<std::unique_ptr<wccff::parser::binary_node>>(r.value());
 
-        REQUIRE(std::holds_alternative<wccff::parser::left_shift_operator>(exp->op));
+        REQUIRE(std::holds_alternative<wccff::left_shift_operator>(exp->op));
         REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(exp->left, 1));
         REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(exp->right, 2));
     }
@@ -421,7 +421,7 @@ TEST_CASE("Binary Operators", "[parser]")
         REQUIRE(std::holds_alternative<std::unique_ptr<wccff::parser::binary_node>>(r.value()));
         const auto &exp = std::get<std::unique_ptr<wccff::parser::binary_node>>(r.value());
 
-        REQUIRE(std::holds_alternative<wccff::parser::right_shift_operator>(exp->op));
+        REQUIRE(std::holds_alternative<wccff::right_shift_operator>(exp->op));
         REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(exp->left, 1));
         REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(exp->right, 2));
     }
@@ -990,7 +990,7 @@ TEST_CASE("parse_argument_list", "[parser]")
         REQUIRE(result.value().size() == 1);
         REQUIRE(std::holds_alternative<std::unique_ptr<parser::binary_node>>(result.value()[0]));
         auto &node = std::get<std::unique_ptr<parser::binary_node>>(result.value()[0]);
-        REQUIRE(std::holds_alternative<parser::plus_operator>(node->op));
+        REQUIRE(std::holds_alternative<plus_operator>(node->op));
         REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(node->left, 42));
         REQUIRE(wccff::testing::is_constant_expression_of<wccff::int_constant>(node->right, 43));
     }
@@ -1273,9 +1273,9 @@ TEST_CASE("parser_pretty_printers", "[parser]")
 
     SECTION("assignment_node")
     {
+        using wccff::assignment_operator;
         using wccff::int_constant;
         using wccff::parser::assignment_node;
-        using wccff::parser::assignment_operator;
         using wccff::parser::var;
 
         auto value = int_constant{ 55 };
@@ -1289,8 +1289,8 @@ TEST_CASE("parser_pretty_printers", "[parser]")
     SECTION("binary_node")
     {
         using wccff::int_constant;
+        using wccff::logical_and_operator;
         using wccff::parser::binary_node;
-        using wccff::parser::logical_and_operator;
         using wccff::parser::var;
 
         auto value = int_constant{ 55 };
@@ -1303,24 +1303,24 @@ TEST_CASE("parser_pretty_printers", "[parser]")
 
     SECTION("binary_operators")
     {
-        REQUIRE(pretty_print(wccff::parser::plus_operator{}) == "Plus");
-        REQUIRE(pretty_print(wccff::parser::subtract_operator{}) == "Subtract");
-        REQUIRE(pretty_print(wccff::parser::multiply_operator{}) == "Multiply");
-        REQUIRE(pretty_print(wccff::parser::divide_operator{}) == "Divide");
-        REQUIRE(pretty_print(wccff::parser::remainder_operator{}) == "Remainder");
-        REQUIRE(pretty_print(wccff::parser::bitwise_and_operator{}) == "Bitwise And");
-        REQUIRE(pretty_print(wccff::parser::bitwise_or_operator{}) == "Bitwise Or");
-        REQUIRE(pretty_print(wccff::parser::bitwise_xor_operator{}) == "Bitwise Xor");
-        REQUIRE(pretty_print(wccff::parser::left_shift_operator{}) == "Left Shift");
-        REQUIRE(pretty_print(wccff::parser::right_shift_operator{}) == "Right Shift");
-        REQUIRE(pretty_print(wccff::parser::logical_and_operator{}) == "Logic And");
-        REQUIRE(pretty_print(wccff::parser::logical_or_operator{}) == "Logic Or");
-        REQUIRE(pretty_print(wccff::parser::equals_operator{}) == "Equals");
-        REQUIRE(pretty_print(wccff::parser::not_equals_operator{}) == "Not Equals");
-        REQUIRE(pretty_print(wccff::parser::less_than_operator{}) == "Less Than");
-        REQUIRE(pretty_print(wccff::parser::less_than_or_equal_operator{}) == "Less Than or Equals");
-        REQUIRE(pretty_print(wccff::parser::greater_than_operator{}) == "Greater Than");
-        REQUIRE(pretty_print(wccff::parser::greater_than_or_equal_operator{}) == "Greater Than or Equals");
+        REQUIRE(pretty_print(wccff::plus_operator{}) == "Plus");
+        REQUIRE(pretty_print(wccff::subtract_operator{}) == "Subtract");
+        REQUIRE(pretty_print(wccff::multiply_operator{}) == "Multiply");
+        REQUIRE(pretty_print(wccff::divide_operator{}) == "Divide");
+        REQUIRE(pretty_print(wccff::remainder_operator{}) == "Remainder");
+        REQUIRE(pretty_print(wccff::bitwise_and_operator{}) == "Bitwise And");
+        REQUIRE(pretty_print(wccff::bitwise_or_operator{}) == "Bitwise Or");
+        REQUIRE(pretty_print(wccff::bitwise_xor_operator{}) == "Bitwise Xor");
+        REQUIRE(pretty_print(wccff::left_shift_operator{}) == "Left Shift");
+        REQUIRE(pretty_print(wccff::right_shift_operator{}) == "Right Shift");
+        REQUIRE(pretty_print(wccff::logical_and_operator{}) == "Logic And");
+        REQUIRE(pretty_print(wccff::logical_or_operator{}) == "Logic Or");
+        REQUIRE(pretty_print(wccff::equals_operator{}) == "Equals");
+        REQUIRE(pretty_print(wccff::not_equals_operator{}) == "Not Equals");
+        REQUIRE(pretty_print(wccff::less_than_operator{}) == "Less Than");
+        REQUIRE(pretty_print(wccff::less_than_or_equal_operator{}) == "Less Than or Equals");
+        REQUIRE(pretty_print(wccff::greater_than_operator{}) == "Greater Than");
+        REQUIRE(pretty_print(wccff::greater_than_or_equal_operator{}) == "Greater Than or Equals");
     }
 
     SECTION("block")
@@ -1412,11 +1412,11 @@ TEST_CASE("parser_pretty_printers", "[parser]")
 
     SECTION("do_while")
     {
+        using wccff::equals_operator;
         using wccff::identifier;
         using wccff::int_constant;
         using wccff::parser::binary_node;
         using wccff::parser::do_while_statement;
-        using wccff::parser::equals_operator;
         using wccff::parser::return_node;
 
         auto loop_name = identifier("loop_name");
@@ -1453,15 +1453,15 @@ TEST_CASE("parser_pretty_printers", "[parser]")
 
     SECTION("for_loop")
     {
+        using wccff::equals_operator;
         using wccff::identifier;
         using wccff::int_constant;
+        using wccff::plus_operator;
         using wccff::parser::binary_node;
-        using wccff::parser::equals_operator;
         using wccff::parser::expression;
         using wccff::parser::for_init;
         using wccff::parser::for_statement;
         using wccff::parser::init_expression;
-        using wccff::parser::plus_operator;
         using wccff::parser::return_node;
 
         identifier loop_name{ "loop_name" };
@@ -1730,7 +1730,7 @@ TEST_CASE("parser_pretty_printers", "[parser]")
     SECTION("unary_node")
     {
         using wccff::int_constant;
-        using wccff::parser::negate_operator;
+        using wccff::negate_operator;
         using wccff::parser::unary_node;
         using wccff::parser::var;
 
@@ -1743,9 +1743,9 @@ TEST_CASE("parser_pretty_printers", "[parser]")
     }
     SECTION("unary_operators")
     {
-        REQUIRE(pretty_print(wccff::parser::bitwise_complement_operator{}) == "Complement");
-        REQUIRE(pretty_print(wccff::parser::negate_operator{}) == "Negate");
-        REQUIRE(pretty_print(wccff::parser::logical_not_operator{}) == "Not");
+        REQUIRE(pretty_print(wccff::bitwise_complement_operator{}) == "Complement");
+        REQUIRE(pretty_print(wccff::negate_operator{}) == "Negate");
+        REQUIRE(pretty_print(wccff::logical_not_operator{}) == "Not");
     }
 
     SECTION("var")
@@ -1785,10 +1785,10 @@ TEST_CASE("parser_pretty_printers", "[parser]")
 
     SECTION("while")
     {
+        using wccff::equals_operator;
         using wccff::identifier;
         using wccff::int_constant;
         using wccff::parser::binary_node;
-        using wccff::parser::equals_operator;
         using wccff::parser::return_node;
         using wccff::parser::while_statement;
 

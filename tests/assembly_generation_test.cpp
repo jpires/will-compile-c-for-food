@@ -41,127 +41,121 @@ TEST_CASE("Binary Operations", "[assembly_generation]")
     wccff::tacky::var dst{ "tacky-1" };
 
     result += "--op=binary_and; src1 = int_constant; src2 = int_constant; dst = var--\n";
-    wccff::tacky::binary_statement stmt1{ wccff::tacky::binary_and_operator{}, int_const_1, int_const_2, dst };
+    wccff::tacky::binary_statement stmt1{ wccff::bitwise_and_operator{}, int_const_1, int_const_2, dst };
     ams_process.process(stmt1);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=binary_or; src1 = long_constant; src2 = long_constant; dst = var--\n";
-    wccff::tacky::binary_statement stmt2{ wccff::tacky::binary_or_operator{}, long_const_1, long_const_2, dst };
+    wccff::tacky::binary_statement stmt2{ wccff::bitwise_or_operator{}, long_const_1, long_const_2, dst };
     ams_process.process(stmt2);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=binary_xor; src1 = unsigned_int_constant; src2 = unsigned_int_constant; dst = var--\n";
-    wccff::tacky::binary_statement stmt3{ wccff::tacky::binary_xor_operator{}, uint_const_1, uint_const_2, dst };
+    wccff::tacky::binary_statement stmt3{ wccff::bitwise_xor_operator{}, uint_const_1, uint_const_2, dst };
     ams_process.process(stmt3);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=plus_operator; src1 = unsigned_long_constant; src2 = unsigned_long_constant; dst = var--\n";
-    wccff::tacky::binary_statement stmt4{ wccff::tacky::plus_operator{}, ulong_const_1, ulong_const_2, dst };
+    wccff::tacky::binary_statement stmt4{ wccff::plus_operator{}, ulong_const_1, ulong_const_2, dst };
     ams_process.process(stmt4);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=subtract_operator; src1 = int_var; src2 = int_constant; dst = var--\n";
-    wccff::tacky::binary_statement stmt5{ wccff::tacky::subtract_operator{}, int_var, int_const_2, dst };
+    wccff::tacky::binary_statement stmt5{ wccff::subtract_operator{}, int_var, int_const_2, dst };
     ams_process.process(stmt5);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=multiply_operator; src1 = long_var; src2 = long_constant; dst = var--\n";
-    wccff::tacky::binary_statement stmt6{ wccff::tacky::multiply_operator{}, long_var, long_const_2, dst };
+    wccff::tacky::binary_statement stmt6{ wccff::multiply_operator{}, long_var, long_const_2, dst };
     ams_process.process(stmt6);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=left_shift_operator; src1 = ulong_var; src2 = long_constant; dst = var--\n";
-    wccff::tacky::binary_statement stmt7{ wccff::tacky::left_shift_operator{}, ulong_var, ulong_const_2, dst };
+    wccff::tacky::binary_statement stmt7{ wccff::left_shift_operator{}, ulong_var, ulong_const_2, dst };
     ams_process.process(stmt7);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=right_shift_operator; src1 = uint_constant; src2 = uint_var; dst = var--\n";
-    wccff::tacky::binary_statement stmt8{ wccff::tacky::right_shift_operator{}, uint_const_1, uint_var, dst };
+    wccff::tacky::binary_statement stmt8{ wccff::right_shift_operator{}, uint_const_1, uint_var, dst };
     ams_process.process(stmt8);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=divide_operator; src1 = uint_constant; src2 = uint_var; dst = var--\n";
-    wccff::tacky::binary_statement stmt9{ wccff::tacky::divide_operator{}, uint_const_1, uint_var, dst };
+    wccff::tacky::binary_statement stmt9{ wccff::divide_operator{}, uint_const_1, uint_var, dst };
     ams_process.process(stmt9);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=remainder_operator; src1 = uint_constant; src2 = uint_var; dst = var--\n";
-    wccff::tacky::binary_statement stmt10{ wccff::tacky::remainder_operator{}, uint_const_1, uint_var, dst };
+    wccff::tacky::binary_statement stmt10{ wccff::remainder_operator{}, uint_const_1, uint_var, dst };
     ams_process.process(stmt10);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=equal_operator; src1 = uint_constant; src2 = uint_var; dst = var--\n";
-    wccff::tacky::binary_statement stmt11{ wccff::tacky::equal_operator{}, uint_const_1, uint_var, dst };
+    wccff::tacky::binary_statement stmt11{ wccff::equals_operator{}, uint_const_1, uint_var, dst };
     ams_process.process(stmt11);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=not_equal_operator; src1 = int_constant; src2 = int_var; dst = var--\n";
-    wccff::tacky::binary_statement stmt12{ wccff::tacky::not_equal_operator{}, int_const_1, int_var, dst };
+    wccff::tacky::binary_statement stmt12{ wccff::not_equals_operator{}, int_const_1, int_var, dst };
     ams_process.process(stmt12);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=less_than_operator; src1 = long_constant; src2 = long_var; dst = var--\n";
-    wccff::tacky::binary_statement stmt13{ wccff::tacky::less_than_operator{}, long_const_1, long_var, dst };
+    wccff::tacky::binary_statement stmt13{ wccff::less_than_operator{}, long_const_1, long_var, dst };
     ams_process.process(stmt13);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=less_than_operator; src1 = ulong_constant; src2 = ulong_var; dst = var--\n";
-    wccff::tacky::binary_statement stmt14{ wccff::tacky::less_than_operator{}, ulong_const_1, ulong_var, dst };
+    wccff::tacky::binary_statement stmt14{ wccff::less_than_operator{}, ulong_const_1, ulong_var, dst };
     ams_process.process(stmt14);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=less_than_or_equal_operator; src1 = long_constant; src2 = long_var; dst = var--\n";
-    wccff::tacky::binary_statement stmt15{ wccff::tacky::less_than_or_equal_operator{}, long_const_1, long_var, dst };
+    wccff::tacky::binary_statement stmt15{ wccff::less_than_or_equal_operator{}, long_const_1, long_var, dst };
     ams_process.process(stmt15);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=less_than_or_equal_operator; src1 = ulong_constant; src2 = ulong_var; dst = var--\n";
-    wccff::tacky::binary_statement stmt16{ wccff::tacky::less_than_or_equal_operator{}, ulong_const_1, ulong_var, dst };
+    wccff::tacky::binary_statement stmt16{ wccff::less_than_or_equal_operator{}, ulong_const_1, ulong_var, dst };
     ams_process.process(stmt16);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=greater_than_operator; src1 = long_constant; src2 = long_var; dst = var--\n";
-    wccff::tacky::binary_statement stmt17{ wccff::tacky::greater_than_operator{}, long_const_1, long_var, dst };
+    wccff::tacky::binary_statement stmt17{ wccff::greater_than_operator{}, long_const_1, long_var, dst };
     ams_process.process(stmt17);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=greater_than_operator; src1 = ulong_constant; src2 = ulong_var; dst = var--\n";
-    wccff::tacky::binary_statement stmt18{ wccff::tacky::greater_than_operator{}, ulong_const_1, ulong_var, dst };
+    wccff::tacky::binary_statement stmt18{ wccff::greater_than_operator{}, ulong_const_1, ulong_var, dst };
     ams_process.process(stmt18);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=greater_than_or_equal_operator; src1 = long_constant; src2 = long_var; dst = var--\n";
-    wccff::tacky::binary_statement stmt19{ wccff::tacky::greater_than_or_equal_operator{},
-                                           long_const_1,
-                                           long_var,
-                                           dst };
+    wccff::tacky::binary_statement stmt19{ wccff::greater_than_or_equal_operator{}, long_const_1, long_var, dst };
     ams_process.process(stmt19);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=greater_than_or_equal_operator; src1 = ulong_constant; src2 = ulong_var; dst = var--\n";
-    wccff::tacky::binary_statement stmt20{ wccff::tacky::greater_than_or_equal_operator{},
-                                           ulong_const_1,
-                                           ulong_var,
-                                           dst };
+    wccff::tacky::binary_statement stmt20{ wccff::greater_than_or_equal_operator{}, ulong_const_1, ulong_var, dst };
     ams_process.process(stmt20);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
@@ -169,64 +163,61 @@ TEST_CASE("Binary Operations", "[assembly_generation]")
     // Double Operations
     result += "---Double Operations---\n";
     result += "--op=plus_operator; src1 = double_constant; src2 = double_var; dst = var--\n";
-    wccff::tacky::binary_statement stmt21{ wccff::tacky::plus_operator{}, double_const_1, double_var, dst };
+    wccff::tacky::binary_statement stmt21{ wccff::plus_operator{}, double_const_1, double_var, dst };
     ams_process.process(stmt21);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=subtract_operator; src1 = double_var; src2 = double_constant; dst = var--\n";
-    wccff::tacky::binary_statement stmt22{ wccff::tacky::subtract_operator{}, double_var, double_const_1, dst };
+    wccff::tacky::binary_statement stmt22{ wccff::subtract_operator{}, double_var, double_const_1, dst };
     ams_process.process(stmt22);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=multiply_operator; src1 = double_var; src2 = double_constant; dst = var--\n";
-    wccff::tacky::binary_statement stmt23{ wccff::tacky::multiply_operator{}, double_var, double_const_1, dst };
+    wccff::tacky::binary_statement stmt23{ wccff::multiply_operator{}, double_var, double_const_1, dst };
     ams_process.process(stmt23);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=divide_operator; src1 = double_var; src2 = double_constant; dst = var--\n";
-    wccff::tacky::binary_statement stmt24{ wccff::tacky::divide_operator{}, double_var, double_const_1, dst };
+    wccff::tacky::binary_statement stmt24{ wccff::divide_operator{}, double_var, double_const_1, dst };
     ams_process.process(stmt24);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=equal_operator; src1 = double_var; src2 = double_constant; dst = var--\n";
-    wccff::tacky::binary_statement stmt25{ wccff::tacky::equal_operator{}, double_var, double_const_1, dst };
+    wccff::tacky::binary_statement stmt25{ wccff::equals_operator{}, double_var, double_const_1, dst };
     ams_process.process(stmt25);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=not_equal_operator; src1 = double_var; src2 = double_constant; dst = var--\n";
-    wccff::tacky::binary_statement stmt26{ wccff::tacky::not_equal_operator{}, double_var, double_const_1, dst };
+    wccff::tacky::binary_statement stmt26{ wccff::not_equals_operator{}, double_var, double_const_1, dst };
     ams_process.process(stmt26);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=less_than_operator; src1 = double_var; src2 = double_constant; dst = var--\n";
-    wccff::tacky::binary_statement stmt27{ wccff::tacky::less_than_operator{}, double_var, double_const_1, dst };
+    wccff::tacky::binary_statement stmt27{ wccff::less_than_operator{}, double_var, double_const_1, dst };
     ams_process.process(stmt27);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=less_than_or_equal_operator; src1 = double_constant; src2 = double_constant; dst = var--\n";
-    wccff::tacky::binary_statement stmt28{ wccff::tacky::less_than_or_equal_operator{},
-                                           double_const_2,
-                                           double_const_1,
-                                           dst };
+    wccff::tacky::binary_statement stmt28{ wccff::less_than_or_equal_operator{}, double_const_2, double_const_1, dst };
     ams_process.process(stmt28);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=greater_than_operator; src1 = double_var; src2 = double_constant; dst = var--\n";
-    wccff::tacky::binary_statement stmt29{ wccff::tacky::greater_than_operator{}, double_var, double_const_1, dst };
+    wccff::tacky::binary_statement stmt29{ wccff::greater_than_operator{}, double_var, double_const_1, dst };
     ams_process.process(stmt29);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=greater_than_or_equal_operator; src1 = double_constant; src2 = double_constant; dst = var--\n";
-    wccff::tacky::binary_statement stmt30{ wccff::tacky::greater_than_or_equal_operator{},
+    wccff::tacky::binary_statement stmt30{ wccff::greater_than_or_equal_operator{},
                                            double_const_2,
                                            double_const_1,
                                            dst };
@@ -905,38 +896,38 @@ TEST_CASE("Unary Operators", "[assembly_generation]")
     wccff::tacky::var dst{ "tacky-1" };
 
     result += "--op=binary_complement_operator; src1 = int_constant; dst = var--\n";
-    wccff::tacky::unary_statement stmt01{ wccff::tacky::binary_complement_operator{}, int_const, dst };
+    wccff::tacky::unary_statement stmt01{ wccff::bitwise_complement_operator{}, int_const, dst };
     ams_process.process(stmt01);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=negate_operator; src1 = long_constant; dst = var--\n";
-    wccff::tacky::unary_statement stmt02{ wccff::tacky::negate_operator{}, long_const, dst };
+    wccff::tacky::unary_statement stmt02{ wccff::negate_operator{}, long_const, dst };
     ams_process.process(stmt02);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=not_operator; src1 = unsigned_int_constant; dst = var--\n";
-    wccff::tacky::unary_statement stmt03{ wccff::tacky::not_operator{}, uint_const, dst };
+    wccff::tacky::unary_statement stmt03{ wccff::logical_not_operator{}, uint_const, dst };
     ams_process.process(stmt03);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=binary_complement_operator; src1 = unsigned_long_constant; dst = var--\n";
-    wccff::tacky::unary_statement stmt04{ wccff::tacky::binary_complement_operator{}, ulong_const, dst };
+    wccff::tacky::unary_statement stmt04{ wccff::bitwise_complement_operator{}, ulong_const, dst };
     ams_process.process(stmt04);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "---Double Operation---\n";
     result += "--op=negate_operator; src1 = double_constant; dst = var--\n";
-    wccff::tacky::unary_statement stmt05{ wccff::tacky::negate_operator{}, double_const, dst };
+    wccff::tacky::unary_statement stmt05{ wccff::negate_operator{}, double_const, dst };
     ams_process.process(stmt05);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();
 
     result += "--op=negate_operator; src1 = double_constant; dst = var--\n";
-    wccff::tacky::unary_statement stmt06{ wccff::tacky::not_operator{}, double_const, dst };
+    wccff::tacky::unary_statement stmt06{ wccff::logical_not_operator{}, double_const, dst };
     ams_process.process(stmt06);
     result += pretty_print(ams_process.get_instructions());
     ams_process.reset_instructions();

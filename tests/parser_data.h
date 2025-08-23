@@ -42,7 +42,7 @@ constexpr wccff::long_constant get_long_constant(int64_t value = 42)
 }
 
 constexpr std::unique_ptr<wccff::parser::binary_node> get_binary_node(
-  wccff::parser::binary_operator op = wccff::parser::plus_operator{},
+  wccff::binary_operator op = wccff::plus_operator{},
   wccff::parser::expression exp1 = get_int_constant(),
   wccff::parser::expression exp2 = get_int_constant())
 {
@@ -61,9 +61,8 @@ constexpr wccff::type get_function_type(wccff::type ret_type = wccff::int_type{}
     return std::make_unique<wccff::fun_type>(std::move(params), std::move(ret_type));
 }
 
-constexpr std::unique_ptr<wccff::parser::unary_node> get_unary_node(
-  wccff::parser::unary_operator op = wccff::parser::negate_operator{},
-  wccff::parser::expression exp = get_int_constant())
+constexpr std::unique_ptr<wccff::parser::unary_node> get_unary_node(wccff::unary_operator op = wccff::negate_operator{},
+                                                                    wccff::parser::expression exp = get_int_constant())
 {
     return std::make_unique<wccff::parser::unary_node>(op, std::move(exp));
 }

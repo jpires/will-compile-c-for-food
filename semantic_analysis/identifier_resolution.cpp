@@ -482,10 +482,10 @@ auto process_statement(const parser::statement &node, identifier_map &variable_m
 auto process_unary_node(const std::unique_ptr<parser::unary_node> &node, identifier_map &variable_map)
   -> std::expected<std::unique_ptr<parser::unary_node>, semantic_error>
 {
-    if (std::holds_alternative<parser::prefix_decrement_operator>(node->op) ||
-        std::holds_alternative<parser::prefix_increment_operator>(node->op) ||
-        std::holds_alternative<parser::postfix_decrement_operator>(node->op) ||
-        std::holds_alternative<parser::postfix_increment_operator>(node->op))
+    if (std::holds_alternative<prefix_decrement_operator>(node->op) ||
+        std::holds_alternative<prefix_increment_operator>(node->op) ||
+        std::holds_alternative<postfix_decrement_operator>(node->op) ||
+        std::holds_alternative<postfix_increment_operator>(node->op))
     {
         if (is_lvalue(node->exp) == false)
         {
