@@ -8,6 +8,7 @@ TEST_CASE("Types", "[common]")
     using wccff::fun_type;
     using wccff::int_type;
     using wccff::long_type;
+    using wccff::pointer;
     using wccff::type;
     using wccff::unsigned_int_type;
     using wccff::unsigned_long_type;
@@ -27,6 +28,7 @@ TEST_CASE("Types", "[common]")
         REQUIRE(long_type{} == long_type{});
         REQUIRE(unsigned_int_type{} == unsigned_int_type{});
         REQUIRE(unsigned_long_type{} == unsigned_long_type{});
+        REQUIRE(pointer{} == pointer{});
 
         fun_type fun1{ .params = {}, .return_type = int_type{} };
         fun_type fun2{ .params = {}, .return_type = int_type{} };

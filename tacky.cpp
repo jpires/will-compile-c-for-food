@@ -378,6 +378,7 @@ val process_expression(const wccff::parser::expression &exp,
                         [&instructions, &table](const std::unique_ptr<parser::function_call> &n) -> val {
                             return process_function_call(n, instructions, table);
                         },
+                        [&](const auto &n) -> val { throw std::logic_error("unimplemented"); },
                       },
                       exp);
 }

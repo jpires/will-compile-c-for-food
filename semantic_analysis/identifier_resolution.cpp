@@ -218,6 +218,10 @@ auto process_expression(const parser::expression &node, identifier_map &variable
             return process_var(n, variable_map);
         },
         [&](const constant &n) -> std::expected<parser::expression, semantic_error> { return n; },
+
+        [&](const auto &n) -> std::expected<parser::expression, semantic_error> {
+            throw std::logic_error("unimplemented");
+        },
       },
       node);
 }

@@ -62,6 +62,7 @@ assembly_type get_assembly_type(const tacky::var &v, const wccff::symbol_table::
         [](const wccff::unsigned_long_type &) -> assembly_type { return quad_word{}; },
         [](const wccff::void_type &) -> assembly_type { throw std::logic_error("Not implemented"); },
         [](const std::unique_ptr<fun_type> &) -> assembly_type { throw std::logic_error("Not implemented"); },
+        [](const std::unique_ptr<pointer> &) -> assembly_type { throw std::logic_error("Not implemented"); },
       },
       s.value().type);
 }

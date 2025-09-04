@@ -1,0 +1,19 @@
+--exp=int_constant--
+AddrOf(IntConstant(42))
+--exp=long_constant--
+AddrOf(LongConstant(42))
+--exp=uint_constant--
+AddrOf(UIntConstant(42))
+--exp=ulong_constant--
+AddrOf(ULongConstant(42))
+--exp=var--
+AddrOf(Var(foo))
+--exp=unary_node--
+AddrOf(Unary(Negate
+      IntConstant(42)
+))
+--exp=binary_node--
+AddrOf(Binary(Plus
+       IntConstant(42)
+       IntConstant(42)
+))

@@ -41,6 +41,16 @@ constexpr wccff::long_constant get_long_constant(int64_t value = 42)
     return wccff::long_constant{ value };
 }
 
+constexpr wccff::unsigned_int_constant get_unsigned_int_constant(uint32_t value = 42)
+{
+    return wccff::unsigned_int_constant{ value };
+}
+
+constexpr wccff::unsigned_long_constant get_unsigned_long_constant(uint64_t value = 42)
+{
+    return wccff::unsigned_long_constant{ value };
+}
+
 constexpr std::unique_ptr<wccff::parser::binary_node> get_binary_node(
   wccff::binary_operator op = wccff::plus_operator{},
   wccff::parser::expression exp1 = get_int_constant(),

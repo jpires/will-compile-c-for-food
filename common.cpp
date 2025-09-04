@@ -91,6 +91,12 @@ std::unique_ptr<fun_type> copy_fun_type(const std::unique_ptr<fun_type> &n)
     }
     return std::make_unique<fun_type>(std::move(new_params), copy_type(n->return_type));
 }
+
+std::unique_ptr<pointer> copy_pointer(const std::unique_ptr<pointer> &n)
+{
+    return std::make_unique<pointer>(copy_type(n->referenced));
+}
+
 type copy_type(const type &n)
 {
     return std::visit(visitor{
@@ -98,6 +104,7 @@ type copy_type(const type &n)
                         [](const int_type) -> type { return int_type{}; },
                         [](const long_type) -> type { return long_type{}; },
                         [](const std::unique_ptr<fun_type> &n) -> type { return copy_fun_type(n); },
+                        [](const std::unique_ptr<pointer> &n) -> type { return copy_pointer(n); },
                         [](const unsigned_int_type) -> type { return unsigned_int_type{}; },
                         [](const unsigned_long_type) -> type { return unsigned_long_type{}; },
                         [](const void_type) -> type { return void_type{}; },
@@ -179,6 +186,7 @@ initial get_default_initial(const type &t)
         [](const unsigned_long_type) -> initial { return long_initial{ 0 }; },
         [](const void_type) -> initial { throw std::runtime_error("void type has no default value"); },
         [](const std::unique_ptr<fun_type> &) -> initial { throw std::runtime_error("fun type has no default value"); },
+        [](const std::unique_ptr<pointer> &) -> initial { throw std::runtime_error("pointer has no default value"); },
       },
       t);
 }

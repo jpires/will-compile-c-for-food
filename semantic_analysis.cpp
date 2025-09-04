@@ -144,6 +144,7 @@ bool is_lvalue(const parser::expression &e)
                         [&](const std::unique_ptr<parser::unary_node> &n) { return is_lvalue(n); },
                         [&](const parser::var &n) { return true; },
                         [&](const constant &n) { return false; },
+                        [&](const auto &n) { return false; },
                       },
                       e);
 }

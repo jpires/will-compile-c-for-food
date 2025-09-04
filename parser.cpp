@@ -103,6 +103,11 @@ std::optional<parser_error> consume_tokens(tokens &tokens, const std::vector<lex
     return std::nullopt;
 }
 
+std::unique_ptr<address_of> copy_address_of(const std::unique_ptr<address_of> &node)
+{
+    return std::make_unique<address_of>(copy_expression(node->exp));
+}
+
 std::unique_ptr<assignment_node> copy_assignment_node(const std::unique_ptr<assignment_node> &node)
 {
     return std::make_unique<assignment_node>(copy_expression(node->lhs),
@@ -138,6 +143,12 @@ variable_declaration copy_declaration(const variable_declaration &node)
     }
     return variable_declaration{ node.name, std::move(init), copy_type(node.var_type), node.storage_class };
 }
+
+std::unique_ptr<dereference> copy_dereference(const std::unique_ptr<dereference> &node)
+{
+    return std::make_unique<dereference>(copy_expression(node->exp));
+}
+
 expression copy_expression(const expression &exp)
 {
     return std::visit(
@@ -150,6 +161,8 @@ expression copy_expression(const expression &exp)
         [](const std::unique_ptr<assignment_node> &n) -> expression { return copy_assignment_node(n); },
         [](const std::unique_ptr<conditional_node> &n) -> expression { return copy_conditional_node(n); },
         [](const std::unique_ptr<function_call> &n) -> expression { return copy_function_call(n); },
+        [](const std::unique_ptr<address_of> &n) -> expression { return copy_address_of(n); },
+        [](const std::unique_ptr<dereference> &n) -> expression { return copy_dereference(n); },
       },
       exp);
 }
@@ -207,6 +220,10 @@ type get_type(const expression &n)
                         [](const std::unique_ptr<function_call> &n) { return get_type(n); },
                         [](const std::unique_ptr<unary_node> &n) { return get_type(n); },
                         [](const var &n) { return get_type(n); },
+                        [&](const auto &) -> type {
+                            throw std::logic_error(
+                              fmt::format("unimplemented: {}", std::source_location::current().function_name()));
+                        },
                       },
                       n);
 }
@@ -250,6 +267,33 @@ bool is_storage_specifier(const lexer::token &t)
 {
     using enum lexer::token_type;
     return t.type == extern_keyword || t.type == static_keyword;
+}
+
+std::expected<abstract_declarator, parser_error> parse_abstract_declarator(tokens &tokens)
+{
+    if (tokens.peek().type == lexer::token_type::multiplication_operator)
+    {
+        if (auto ec = consume_tokens(tokens, { lexer::token_type::multiplication_operator }); ec.has_value())
+        {
+            return std::unexpected{ ec.value() };
+        }
+
+        if (tokens.peek().type != lexer::token_type::multiplication_operator &&
+            tokens.peek().type != lexer::token_type::open_parenthesis)
+        {
+            return std::make_unique<abstract_pointer>(abstract_base{});
+        }
+
+        auto r = parse_abstract_declarator(tokens);
+        if (r.has_value() == false)
+        {
+            return std::unexpected{ r.error() };
+        }
+
+        return std::make_unique<abstract_pointer>(std::move(r.value()));
+    }
+
+    return parse_direct_abstract_declarator(tokens);
 }
 
 std::expected<std::vector<expression>, parser_error> parse_argument_list(tokens &tokens)
@@ -332,6 +376,23 @@ std::expected<std::unique_ptr<cast_expression>, parser_error> parse_cast_express
         return std::unexpected{ type.error() };
     }
 
+    if (tokens.peek().type != lexer::token_type::close_parenthesis)
+    {
+        auto dec = parse_abstract_declarator(tokens);
+        if (dec.has_value() == false)
+        {
+            return std::unexpected{ dec.error() };
+        }
+
+        auto p1 = process_abstract_declarator(dec.value(), type.value());
+        if (p1.has_value() == false)
+        {
+            return std::unexpected{ p1.error() };
+        }
+
+        type = std::move(p1.value());
+    }
+
     if (auto p = consume_tokens(tokens, { close_parenthesis }); p.has_value())
     {
         return std::unexpected{ p.value() };
@@ -411,6 +472,67 @@ std::expected<std::unique_ptr<do_while_statement>, parser_error> parse_do_while(
     return std::make_unique<do_while_statement>(std::move(body.value()), std::move(conditional.value()));
 }
 
+std::expected<type, parser_error> process_abstract_declarator(const abstract_declarator &declarator,
+                                                              const type &base_type)
+{
+    return std::visit(
+      visitor{
+        [&base_type](abstract_base) -> std::expected<type, parser_error> { return copy_type(base_type); },
+        [&base_type](const std::unique_ptr<abstract_pointer> &node) -> std::expected<type, parser_error> {
+            const type derived_type = std::make_unique<wccff::pointer>(copy_type(base_type));
+            return process_abstract_declarator(node->inner, derived_type);
+        },
+      },
+      declarator);
+}
+
+std::expected<declarator_tmp, parser_error> process_declarator(const declarator &declarator, const type &base_type)
+{
+    return std::visit(
+      visitor{
+        [&](const wccff::identifier &id) -> std::expected<declarator_tmp, parser_error> {
+            return declarator_tmp{ id, copy_type(base_type), {} };
+        },
+        [&](const std::unique_ptr<func_declarator> &f) -> std::expected<declarator_tmp, parser_error> {
+            if (std::holds_alternative<wccff::identifier>(f->inner))
+            {
+                auto f_name = std::get<wccff::identifier>(f->inner);
+                std::vector<wccff::identifier> p_name;
+                std::vector<wccff::type> p_type;
+
+                for (const auto &[i, t] : f->params)
+                {
+                    auto result = process_declarator(i, t);
+                    if (result.has_value() == false)
+                    {
+                        return std::unexpected{ result.error() };
+                    }
+
+                    const auto &[p_i, p_t, c] = result.value();
+                    if (std::holds_alternative<std::unique_ptr<wccff::fun_type>>(p_t))
+                    {
+                        auto msg = fmt::format("Function pointers in parameters not supported");
+                        return std::unexpected{ parser_error{ msg } };
+                    }
+                    p_name.push_back(p_i);
+                    p_type.push_back(copy_type(p_t));
+                }
+
+                auto derived_type = std::make_unique<wccff::fun_type>(std::move(p_type), copy_type(base_type));
+                return declarator_tmp{ f_name, std::move(derived_type), std::move(p_name) };
+            }
+
+            auto msg = fmt::format("Can't apply additional type derivations to a function type");
+            return std::unexpected{ parser_error{ msg } };
+        },
+        [&](const std::unique_ptr<pointer_declarator> &d) -> std::expected<declarator_tmp, parser_error> {
+            const type derived_type = std::make_unique<pointer>(copy_type(base_type));
+            return process_declarator(d->inner, derived_type);
+        },
+      },
+      declarator);
+}
+
 std::expected<declaration, parser_error> parse_declaration(tokens &tokens)
 {
     auto specifier = parse_specifier(tokens);
@@ -419,13 +541,113 @@ std::expected<declaration, parser_error> parse_declaration(tokens &tokens)
         return std::unexpected{ specifier.error() };
     }
 
-    if (tokens.peek(0).type == lexer::token_type::identifier &&
-        tokens.peek(1).type == lexer::token_type::open_parenthesis)
+    auto p = parse_declarator(tokens);
+    if (p.has_value() == false)
     {
-        return parse_function_declaration(tokens, std::move(specifier.value()));
+        return std::unexpected{ p.error() };
     }
 
-    return parse_variable_declaration(tokens, std::move(specifier.value()));
+    auto dec = process_declarator(p.value(), specifier.value().t);
+    if (dec.has_value() == false)
+    {
+        return std::unexpected{ dec.error() };
+    }
+
+    if (std::holds_alternative<std::unique_ptr<fun_type>>(dec->t))
+    {
+        return parse_function_declaration(tokens, dec->name, dec->params, specifier->storage, dec->t);
+    }
+
+    return parse_variable_declaration(tokens, dec->name, dec->t, specifier->storage);
+}
+
+std::expected<declarator, parser_error> parse_declarator(tokens &tokens)
+{
+    if (tokens.peek().type == lexer::token_type::multiplication_operator)
+    {
+        if (auto ec = consume_tokens(tokens, { lexer::token_type::multiplication_operator }); ec.has_value())
+        {
+            return std::unexpected{ ec.value() };
+        }
+
+        auto inner = parse_declarator(tokens);
+        if (inner.has_value() == false)
+        {
+            return std::unexpected{ inner.error() };
+        }
+
+        return std::make_unique<pointer_declarator>(std::move(inner.value()));
+    }
+
+    return parse_direct_declarator(tokens);
+}
+
+std::expected<declarator, parser_error> parse_direct_declarator(tokens &tokens)
+{
+    auto simple = parse_simple_declarator(tokens);
+    if (simple.has_value() == false)
+    {
+        return std::unexpected{ simple.error() };
+    }
+
+    if (tokens.peek().type != lexer::token_type::open_parenthesis)
+    {
+        return simple;
+    }
+
+    auto params = parse_params_list(tokens);
+    if (params.has_value() == false)
+    {
+        return std::unexpected{ params.error() };
+    }
+
+    return std::make_unique<func_declarator>(std::move(simple.value()), std::move(params.value()));
+}
+
+std::expected<declarator, parser_error> parse_simple_declarator(tokens &tokens)
+{
+    if (tokens.peek().type == lexer::token_type::identifier)
+    {
+        return parse_identifier(tokens);
+    }
+
+    if (auto ec = consume_tokens(tokens, { lexer::token_type::open_parenthesis }); ec.has_value())
+    {
+        return std::unexpected{ ec.value() };
+    }
+
+    auto r = parse_declarator(tokens);
+    if (r.has_value() == false)
+    {
+        return std::unexpected{ r.error() };
+    }
+
+    if (auto ec = consume_tokens(tokens, { lexer::token_type::close_parenthesis }); ec.has_value())
+    {
+        return std::unexpected{ ec.value() };
+    }
+
+    return r;
+}
+
+std::expected<abstract_declarator, parser_error> parse_direct_abstract_declarator(tokens &tokens)
+{
+    if (auto ec = consume_tokens(tokens, { lexer::token_type::open_parenthesis }); ec.has_value())
+    {
+        return std::unexpected{ ec.value() };
+    }
+
+    auto r = parse_abstract_declarator(tokens);
+    if (r.has_value() == false)
+    {
+        return std::unexpected{ r.error() };
+    }
+    if (auto ec = consume_tokens(tokens, { lexer::token_type::close_parenthesis }); ec.has_value())
+    {
+        return std::unexpected{ ec.value() };
+    }
+
+    return std::move(r.value());
 }
 
 std::expected<std::optional<expression>, parser_error> parse_optional_expression(tokens &tokens,
@@ -450,6 +672,7 @@ std::expected<std::optional<expression>, parser_error> parse_optional_expression
 
     return std::move(expr.value());
 }
+
 std::expected<for_init, parser_error> parse_for_init(tokens &tokens)
 {
     using enum lexer::token_type;
@@ -461,7 +684,25 @@ std::expected<for_init, parser_error> parse_for_init(tokens &tokens)
             return std::unexpected{ type_result.error() };
         }
 
-        auto decl = parse_variable_declaration(tokens, { .t = copy_type(type_result.value()) });
+        auto p = parse_declarator(tokens);
+        if (p.has_value() == false)
+        {
+            return std::unexpected{ p.error() };
+        }
+
+        auto dec = process_declarator(p.value(), type_result.value());
+        if (dec.has_value() == false)
+        {
+            return std::unexpected{ dec.error() };
+        }
+
+        if (std::holds_alternative<std::unique_ptr<wccff::fun_type>>(dec->t))
+        {
+            auto msg = fmt::format("Illegal function declaration at in for-init");
+            return std::unexpected{ parser_error{ msg } };
+        }
+
+        auto decl = parse_variable_declaration(tokens, dec->name, dec->t, storage_class::no_storage);
         if (decl.has_value() == false)
         {
             return std::unexpected{ decl.error() };
@@ -588,32 +829,12 @@ std::expected<std::unique_ptr<function_call>, parser_error> parse_function_call(
     return std::make_unique<function_call>(std::move(name.value()), std::move(arguments.value()));
 }
 
-std::expected<function_declaration, parser_error> parse_function_declaration(tokens &tokens, specifier specifieres)
+std::expected<function_declaration, parser_error> parse_function_declaration(tokens &tokens,
+                                                                             wccff::identifier name,
+                                                                             std::vector<identifier> params,
+                                                                             storage_class storage,
+                                                                             const type &t)
 {
-    auto function_name = parse_identifier(tokens);
-    if (function_name.has_value() == false)
-    {
-        return std::unexpected{ function_name.error() };
-    }
-
-    std::vector<identifier> arguments_names;
-    std::vector<type> arguments_types;
-    if (auto arguments = parse_params_list(tokens); arguments.has_value() == false)
-    {
-        return std::unexpected{ arguments.error() };
-    }
-    else
-    {
-        for (const auto &[name, p_type] : arguments.value())
-        {
-            if (name != identifier{ "NOT.VALID" })
-            {
-                arguments_names.push_back(name);
-            }
-            arguments_types.push_back(copy_type(p_type));
-        }
-    }
-
     std::optional<block> body;
     if (tokens.peek(0).type == lexer::token_type::open_brace)
     {
@@ -632,12 +853,7 @@ std::expected<function_declaration, parser_error> parse_function_declaration(tok
         }
     }
 
-    auto final_type = std::make_unique<fun_type>(std::move(arguments_types), copy_type(specifieres.t));
-    return function_declaration{ function_name.value(),
-                                 std::move(arguments_names),
-                                 std::move(body),
-                                 std::move(final_type),
-                                 specifieres.storage };
+    return function_declaration{ std::move(name), std::move(params), std::move(body), copy_type(t), storage };
 }
 
 std::expected<program, parser_error> parse_program(tokens &tokens)
@@ -685,9 +901,9 @@ std::expected<return_node, parser_error> parse_return_node(tokens &tokens)
     return return_node{ std::move(e.value()) };
 }
 
-std::expected<std::vector<param>, parser_error> parse_params_list(tokens &tokens)
+std::expected<std::vector<param_declarator>, parser_error> parse_params_list(tokens &tokens)
 {
-    std::vector<param> arguments;
+    std::vector<param_declarator> arguments;
 
     if (auto p = consume_tokens(tokens, { lexer::token_type::open_parenthesis }); p.has_value())
     {
@@ -701,18 +917,11 @@ std::expected<std::vector<param>, parser_error> parse_params_list(tokens &tokens
             return std::unexpected{ p.value() };
         }
 
-        if (tokens.peek().type != lexer::token_type::close_parenthesis)
-        {
-            auto msg = fmt::format("Unexpected token: Expected an ')' but found {}", tokens.peek().type);
-            return std::unexpected{ parser_error{ msg } };
-        }
-
         if (auto p = consume_tokens(tokens, { lexer::token_type::close_parenthesis }); p.has_value())
         {
             return std::unexpected{ p.value() };
         }
 
-        arguments.emplace_back(identifier{ "NOT.VALID" }, void_type{});
         return arguments;
     }
 
@@ -726,7 +935,7 @@ std::expected<std::vector<param>, parser_error> parse_params_list(tokens &tokens
             return std::unexpected{ p_type.error() };
         }
 
-        auto arg = parse_identifier(tokens);
+        auto arg = parse_declarator(tokens);
         if (arg.has_value() == false)
         {
             return std::unexpected{ arg.error() };
@@ -755,9 +964,8 @@ std::expected<specifier, parser_error> parse_specifier(tokens &tokens)
 {
     std::vector<storage_class> storage;
     std::vector<lexer::token> type;
-    while (true)
+    for (auto token = tokens.peek(); is_storage_specifier(token) || is_type_specifier(token); token = tokens.peek())
     {
-        auto token = tokens.peek();
         if (is_type_specifier(token))
         {
             type.push_back(tokens.get_next_token_safe());
@@ -771,15 +979,6 @@ std::expected<specifier, parser_error> parse_specifier(tokens &tokens)
         {
             consume_tokens(tokens, { lexer::token_type::extern_keyword });
             storage.emplace_back(storage_class::extern_storage);
-        }
-        else if (token.type == lexer::token_type::identifier)
-        {
-            break;
-        }
-        else
-        {
-            auto msg = fmt::format("Unexpected token: Expected an identifier but found {}", token.type);
-            return std::unexpected{ parser_error{ msg } };
         }
     }
 
@@ -980,7 +1179,7 @@ std::expected<type, parser_error> parse_type(const std::vector<lexer::token> &to
 std::expected<type, parser_error> parse_type_specifier(tokens &tokens, lexer::token_type stop_token)
 {
     std::vector<lexer::token> type_specifier;
-    while (tokens.peek().type != stop_token)
+    while (is_type_specifier(tokens.peek()))
     {
         auto t = tokens.get_next_token();
         if (t.has_value() == false)
@@ -1166,6 +1365,34 @@ std::expected<expression, parser_error> parse_factor(tokens &tokens)
                 return std::unexpected{ u.error() };
             }
             return std::move(u.value());
+        }
+        case lexer::token_type::bitwise_and_operator:
+        {
+            if (auto p = consume_tokens(tokens, { lexer::token_type::bitwise_and_operator }); p.has_value())
+            {
+                return std::unexpected{ p.value() };
+            }
+            auto exp = parse_factor(tokens);
+            if (exp.has_value() == false)
+            {
+                return std::unexpected{ exp.error() };
+            }
+
+            return std::make_unique<address_of>(std::move(exp.value()));
+        }
+        case lexer::token_type::multiplication_operator:
+        {
+            if (auto p = consume_tokens(tokens, { lexer::token_type::multiplication_operator }); p.has_value())
+            {
+                return std::unexpected{ p.value() };
+            }
+            auto exp = parse_factor(tokens);
+            if (exp.has_value() == false)
+            {
+                return std::unexpected{ exp.error() };
+            }
+
+            return std::make_unique<dereference>(std::move(exp.value()));
         }
         case lexer::token_type::open_parenthesis:
         {
@@ -1495,14 +1722,11 @@ std::expected<constant, parser_error> parse_constant(tokens &tokens)
     return std::unexpected{ parser_error{ msg } };
 }
 
-std::expected<variable_declaration, parser_error> parse_variable_declaration(tokens &tokens, specifier specifieres)
+std::expected<variable_declaration, parser_error> parse_variable_declaration(tokens &tokens,
+                                                                             wccff::identifier name,
+                                                                             const wccff::type &t,
+                                                                             storage_class storage)
 {
-    auto id = parse_identifier(tokens);
-    if (id.has_value() == false)
-    {
-        return std::unexpected{ id.error() };
-    }
-
     auto next_token = tokens.get_next_token();
     if (next_token.has_value() == false)
     {
@@ -1511,7 +1735,7 @@ std::expected<variable_declaration, parser_error> parse_variable_declaration(tok
 
     if (next_token->type == lexer::token_type::semicolon)
     {
-        return variable_declaration{ id.value(), std::nullopt, std::move(specifieres.t), specifieres.storage };
+        return variable_declaration{ std::move(name), std::nullopt, copy_type(t), storage };
     }
 
     if (next_token->type == lexer::token_type::assignment_operator)
@@ -1528,10 +1752,7 @@ std::expected<variable_declaration, parser_error> parse_variable_declaration(tok
             return std::unexpected{ s.value() };
         }
 
-        return variable_declaration{ id.value(),
-                                     std::optional{ std::move(init.value()) },
-                                     std::move(specifieres.t),
-                                     specifieres.storage };
+        return variable_declaration{ std::move(name), std::optional{ std::move(init.value()) }, copy_type(t), storage };
     }
 
     auto msg = fmt::format("Parse failure at: {}. Expected '=' or ';' but found {}", next_token->loc, next_token->type);
@@ -1581,6 +1802,11 @@ std::expected<program, parser_error> parse(tokens &tokens)
         return std::unexpected{ parser_error{ "Unexpected tokens at the end of the input" } };
     }
     return p;
+}
+
+std::string pretty_print(const std::unique_ptr<address_of> &node, int32_t ident)
+{
+    return wccff::format_indented(ident, "AddrOf({})", pretty_print(node->exp));
 }
 
 std::string pretty_print(const block &node, int32_t ident)
@@ -1634,6 +1860,10 @@ std::string pretty_print(const declaration &node, int32_t ident)
                       },
                       node);
 }
+std::string pretty_print(const std::unique_ptr<dereference> &node, int32_t ident)
+{
+    return wccff::format_indented(ident, "Dereference({})", pretty_print(node->exp));
+}
 
 std::string pretty_print(const double_constant &node, int32_t ident)
 {
@@ -1645,12 +1875,14 @@ std::string pretty_print(const expression &node, int32_t ident)
     return std::visit(wccff::visitor{
                         [ident](const var &n) { return pretty_print(n, ident); },
                         [ident](const constant &n) { return pretty_print(n, ident); },
+                        [ident](const std::unique_ptr<address_of> &n) { return pretty_print(n, ident); },
+                        [ident](const std::unique_ptr<dereference> &n) { return pretty_print(n, ident); },
                         [ident](const std::unique_ptr<unary_node> &n) { return pretty_print(n, ident); },
                         [ident](const std::unique_ptr<binary_node> &n) { return pretty_print(n, ident); },
                         [ident](const std::unique_ptr<cast_expression> &n) { return pretty_print(n, ident); },
                         [ident](const std::unique_ptr<assignment_node> &n) { return pretty_print(n, ident); },
                         [ident](const std::unique_ptr<conditional_node> &n) { return pretty_print(n, ident); },
-                        [ident](const std::unique_ptr<parser::function_call> &n) { return pretty_print(n, ident); },
+                        [ident](const std::unique_ptr<function_call> &n) { return pretty_print(n, ident); },
                       },
                       node);
 }
@@ -1890,12 +2122,19 @@ std::string pretty_print(const std::unique_ptr<fun_type> &node, int32_t ident)
 {
     auto prefix = wccff::format_indented(ident, "FunType(RetType({})", pretty_print(node->return_type, 0));
     std::string params = "Param(";
-    for (const auto &p : node->params)
+    if (node->params.empty())
     {
-        params += fmt::format("{},", pretty_print(p));
+        params += "Void)";
     }
-    // The last char will be a comma ',' remove that comma.
-    params[params.size() - 1] = ')';
+    else
+    {
+        for (const auto &p : node->params)
+        {
+            params += fmt::format("{},", pretty_print(p));
+        }
+        // The last char will be a comma ',' remove that comma.
+        params[params.size() - 1] = ')';
+    }
 
     auto params_final = wccff::format_indented(ident + 8, "{}", params);
 
@@ -1927,6 +2166,11 @@ std::string pretty_print(const std::unique_ptr<labelled_statement> &node, int32_
     return fmt::format("{}\n{}\n{}", prefix, stmt, sufix);
 }
 
+std::string pretty_print(const std::unique_ptr<pointer> &node, int32_t ident)
+{
+    return wccff::format_indented(ident, "Ptr({})", pretty_print(node->referenced));
+}
+
 std::string pretty_print(const std::unique_ptr<unary_node> &node, int32_t ident)
 {
     auto prefix = wccff::format_indented(ident, "Unary({}", pretty_print(node->op, 0));
@@ -1953,6 +2197,7 @@ std::string pretty_print(const type &node, int32_t ident)
                         [ident](const int_type) { return wccff::format_indented(ident, "Int"); },
                         [ident](const long_type) { return wccff::format_indented(ident, "Long"); },
                         [ident](const std::unique_ptr<fun_type> &node) { return pretty_print(node, ident); },
+                        [ident](const std::unique_ptr<pointer> &node) { return pretty_print(node, ident); },
                         [ident](const unsigned_int_type) { return wccff::format_indented(ident, "UInt"); },
                         [ident](const unsigned_long_type) { return wccff::format_indented(ident, "ULong"); },
                         [ident](const void_type) { return wccff::format_indented(ident, "Void"); },

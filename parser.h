@@ -70,7 +70,31 @@ struct parser_error
     std::string message;
 };
 
+struct abstract_base
+{
+};
+struct abstract_pointer;
+using abstract_declarator = std::variant<abstract_base, std::unique_ptr<abstract_pointer>>;
+
+struct abstract_pointer
+{
+    abstract_declarator inner;
+};
+
+struct func_declarator;
+struct pointer_declarator;
+using declarator = std::variant<identifier, std::unique_ptr<func_declarator>, std::unique_ptr<pointer_declarator>>;
+
+struct declarator_tmp
+{
+    wccff::identifier name;
+    wccff::type t;
+    std::vector<wccff::identifier> params;
+};
+
+struct address_of;
 struct binary_node;
+struct dereference;
 struct do_while_statement;
 struct cast_expression;
 struct compound_statement;
@@ -94,6 +118,24 @@ struct param
     identifier name;
     type p_type;
 };
+
+struct param_declarator
+{
+    declarator inner;
+    type p_type;
+};
+
+struct func_declarator
+{
+    declarator inner;
+    std::vector<param_declarator> params;
+};
+
+struct pointer_declarator
+{
+    declarator inner;
+};
+
 enum class storage_class
 {
     no_storage,
@@ -120,8 +162,14 @@ using expression = std::variant<constant,
                                 std::unique_ptr<cast_expression>,
                                 std::unique_ptr<assignment_node>,
                                 std::unique_ptr<conditional_node>,
-                                std::unique_ptr<function_call>>;
+                                std::unique_ptr<function_call>,
+                                std::unique_ptr<dereference>,
+                                std::unique_ptr<address_of>>;
 
+struct address_of
+{
+    expression exp;
+};
 struct assignment_node
 {
     assignment_node(expression lhs_, expression rhs_);
@@ -144,6 +192,11 @@ struct conditional_node
     expression e1;
     expression e2;
     std::optional<type> type;
+};
+
+struct dereference
+{
+    expression exp;
 };
 
 struct function_call
@@ -302,11 +355,13 @@ expression convert_to(const expression &e, const type &t);
  */
 std::optional<parser_error> consume_tokens(tokens &tokens, const std::vector<lexer::token_type> &list);
 
+std::unique_ptr<address_of> copy_address_of(const std::unique_ptr<address_of> &node);
 std::unique_ptr<assignment_node> copy_assignment_node(const std::unique_ptr<assignment_node> &node);
 std::unique_ptr<binary_node> copy_binary_node(const std::unique_ptr<binary_node> &node);
 std::unique_ptr<cast_expression> copy_cast_expresion(const std::unique_ptr<cast_expression> &node);
 std::unique_ptr<conditional_node> copy_conditional_node(const std::unique_ptr<conditional_node> &node);
 variable_declaration copy_declaration(const variable_declaration &node);
+std::unique_ptr<dereference> copy_dereference(const std::unique_ptr<dereference> &node);
 expression copy_expression(const expression &expression);
 std::unique_ptr<function_call> copy_function_call(const std::unique_ptr<function_call> &n);
 std::unique_ptr<unary_node> copy_unary_node(const std::unique_ptr<unary_node> &node);
@@ -327,6 +382,9 @@ bool is_type_specifier(const lexer::token &t);
 /// \brief Returns true if the token is a storage specifier as declared in 6.7.1 Storage-class specifiers
 bool is_storage_specifier(const lexer::token &t);
 
+// <abstract-declarator> ::= "*" [ <abstract-declarator> ] | <direct-abstract-declarator>
+std::expected<abstract_declarator, parser_error> parse_abstract_declarator(tokens &tokens);
+std::expected<abstract_declarator, parser_error> parse_direct_abstract_declarator(tokens &tokens);
 std::expected<std::vector<expression>, parser_error> parse_argument_list(tokens &tokens);
 std::expected<block_item, parser_error> parse_block_item(tokens &tokens);
 std::expected<block, parser_error> parse_block(tokens &tokens);
@@ -336,32 +394,55 @@ std::expected<expression, parser_error> parse_conditional(tokens &tokens);
 std::expected<constant, parser_error> parse_constant(tokens &tokens);
 std::expected<std::unique_ptr<do_while_statement>, parser_error> parse_do_while(tokens &tokens);
 std::expected<declaration, parser_error> parse_declaration(tokens &tokens);
+
+// <declarator> ::= "*" <declarator> | <direct-declarator>
+std::expected<declarator, parser_error> parse_declarator(tokens &tokens);
+
+// <direct-declarator> ::= <simple-declarator> [ <param-list> ]
+std::expected<declarator, parser_error> parse_direct_declarator(tokens &tokens);
+
+// <simple-declarator> ::= <identifier> | "(" <declarator> ")"
+std::expected<declarator, parser_error> parse_simple_declarator(tokens &tokens);
+
 std::expected<for_init, parser_error> parse_for_init(tokens &tokens);
 std::expected<std::unique_ptr<for_statement>, parser_error> parse_for_statement(tokens &tokens);
 std::expected<std::unique_ptr<function_call>, parser_error> parse_function_call(tokens &tokens);
-std::expected<function_declaration, parser_error> parse_function_declaration(tokens &tokens, specifier specifieres);
+std::expected<function_declaration, parser_error> parse_function_declaration(tokens &tokens,
+                                                                             wccff::identifier name,
+                                                                             std::vector<identifier> params,
+                                                                             storage_class storage,
+                                                                             const type &t);
 std::expected<identifier, parser_error> parse_identifier(tokens &tokens);
 std::expected<std::unique_ptr<if_node>, parser_error> parse_if_node(tokens &tokens);
 std::expected<expression, parser_error> parse_expression(tokens &tokens, int32_t min_precedence = 0);
 std::expected<expression, parser_error> parse_factor(tokens &tokens);
-std::expected<std::vector<param>, parser_error> parse_params_list(tokens &tokens);
+std::expected<std::vector<param_declarator>, parser_error> parse_params_list(tokens &tokens);
 std::optional<parser_error> parse_semicolon(tokens &tokens);
 std::expected<specifier, parser_error> parse_specifier(tokens &tokens);
 std::expected<statement, parser_error> parse_statement(tokens &tokens);
 std::expected<type, parser_error> parse_type(const std::vector<lexer::token> &tokens);
 std::expected<type, parser_error> parse_type_specifier(tokens &token, lexer::token_type stop_token);
 std::expected<std::unique_ptr<unary_node>, parser_error> parse_unary_node(tokens &tokens);
-std::expected<variable_declaration, parser_error> parse_variable_declaration(tokens &tokens, specifier specifieres);
+std::expected<variable_declaration, parser_error> parse_variable_declaration(tokens &tokens,
+                                                                             wccff::identifier name,
+                                                                             const wccff::type &t,
+                                                                             storage_class storage);
 std::expected<std::unique_ptr<while_statement>, parser_error> parse_while_statement(tokens &tokens);
 
 std::expected<program, parser_error> parse(tokens &tokens);
 
+std::expected<type, parser_error> process_abstract_declarator(const abstract_declarator &declarator,
+                                                              const type &base_type);
+std::expected<declarator_tmp, parser_error> process_declarator(const declarator &declarator, const type &base_type);
+
+std::string pretty_print(const std::unique_ptr<address_of> &node, int32_t ident = 0);
 std::string pretty_print(const block &node, int32_t ident = 0);
 std::string pretty_print(const block_item &node, int32_t ident = 0);
 std::string pretty_print(const break_statement &node, int32_t ident = 0);
 std::string pretty_print(const constant &node, int32_t ident = 0);
 std::string pretty_print(const continue_statement &node, int32_t ident = 0);
 std::string pretty_print(const declaration &node, int32_t ident = 0);
+std::string pretty_print(const std::unique_ptr<dereference> &node, int32_t ident = 0);
 std::string pretty_print(const double_constant &node, int32_t ident = 0);
 std::string pretty_print(const expression &node, int32_t ident = 0);
 std::string pretty_print(const for_init &node, int32_t ident = 0);
@@ -388,6 +469,7 @@ std::string pretty_print(const std::unique_ptr<function_call> &node, int32_t ide
 std::string pretty_print(const std::unique_ptr<fun_type> &node, int32_t ident = 0);
 std::string pretty_print(const std::unique_ptr<if_node> &node, int32_t ident = 0);
 std::string pretty_print(const std::unique_ptr<labelled_statement> &node, int32_t ident = 0);
+std::string pretty_print(const std::unique_ptr<pointer> &node, int32_t ident = 0);
 std::string pretty_print(const std::unique_ptr<unary_node> &node, int32_t ident = 0);
 std::string pretty_print(const std::unique_ptr<while_statement> &node, int32_t ident = 0);
 std::string pretty_print(const type &node, int32_t ident = 0);

@@ -237,6 +237,7 @@ struct fun_type;
 struct long_type
 {
 };
+struct pointer;
 struct unsigned_int_type
 {
 };
@@ -250,6 +251,7 @@ struct void_type
 using type = std::variant<int_type,
                           long_type,
                           std::unique_ptr<fun_type>,
+                          std::unique_ptr<pointer>,
                           unsigned_int_type,
                           unsigned_long_type,
                           void_type,
@@ -263,11 +265,19 @@ struct fun_type
     bool operator==(const fun_type &other) const = default;
 };
 
+struct pointer
+{
+    type referenced;
+
+    bool operator==(const pointer &other) const = default;
+};
+
 constexpr bool operator==(const type &lhs, const type &rhs)
 {
     return std::visit(visitor{
                         [](const double_type &, const double_type &) { return true; },
                         [](const std::unique_ptr<fun_type> &l, const std::unique_ptr<fun_type> &r) { return *l == *r; },
+                        [](const std::unique_ptr<pointer> &l, const std::unique_ptr<pointer> &r) { return *l == *r; },
                         [](const int_type &, const int_type &) { return true; },
                         [](const long_type &, const long_type &) { return true; },
                         [](const unsigned_int_type &, const unsigned_int_type &) { return true; },
