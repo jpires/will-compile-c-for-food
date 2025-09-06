@@ -55,14 +55,42 @@ auto convert_constant(const constant &c, const type &t) -> symbol_table::initial
         [uint_value](const unsigned_long_type &) -> symbol_table::initial_value {
             return unsigned_long_initial{ static_cast<uint64_t>(uint_value) };
         },
+        [uint_value](const std::unique_ptr<pointer> &) -> symbol_table::initial_value {
+            return unsigned_long_initial{ static_cast<uint64_t>(uint_value) };
+        },
         [](const auto &) -> symbol_table::initial_value { throw std::logic_error("Undefined operator"); },
       },
       t);
 }
 
+auto process_address_of(const std::unique_ptr<parser::address_of> &node, symbol_table::symbol_table &table)
+  -> std::expected<std::unique_ptr<parser::address_of>, semantic_error>
+{
+    if (is_lvalue(node->exp) == false)
+    {
+        auto msg = fmt::format("Can't take the address of a non-lvalue");
+        return std::unexpected{ semantic_error{ msg } };
+    }
+
+    auto exp = process_expression(node->exp, table);
+    if (exp.has_value() == false)
+    {
+        return std::unexpected{ exp.error() };
+    }
+
+    auto exp_type = std::make_unique<pointer>(get_type(exp.value()));
+    return std::make_unique<parser::address_of>(std::move(exp.value()), std::move(exp_type));
+}
+
 auto process_assignment_node(const std::unique_ptr<parser::assignment_node> &node, symbol_table::symbol_table &table)
   -> std::expected<std::unique_ptr<parser::assignment_node>, semantic_error>
 {
+    if (is_lvalue(node->lhs) == false)
+    {
+        auto msg = fmt::format("Left side of assignment is not an lvalue");
+        return std::unexpected{ semantic_error{ msg } };
+    }
+
     auto left = process_expression(node->lhs, table);
     if (left.has_value() == false)
     {
@@ -75,9 +103,13 @@ auto process_assignment_node(const std::unique_ptr<parser::assignment_node> &nod
     }
 
     auto left_type = get_type(left.value());
-    auto converted_right = convert_to(right.value(), left_type);
+    auto converted_right = convert_by_assignment(right.value(), left_type);
+    if (converted_right.has_value() == false)
+    {
+        return std::unexpected{ converted_right.error() };
+    }
     return std::make_unique<parser::assignment_node>(std::move(left.value()),
-                                                     std::move(converted_right),
+                                                     std::move(converted_right.value()),
                                                      std::move(left_type));
 }
 
@@ -94,6 +126,14 @@ auto process_binary_node(const std::unique_ptr<parser::binary_node> &node, symbo
     if (right.has_value() == false)
     {
         return std::unexpected{ right.error() };
+    }
+
+    if (std::holds_alternative<logical_and_operator>(node->op) || std::holds_alternative<logical_or_operator>(node->op))
+    {
+        return std::make_unique<parser::binary_node>(node->op,
+                                                     parser::copy_expression(left.value()),
+                                                     parser::copy_expression(right.value()),
+                                                     int_type{});
     }
 
     if (get_type(left.value()) == double_type{} || get_type(right.value()) == double_type{})
@@ -121,7 +161,34 @@ auto process_binary_node(const std::unique_ptr<parser::binary_node> &node, symbo
         }
     }
 
-    auto common_type = wccff::get_common_type(get_type(left.value()), get_type(right.value()));
+    if (is_pointer(get_type(left.value())) || is_pointer(get_type(right.value())))
+    {
+        if (std::holds_alternative<plus_operator>(node->op) || std::holds_alternative<subtract_operator>(node->op) ||
+            std::holds_alternative<multiply_operator>(node->op) || std::holds_alternative<divide_operator>(node->op) ||
+            std::holds_alternative<remainder_operator>(node->op) ||
+            std::holds_alternative<bitwise_and_operator>(node->op) ||
+            std::holds_alternative<bitwise_or_operator>(node->op) ||
+            std::holds_alternative<bitwise_xor_operator>(node->op))
+        {
+            auto msg = fmt::format("Operation '{}' cannot be applied to a pointer type", pretty_print(node->op));
+            return std::unexpected{ semantic_error{ msg } };
+        }
+    }
+
+    type common_type;
+    if (is_pointer(get_type(left.value())) || is_pointer(get_type(right.value())))
+    {
+        auto ptr_type = wccff::sema::get_common_pointer_type(left.value(), right.value());
+        if (ptr_type.has_value() == false)
+        {
+            return std::unexpected(ptr_type.error());
+        }
+        common_type = std::move(ptr_type.value());
+    }
+    else
+    {
+        common_type = wccff::get_common_type(get_type(left.value()), get_type(right.value()));
+    }
     auto converted_left = convert_to(left.value(), common_type);
     auto converted_right = convert_to(right.value(), common_type);
 
@@ -197,6 +264,13 @@ auto process_cast_expression(const std::unique_ptr<parser::cast_expression> &nod
         return std::unexpected{ exp.error() };
     }
 
+    if ((get_type(exp.value()) == double_type{} && is_pointer(node->target)) ||
+        (is_pointer(get_type(exp.value())) && node->target == double_type{}))
+    {
+        auto msg = fmt::format("Cannot cast from double to pointer or pointer to double");
+        return std::unexpected{ semantic_error{ msg } };
+    }
+
     return std::make_unique<parser::cast_expression>(copy_type(node->target),
                                                      copy_expression(exp.value()),
                                                      copy_type(node->target));
@@ -236,7 +310,21 @@ auto process_conditional_node(const std::unique_ptr<parser::conditional_node> &n
         return std::unexpected{ e2.error() };
     }
 
-    auto common_type = get_common_type(get_type(e1.value()), get_type(e2.value()));
+    type common_type;
+    if (is_pointer(get_type(e1.value())) || is_pointer(get_type(e2.value())))
+    {
+        auto ptr_type = wccff::sema::get_common_pointer_type(e1.value(), e2.value());
+        if (ptr_type.has_value() == false)
+        {
+            return std::unexpected(ptr_type.error());
+        }
+        common_type = std::move(ptr_type.value());
+    }
+    else
+    {
+        common_type = wccff::get_common_type(get_type(e1.value()), get_type(e2.value()));
+    }
+
     auto converted_e1 = parser::convert_to(e1.value(), common_type);
     auto converted_e2 = parser::convert_to(e2.value(), common_type);
 
@@ -260,6 +348,27 @@ auto process_declaration(const parser::declaration &node, symbol_table::symbol_t
                         },
                       },
                       node);
+}
+
+auto process_dereference(const std::unique_ptr<parser::dereference> &node, symbol_table::symbol_table &table)
+  -> std::expected<std::unique_ptr<parser::dereference>, semantic_error>
+{
+    auto exp = process_expression(node->exp, table);
+    if (exp.has_value() == false)
+    {
+        return std::unexpected{ exp.error() };
+    }
+
+    auto exp_type = get_type(exp.value());
+    if (is_pointer(exp_type) == false)
+    {
+        auto msg = fmt::format("Cannot dereference a non pointer type");
+        return std::unexpected{ semantic_error{ msg } };
+    }
+
+    const auto &t = std::get<std::unique_ptr<pointer>>(exp_type);
+
+    return std::make_unique<parser::dereference>(std::move(exp.value()), copy_type(t->referenced));
 }
 
 auto process_do_while_statement(const std::unique_ptr<parser::do_while_statement> &node,
@@ -286,8 +395,14 @@ auto process_expression(const parser::expression &node, symbol_table::symbol_tab
 {
     return std::visit(
       visitor{
+        [&](const std::unique_ptr<parser::address_of> &n) -> std::expected<parser::expression, semantic_error> {
+            return process_address_of(n, table);
+        },
         [&](const std::unique_ptr<parser::assignment_node> &n) -> std::expected<parser::expression, semantic_error> {
             return process_assignment_node(n, table);
+        },
+        [&](const std::unique_ptr<parser::binary_node> &n) -> std::expected<parser::expression, semantic_error> {
+            return process_binary_node(n, table);
         },
         [&](const std::unique_ptr<parser::cast_expression> &n) -> std::expected<parser::expression, semantic_error> {
             return process_cast_expression(n, table);
@@ -295,8 +410,8 @@ auto process_expression(const parser::expression &node, symbol_table::symbol_tab
         [&](const std::unique_ptr<parser::conditional_node> &n) -> std::expected<parser::expression, semantic_error> {
             return process_conditional_node(n, table);
         },
-        [&](const std::unique_ptr<parser::binary_node> &n) -> std::expected<parser::expression, semantic_error> {
-            return process_binary_node(n, table);
+        [&](const std::unique_ptr<parser::dereference> &n) -> std::expected<parser::expression, semantic_error> {
+            return process_dereference(n, table);
         },
         [&](const std::unique_ptr<parser::function_call> &n) -> std::expected<parser::expression, semantic_error> {
             return process_function_call(n, table);
@@ -397,7 +512,13 @@ auto process_function_call(const std::unique_ptr<parser::function_call> &node, s
             return std::unexpected{ result.error() };
         }
 
-        args.push_back(parser::convert_to(result.value(), t));
+        auto p = convert_by_assignment(result.value(), t);
+        if (p.has_value() == false)
+        {
+            return std::unexpected{ p.error() };
+        }
+
+        args.push_back(std::move(p.value()));
     }
 
     auto &return_type = std::get<std::unique_ptr<fun_type>>(symbol->type)->return_type;
@@ -577,7 +698,13 @@ auto process_return_node(const parser::return_node &node, symbol_table::symbol_t
     auto current_function = table.get(table.current_processing_function);
     auto &ret_type = std::get<std::unique_ptr<fun_type>>(current_function->type);
 
-    return parser::return_node{ parser::convert_to(exp.value(), ret_type->return_type) };
+    auto p = convert_by_assignment(exp.value(), ret_type->return_type);
+    if (p.has_value() == false)
+    {
+        return std::unexpected{ p.error() };
+    }
+
+    return parser::return_node{ std::move(p.value()) };
 }
 
 auto process_statement(const parser::statement &node, symbol_table::symbol_table &table)
@@ -624,6 +751,20 @@ auto process_unary_node(const std::unique_ptr<parser::unary_node> &node, symbol_
     if (exp.has_value() == false)
     {
         return std::unexpected{ exp.error() };
+    }
+
+    if (is_pointer(get_type(exp.value())))
+    {
+        if (std::holds_alternative<bitwise_complement_operator>(node->op))
+        {
+            auto msg = fmt::format("Bitwise complement '~' cannot be applied to a pointer");
+            return std::unexpected{ semantic_error{ msg } };
+        }
+        if (std::holds_alternative<negate_operator>(node->op))
+        {
+            auto msg = fmt::format("Negate '-' cannot be applied to a pointer");
+            return std::unexpected{ semantic_error{ msg } };
+        }
     }
 
     if (std::holds_alternative<bitwise_complement_operator>(node->op) && get_type(exp.value()) == double_type{})
@@ -690,6 +831,11 @@ auto process_variable_declaration_file_scope(const parser::variable_declaration 
     {
         if (std::holds_alternative<constant>(node.init.value()))
         {
+            if (is_null_pointer_constant(node.init.value()) == false && is_pointer(node.var_type))
+            {
+                return std::unexpected<semantic_error>{ fmt::format("Non Constant initialiser for {}",
+                                                                    node.name.name) };
+            }
             auto int_node = std::get<constant>(node.init.value());
             init_value = convert_constant(int_node, node.var_type);
         }
@@ -799,7 +945,7 @@ auto process_variable_declaration_local_scope(const parser::variable_declaration
         symbol_table::initial_value init_value{};
         if (node.init.has_value() == false)
         {
-            init_value = int_initial{ 0 };
+            init_value = get_default_initial(node.var_type);
         }
         else if (std::holds_alternative<constant>(node.init.value()))
         {
@@ -827,7 +973,12 @@ auto process_variable_declaration_local_scope(const parser::variable_declaration
                 return std::unexpected{ tmp.error() };
             }
 
-            init = parser::convert_to(tmp.value(), node.var_type);
+            auto p = convert_by_assignment(tmp.value(), node.var_type);
+            if (p.has_value() == false)
+            {
+                return std::unexpected{ p.error() };
+            }
+            init = std::move(p.value());
         }
 
         return parser::variable_declaration{ node.name, std::move(init), copy_type(node.var_type), node.storage_class };

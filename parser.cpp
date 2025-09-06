@@ -105,7 +105,7 @@ std::optional<parser_error> consume_tokens(tokens &tokens, const std::vector<lex
 
 std::unique_ptr<address_of> copy_address_of(const std::unique_ptr<address_of> &node)
 {
-    return std::make_unique<address_of>(copy_expression(node->exp));
+    return std::make_unique<address_of>(copy_expression(node->exp), copy_optional_type(node->type));
 }
 
 std::unique_ptr<assignment_node> copy_assignment_node(const std::unique_ptr<assignment_node> &node)
@@ -146,7 +146,7 @@ variable_declaration copy_declaration(const variable_declaration &node)
 
 std::unique_ptr<dereference> copy_dereference(const std::unique_ptr<dereference> &node)
 {
-    return std::make_unique<dereference>(copy_expression(node->exp));
+    return std::make_unique<dereference>(copy_expression(node->exp), copy_optional_type(node->type));
 }
 
 expression copy_expression(const expression &exp)
@@ -213,10 +213,12 @@ type get_type(const expression &n)
 {
     return std::visit(visitor{
                         [](const constant &n) { return get_type(n); },
+                        [](const std::unique_ptr<address_of> &n) -> type { return get_type(n); },
                         [](const std::unique_ptr<assignment_node> &n) { return get_type(n); },
                         [](const std::unique_ptr<binary_node> &n) { return get_type(n); },
                         [](const std::unique_ptr<cast_expression> &n) { return get_type(n); },
                         [](const std::unique_ptr<conditional_node> &n) { return get_type(n); },
+                        [](const std::unique_ptr<dereference> &n) { return copy_type(n->type.value()); },
                         [](const std::unique_ptr<function_call> &n) { return get_type(n); },
                         [](const std::unique_ptr<unary_node> &n) { return get_type(n); },
                         [](const var &n) { return get_type(n); },
@@ -226,6 +228,10 @@ type get_type(const expression &n)
                         },
                       },
                       n);
+}
+type get_type(const std::unique_ptr<address_of> &n)
+{
+    return copy_type(n->type.value());
 }
 inline type get_type(const std::unique_ptr<assignment_node> &n)
 {

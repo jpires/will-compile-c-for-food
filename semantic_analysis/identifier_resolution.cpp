@@ -21,15 +21,22 @@
 #include <visitor.h>
 
 namespace wccff::sema::variable_resolution {
+
+auto process_address_of(const std::unique_ptr<parser::address_of> &node, identifier_map &variable_map)
+  -> std::expected<std::unique_ptr<parser::address_of>, semantic_error>
+{
+    auto exp = process_expression(node->exp, variable_map);
+    if (exp.has_value() == false)
+    {
+        return std::unexpected{ exp.error() };
+    }
+
+    return std::make_unique<parser::address_of>(std::move(exp.value()));
+}
+
 auto process_assignment_node(const std::unique_ptr<parser::assignment_node> &node, identifier_map &variable_map)
   -> std::expected<std::unique_ptr<parser::assignment_node>, semantic_error>
 {
-    if (std::holds_alternative<parser::var>(node->lhs) == false)
-    {
-        auto msg = fmt::format("Trying to assign a value to a non variable");
-        return std::unexpected{ semantic_error{ msg } };
-    }
-
     auto left = process_expression(node->lhs, variable_map);
     if (left.has_value() == false)
     {
@@ -173,6 +180,18 @@ auto process_declaration(const parser::declaration &node, identifier_map &variab
       node);
 }
 
+auto process_dereference(const std::unique_ptr<parser::dereference> &node, identifier_map &variable_map)
+  -> std::expected<std::unique_ptr<parser::dereference>, semantic_error>
+{
+    auto exp = process_expression(node->exp, variable_map);
+    if (exp.has_value() == false)
+    {
+        return std::unexpected{ exp.error() };
+    }
+
+    return std::make_unique<parser::dereference>(std::move(exp.value()));
+}
+
 auto process_do_while_statement(const std::unique_ptr<parser::do_while_statement> &node, identifier_map &variable_map)
   -> std::expected<std::unique_ptr<parser::do_while_statement>, semantic_error>
 {
@@ -196,8 +215,14 @@ auto process_expression(const parser::expression &node, identifier_map &variable
 {
     return std::visit(
       visitor{
+        [&](const std::unique_ptr<parser::address_of> &n) -> std::expected<parser::expression, semantic_error> {
+            return process_address_of(n, variable_map);
+        },
         [&](const std::unique_ptr<parser::assignment_node> &n) -> std::expected<parser::expression, semantic_error> {
             return process_assignment_node(n, variable_map);
+        },
+        [&](const std::unique_ptr<parser::binary_node> &n) -> std::expected<parser::expression, semantic_error> {
+            return process_binary_node(n, variable_map);
         },
         [&](const std::unique_ptr<parser::cast_expression> &n) -> std::expected<parser::expression, semantic_error> {
             return process_cast_expression(n, variable_map);
@@ -205,8 +230,8 @@ auto process_expression(const parser::expression &node, identifier_map &variable
         [&](const std::unique_ptr<parser::conditional_node> &n) -> std::expected<parser::expression, semantic_error> {
             return process_conditional_node(n, variable_map);
         },
-        [&](const std::unique_ptr<parser::binary_node> &n) -> std::expected<parser::expression, semantic_error> {
-            return process_binary_node(n, variable_map);
+        [&](const std::unique_ptr<parser::dereference> &n) -> std::expected<parser::expression, semantic_error> {
+            return process_dereference(n, variable_map);
         },
         [&](const std::unique_ptr<parser::function_call> &n) -> std::expected<parser::expression, semantic_error> {
             return process_function_call(n, variable_map);
@@ -486,18 +511,6 @@ auto process_statement(const parser::statement &node, identifier_map &variable_m
 auto process_unary_node(const std::unique_ptr<parser::unary_node> &node, identifier_map &variable_map)
   -> std::expected<std::unique_ptr<parser::unary_node>, semantic_error>
 {
-    if (std::holds_alternative<prefix_decrement_operator>(node->op) ||
-        std::holds_alternative<prefix_increment_operator>(node->op) ||
-        std::holds_alternative<postfix_decrement_operator>(node->op) ||
-        std::holds_alternative<postfix_increment_operator>(node->op))
-    {
-        if (is_lvalue(node->exp) == false)
-        {
-            return std::unexpected{ semantic_error{
-              "Not a lvalue expression on prefix or postfix increment/decrement" } };
-        }
-    }
-
     auto exp = process_expression(node->exp, variable_map);
     if (exp.has_value() == false)
     {

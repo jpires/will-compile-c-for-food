@@ -169,6 +169,7 @@ using expression = std::variant<constant,
 struct address_of
 {
     expression exp;
+    std::optional<type> type;
 };
 struct assignment_node
 {
@@ -197,6 +198,7 @@ struct conditional_node
 struct dereference
 {
     expression exp;
+    std::optional<type> type;
 };
 
 struct function_call
@@ -368,6 +370,7 @@ std::unique_ptr<unary_node> copy_unary_node(const std::unique_ptr<unary_node> &n
 
 type get_type(const constant &n);
 type get_type(const expression &n);
+type get_type(const std::unique_ptr<address_of> &n);
 type get_type(const std::unique_ptr<assignment_node> &n);
 type get_type(const std::unique_ptr<binary_node> &n);
 type get_type(const std::unique_ptr<cast_expression> &n);

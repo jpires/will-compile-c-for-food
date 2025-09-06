@@ -82,7 +82,15 @@ class identifier_map
 std::expected<std::tuple<parser::program, symbol_table::symbol_table>, semantic_error> analyse(
   const parser::program &input);
 
+std::expected<parser::expression, semantic_error> convert_by_assignment(const parser::expression &exp,
+                                                                        const type &target);
+
 bool is_lvalue(const parser::expression &e);
+
+bool is_null_pointer_constant(const wccff::parser::expression &exp);
+
+std::expected<type, semantic_error> get_common_pointer_type(const parser::expression &left,
+                                                            const parser::expression &right);
 
 } // namespace wccff::sema
 /*

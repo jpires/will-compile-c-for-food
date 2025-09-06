@@ -162,6 +162,24 @@ int32_t get_type_size(const type &t)
       t);
 }
 
+bool is_arithmetic(const type &t)
+{
+    return std::visit(visitor{
+                        [](const double_type &) { return true; },
+                        [](const int_type &) { return true; },
+                        [](const long_type &) { return true; },
+                        [](const unsigned_int_type &) { return true; },
+                        [](const unsigned_long_type &) { return true; },
+                        [](const auto &) { return false; },
+                      },
+                      t);
+}
+
+bool is_pointer(const type &t)
+{
+    return std::holds_alternative<std::unique_ptr<pointer>>(t);
+}
+
 bool is_signed_type(const type &t)
 {
     return std::visit(

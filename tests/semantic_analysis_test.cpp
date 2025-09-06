@@ -74,11 +74,11 @@ TEST_CASE("Type Checker", "[semantic_analysis]")
             REQUIRE(ast.has_value());
 
             sema::identifier_map variable_map;
-            auto var_resolv__result = sema::variable_resolution::process_program(ast.value(), variable_map);
-            REQUIRE(var_resolv__result.has_value());
+            auto var_resolv_result = sema::variable_resolution::process_program(ast.value(), variable_map);
+            REQUIRE(var_resolv_result.has_value());
 
             symbol_table::symbol_table table;
-            auto sema_result = sema::type_checker::process_program(var_resolv__result.value(), table);
+            auto sema_result = sema::type_checker::process_program(var_resolv_result.value(), table);
             REQUIRE(sema_result.has_value());
             ApprovalTests::Approvals::verify(pretty_print(sema_result.value()));
         }

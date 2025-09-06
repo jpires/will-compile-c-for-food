@@ -125,28 +125,79 @@ std::expected<std::tuple<parser::program, symbol_table::symbol_table>, semantic_
     return std::make_tuple(std::move(loop_labelling_result.value()), symbol_table);
 }
 
-bool is_lvalue(const std::unique_ptr<parser::binary_node> &e)
+std::expected<parser::expression, semantic_error> convert_by_assignment(const parser::expression &exp,
+                                                                        const type &target)
 {
-    return false;
+    if (get_type(exp) == target)
+    {
+        return parser::copy_expression(exp);
+    }
+
+    if (is_arithmetic(get_type(exp)) && is_arithmetic(target))
+    {
+        return convert_to(exp, target);
+    }
+
+    if (is_null_pointer_constant(exp) && is_pointer(target))
+    {
+        return convert_to(exp, target);
+    }
+
+    auto msg = fmt::format("Cannot convert type for assignment");
+    return std::unexpected{ semantic_error{ msg } };
 }
-bool is_lvalue(const std::unique_ptr<parser::unary_node> &e)
-{
-    return is_lvalue(e->exp);
-}
+
 bool is_lvalue(const parser::expression &e)
 {
     return std::visit(visitor{
-                        [&](const std::unique_ptr<parser::assignment_node> &n) { return false; },
-                        [&](const std::unique_ptr<parser::cast_expression> &n) { return false; },
-                        [&](const std::unique_ptr<parser::conditional_node> &n) { return false; },
-                        [&](const std::unique_ptr<parser::binary_node> &n) { return is_lvalue(n); },
-                        [&](const std::unique_ptr<parser::function_call> &n) { return false; },
-                        [&](const std::unique_ptr<parser::unary_node> &n) { return is_lvalue(n); },
+                        [&](const std::unique_ptr<parser::dereference> &n) { return true; },
                         [&](const parser::var &n) { return true; },
                         [&](const constant &n) { return false; },
                         [&](const auto &n) { return false; },
                       },
                       e);
+}
+
+bool is_null_pointer_constant(const wccff::constant &exp)
+{
+    return std::visit(visitor{
+                        [](const wccff::int_constant &n) { return n.value ? false : true; },
+                        [](const wccff::long_constant &n) { return n.value ? false : true; },
+                        [](const wccff::unsigned_int_constant &n) { return n.value ? false : true; },
+                        [](const wccff::unsigned_long_constant &n) { return n.value ? false : true; },
+                        [](const auto &) { return false; },
+                      },
+                      exp);
+}
+
+bool is_null_pointer_constant(const wccff::parser::expression &exp)
+{
+    return std::visit(visitor{
+                        [](const wccff::constant &n) { return is_null_pointer_constant(n); },
+                        [](const auto &) { return false; },
+                      },
+                      exp);
+}
+
+std::expected<type, semantic_error> get_common_pointer_type(const parser::expression &e1, const parser::expression &e2)
+{
+    auto e1_t = get_type(e1);
+    auto e2_t = get_type(e2);
+    if (e1_t == e2_t)
+    {
+        return e1_t;
+    }
+    if (is_null_pointer_constant(e1))
+    {
+        return e2_t;
+    }
+    if (is_null_pointer_constant(e2))
+    {
+        return e1_t;
+    }
+
+    auto msg = fmt::format("Expression has incompatible types.");
+    return std::unexpected{ semantic_error{ msg } };
 }
 
 } // namespace wccff::sema

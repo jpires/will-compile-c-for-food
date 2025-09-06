@@ -26,6 +26,9 @@
 
 namespace wccff::sema::variable_resolution {
 
+auto process_address_of(const std::unique_ptr<parser::address_of> &node, identifier_map &variable_map)
+  -> std::expected<std::unique_ptr<parser::address_of>, semantic_error>;
+
 auto process_assignment_node(const std::unique_ptr<parser::assignment_node> &node, identifier_map &variable_map)
   -> std::expected<std::unique_ptr<parser::assignment_node>, semantic_error>;
 
@@ -49,6 +52,9 @@ auto process_conditional_node(const std::unique_ptr<parser::conditional_node> &n
 
 auto process_declaration(const parser::declaration &node, identifier_map &variable_map, scope_type scope)
   -> std::expected<parser::declaration, semantic_error>;
+
+auto process_dereference(const std::unique_ptr<parser::dereference> &node, identifier_map &variable_map)
+  -> std::expected<std::unique_ptr<parser::dereference>, semantic_error>;
 
 auto process_do_while_statement(const std::unique_ptr<parser::do_while_statement> &node, identifier_map &variable_map)
   -> std::expected<std::unique_ptr<parser::do_while_statement>, semantic_error>;

@@ -295,7 +295,8 @@ std::optional<type> copy_optional_type(const std::optional<type> &n);
 type get_common_type(const type &t1, const type &t2);
 
 int32_t get_type_size(const type &t);
-
+bool is_arithmetic(const type &t);
+bool is_pointer(const type &t);
 bool is_signed_type(const type &t);
 
 /**

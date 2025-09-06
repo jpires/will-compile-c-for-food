@@ -28,7 +28,6 @@ TEST_CASE("Types", "[common]")
         REQUIRE(long_type{} == long_type{});
         REQUIRE(unsigned_int_type{} == unsigned_int_type{});
         REQUIRE(unsigned_long_type{} == unsigned_long_type{});
-        REQUIRE(pointer{} == pointer{});
 
         fun_type fun1{ .params = {}, .return_type = int_type{} };
         fun_type fun2{ .params = {}, .return_type = int_type{} };
@@ -49,6 +48,38 @@ TEST_CASE("Types", "[common]")
         REQUIRE(fun1 != fun4);
         REQUIRE(fun4 != fun5);
         REQUIRE(fun4 != fun6);
+
+        pointer ptr1{ .referenced = double_type{} };
+        pointer ptr2{ .referenced = int_type{} };
+        pointer ptr3{ .referenced = long_type{} };
+        pointer ptr4{ .referenced = unsigned_int_type{} };
+        pointer ptr5{ .referenced = unsigned_long_type{} };
+
+        REQUIRE(ptr1 == ptr1);
+        REQUIRE(ptr1 != ptr2);
+        REQUIRE(ptr1 != ptr3);
+        REQUIRE(ptr1 != ptr4);
+        REQUIRE(ptr1 != ptr5);
+
+        REQUIRE(ptr2 == ptr2);
+        REQUIRE(ptr2 != ptr3);
+        REQUIRE(ptr2 != ptr4);
+        REQUIRE(ptr2 != ptr5);
+
+        REQUIRE(ptr3 == ptr3);
+        REQUIRE(ptr3 != ptr4);
+        REQUIRE(ptr3 != ptr5);
+
+        REQUIRE(ptr4 == ptr4);
+        REQUIRE(ptr4 != ptr5);
+
+        REQUIRE(ptr5 == ptr5);
+
+        auto ptr6 = std::make_unique<pointer>(double_type{});
+        auto ptr7 = std::make_unique<pointer>(double_type{});
+
+        // REQUIRE(ptr6 == ptr7);
+        // REQUIRE(type{ std::move(ptr6) } == ptr7);
     }
 
     SECTION("get_common_type")
