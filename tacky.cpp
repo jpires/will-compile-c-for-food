@@ -95,17 +95,40 @@ var make_temporary_variable(const type &t, symbol_table::symbol_table &table)
     return var{ name };
 }
 
-val process_assignment_node(const std::unique_ptr<parser::assignment_node> &node,
-                            std::vector<instruction> &instructions,
-                            symbol_table::symbol_table &table)
+exp_result process_address_of(const std::unique_ptr<parser::address_of> &node,
+                              std::vector<instruction> &instructions,
+                              symbol_table::symbol_table &table)
 {
-    auto right = process_expression(node->rhs, instructions, table);
-    // The previous pass ensures that the left side of an assignment is a var.
-    // If it's not, then terminate.
-    auto &left = std::get<parser::var>(node->lhs);
-    auto dst = var{ left.name };
-    instructions.emplace_back(copy_statement{ right, dst });
-    return dst;
+    auto result = process_expression(node->exp, instructions, table);
+    return std::visit(visitor{
+                        [&](const plain_operand &obj) -> exp_result {
+                            auto dst = make_temporary_variable(node->type.value(), table);
+                            instructions.emplace_back(get_address{ obj.dst, dst });
+                            return plain_operand{ dst };
+                        },
+                        [](const dereferenced_pointer &ptr) -> exp_result { return plain_operand{ ptr.dst }; },
+                      },
+                      result);
+}
+
+exp_result process_assignment_node(const std::unique_ptr<parser::assignment_node> &node,
+                                   std::vector<instruction> &instructions,
+                                   symbol_table::symbol_table &table)
+{
+    auto left = process_expression(node->lhs, instructions, table);
+    auto right = process_expression_and_convert(node->rhs, instructions, table);
+
+    return std::visit(visitor{
+                        [&](const plain_operand &obj) -> exp_result {
+                            instructions.emplace_back(copy_statement{ right, obj.dst });
+                            return left;
+                        },
+                        [&](const dereferenced_pointer &ptr) -> exp_result {
+                            instructions.emplace_back(store{ right, ptr.dst });
+                            return plain_operand{ right };
+                        },
+                      },
+                      left);
 }
 
 void process_block(const parser::block &node, std::vector<instruction> &instructions, symbol_table::symbol_table &table)
@@ -116,25 +139,25 @@ void process_block(const parser::block &node, std::vector<instruction> &instruct
     }
 }
 
-val process_conditional_node(const std::unique_ptr<parser::conditional_node> &node,
-                             std::vector<instruction> &instructions,
-                             symbol_table::symbol_table &table)
+exp_result process_conditional_node(const std::unique_ptr<parser::conditional_node> &node,
+                                    std::vector<instruction> &instructions,
+                                    symbol_table::symbol_table &table)
 {
     auto e2_label = identifier{ get_conditional_e2_label() };
     auto end_label = identifier{ get_conditional_end_label() };
     auto result = make_temporary_variable(get_type(node), table);
-    auto c = process_expression(node->condition, instructions, table);
+    auto c = process_expression_and_convert(node->condition, instructions, table);
 
     instructions.emplace_back(jump_if_zero_statement{ c, e2_label });
-    auto r_e1 = process_expression(node->e1, instructions, table);
+    auto r_e1 = process_expression_and_convert(node->e1, instructions, table);
     instructions.emplace_back(copy_statement{ r_e1, result });
     instructions.emplace_back(jump_statement{ end_label });
     instructions.emplace_back(label_statement{ e2_label });
-    auto r_e2 = process_expression(node->e2, instructions, table);
+    auto r_e2 = process_expression_and_convert(node->e2, instructions, table);
     instructions.emplace_back(copy_statement{ r_e2, result });
     instructions.emplace_back(label_statement{ end_label });
 
-    return result;
+    return plain_operand{ result };
 }
 
 constant process_constant(const constant &node)
@@ -158,7 +181,7 @@ void process_if(const std::unique_ptr<parser::if_node> &node,
     // i.e. both labels will have the same number no matter if the 'if' doesn't have an 'else'
     auto else_label = identifier{ get_if_else_label() };
     auto end_label = identifier{ get_if_end_label() };
-    auto result = process_expression(node->op, instructions, table);
+    auto result = process_expression_and_convert(node->op, instructions, table);
 
     if (node->else_stmt.has_value())
     {
@@ -225,9 +248,9 @@ wccff::binary_operator process_binary_operator(const wccff::binary_operator &op)
       op);
 }
 
-val process_prefix_unary(const std::unique_ptr<parser::unary_node> &node,
-                         std::vector<instruction> &instructions,
-                         symbol_table::symbol_table &table)
+exp_result process_prefix_unary(const std::unique_ptr<parser::unary_node> &node,
+                                std::vector<instruction> &instructions,
+                                symbol_table::symbol_table &table)
 {
     binary_operator op;
     if (std::holds_alternative<prefix_increment_operator>(node->op))
@@ -238,17 +261,17 @@ val process_prefix_unary(const std::unique_ptr<parser::unary_node> &node,
     {
         op = subtract_operator{};
     }
-    auto src = process_expression(node->exp, instructions, table);
+    auto src = process_expression_and_convert(node->exp, instructions, table);
     auto dst = make_temporary_variable(get_type(node), table);
     // ToDo: Change the int_constant to a generic constant
     instructions.emplace_back(binary_statement{ op, src, int_constant{ 1 }, dst });
     instructions.emplace_back(copy_statement(dst, src));
-    return dst;
+    return plain_operand{ dst };
 }
 
-val process_postfix_unary(const std::unique_ptr<parser::unary_node> &node,
-                          std::vector<instruction> &instructions,
-                          symbol_table::symbol_table &table)
+exp_result process_postfix_unary(const std::unique_ptr<parser::unary_node> &node,
+                                 std::vector<instruction> &instructions,
+                                 symbol_table::symbol_table &table)
 {
     binary_operator op;
     if (std::holds_alternative<postfix_increment_operator>(node->op))
@@ -259,19 +282,19 @@ val process_postfix_unary(const std::unique_ptr<parser::unary_node> &node,
     {
         op = subtract_operator{};
     }
-    auto src = process_expression(node->exp, instructions, table);
+    auto src = process_expression_and_convert(node->exp, instructions, table);
     auto dst = make_temporary_variable(get_type(node), table);
     auto tmp = make_temporary_variable(get_type(node), table);
     instructions.emplace_back(copy_statement(src, dst));
     // ToDo: Change the int_constant to a generic constant
     instructions.emplace_back(binary_statement{ op, src, int_constant{ 1 }, tmp });
     instructions.emplace_back(copy_statement(tmp, src));
-    return dst;
+    return plain_operand{ dst };
 }
 
-val process_unary_node(const std::unique_ptr<parser::unary_node> &node,
-                       std::vector<instruction> &instructions,
-                       symbol_table::symbol_table &table)
+exp_result process_unary_node(const std::unique_ptr<parser::unary_node> &node,
+                              std::vector<instruction> &instructions,
+                              symbol_table::symbol_table &table)
 {
     if (std::holds_alternative<prefix_increment_operator>(node->op) ||
         std::holds_alternative<prefix_decrement_operator>(node->op))
@@ -285,56 +308,56 @@ val process_unary_node(const std::unique_ptr<parser::unary_node> &node,
         return process_postfix_unary(node, instructions, table);
     }
 
-    auto src = process_expression(node->exp, instructions, table);
+    auto src = process_expression_and_convert(node->exp, instructions, table);
     auto dst = make_temporary_variable(get_type(node), table);
     auto op = process_unary_operator(node->op);
     instructions.emplace_back(unary_statement{ op, src, dst });
-    return dst;
+    return plain_operand{ dst };
 }
 
-val process_binary_and(const std::unique_ptr<parser::binary_node> &node,
-                       std::vector<instruction> &instructions,
-                       symbol_table::symbol_table &table)
+exp_result process_binary_and(const std::unique_ptr<parser::binary_node> &node,
+                              std::vector<instruction> &instructions,
+                              symbol_table::symbol_table &table)
 {
     auto false_end_label = get_and_false_label();
     auto end_label = get_and_end_label();
     auto dst = make_temporary_variable(get_type(node), table);
 
-    auto v1 = process_expression(node->left, instructions, table);
+    auto v1 = process_expression_and_convert(node->left, instructions, table);
     instructions.emplace_back(jump_if_zero_statement{ v1, false_end_label });
-    auto v2 = process_expression(node->right, instructions, table);
+    auto v2 = process_expression_and_convert(node->right, instructions, table);
     instructions.emplace_back(jump_if_zero_statement{ v2, false_end_label });
     instructions.emplace_back(copy_statement{ int_constant{ 1 }, dst });
     instructions.emplace_back(jump_statement{ end_label });
     instructions.emplace_back(label_statement{ false_end_label });
     instructions.emplace_back(copy_statement{ int_constant{ 0 }, dst });
     instructions.emplace_back(label_statement{ end_label });
-    return dst;
+    return plain_operand{ dst };
 }
 
-val process_binary_or(const std::unique_ptr<parser::binary_node> &node,
-                      std::vector<instruction> &instructions,
-                      symbol_table::symbol_table &table)
+exp_result process_binary_or(const std::unique_ptr<parser::binary_node> &node,
+                             std::vector<instruction> &instructions,
+                             symbol_table::symbol_table &table)
 {
     auto false_end_label = get_or_false_label();
     auto end_label = get_or_end_label();
     auto dst = make_temporary_variable(get_type(node), table);
 
-    auto v1 = process_expression(node->left, instructions, table);
+    auto v1 = process_expression_and_convert(node->left, instructions, table);
     instructions.emplace_back(jump_if_not_zero_statement{ v1, false_end_label });
-    auto v2 = process_expression(node->right, instructions, table);
+    auto v2 = process_expression_and_convert(node->right, instructions, table);
     instructions.emplace_back(jump_if_not_zero_statement{ v2, false_end_label });
     instructions.emplace_back(copy_statement{ int_constant{ 0 }, dst });
     instructions.emplace_back(jump_statement{ end_label });
     instructions.emplace_back(label_statement{ false_end_label });
     instructions.emplace_back(copy_statement{ int_constant{ 1 }, dst });
     instructions.emplace_back(label_statement{ end_label });
-    return dst;
+    return plain_operand{ dst };
 }
 
-val process_binary_node(const std::unique_ptr<parser::binary_node> &node,
-                        std::vector<instruction> &instructions,
-                        symbol_table::symbol_table &table)
+exp_result process_binary_node(const std::unique_ptr<parser::binary_node> &node,
+                               std::vector<instruction> &instructions,
+                               symbol_table::symbol_table &table)
 {
     if (std::holds_alternative<logical_and_operator>(node->op))
     {
@@ -345,49 +368,71 @@ val process_binary_node(const std::unique_ptr<parser::binary_node> &node,
         return process_binary_or(node, instructions, table);
     }
 
-    auto v1 = process_expression(node->left, instructions, table);
-    auto v2 = process_expression(node->right, instructions, table);
+    auto v1 = process_expression_and_convert(node->left, instructions, table);
+    auto v2 = process_expression_and_convert(node->right, instructions, table);
     auto dst = make_temporary_variable(get_type(node), table);
     auto op = process_binary_operator(node->op);
     instructions.emplace_back(binary_statement{ op, v1, v2, dst });
-    return dst;
+    return plain_operand{ dst };
 }
 
-val process_expression(const wccff::parser::expression &exp,
-                       std::vector<instruction> &instructions,
-                       symbol_table::symbol_table &table)
+exp_result process_expression(const wccff::parser::expression &exp,
+                              std::vector<instruction> &instructions,
+                              symbol_table::symbol_table &table)
 {
     return std::visit(visitor{
-                        [](const constant &c) -> val { return process_constant(c); },
-                        [](const parser::var &c) -> val { return var{ c.name }; },
-                        [&instructions, &table](const std::unique_ptr<parser::unary_node> &n) -> val {
+                        [](const constant &c) -> exp_result { return plain_operand{ val{ process_constant(c) } }; },
+                        [](const parser::var &c) -> exp_result { return plain_operand{ var{ c.name } }; },
+                        [&instructions, &table](const std::unique_ptr<parser::unary_node> &n) -> exp_result {
                             return process_unary_node(n, instructions, table);
                         },
-                        [&instructions, &table](const std::unique_ptr<parser::binary_node> &n) -> val {
+                        [&instructions, &table](const std::unique_ptr<parser::binary_node> &n) -> exp_result {
                             return process_binary_node(n, instructions, table);
                         },
-                        [&instructions, &table](const std::unique_ptr<parser::cast_expression> &n) -> val {
+                        [&instructions, &table](const std::unique_ptr<parser::cast_expression> &n) -> exp_result {
                             return process_cast_expression(n, instructions, table);
                         },
-                        [&instructions, &table](const std::unique_ptr<parser::assignment_node> &n) -> val {
+                        [&instructions, &table](const std::unique_ptr<parser::address_of> &n) -> exp_result {
+                            return process_address_of(n, instructions, table);
+                        },
+                        [&instructions, &table](const std::unique_ptr<parser::assignment_node> &n) -> exp_result {
                             return process_assignment_node(n, instructions, table);
                         },
-                        [&instructions, &table](const std::unique_ptr<parser::conditional_node> &n) -> val {
+                        [&instructions, &table](const std::unique_ptr<parser::conditional_node> &n) -> exp_result {
                             return process_conditional_node(n, instructions, table);
                         },
-                        [&instructions, &table](const std::unique_ptr<parser::function_call> &n) -> val {
+                        [&instructions, &table](const std::unique_ptr<parser::dereference> &n) -> exp_result {
+                            return process_dereference(n, instructions, table);
+                        },
+                        [&instructions, &table](const std::unique_ptr<parser::function_call> &n) -> exp_result {
                             return process_function_call(n, instructions, table);
                         },
-                        [&](const auto &n) -> val { throw std::logic_error("unimplemented"); },
+                        [&](const auto &n) -> exp_result { throw std::logic_error("unimplemented"); },
                       },
                       exp);
+}
+
+val process_expression_and_convert(const wccff::parser::expression &exp,
+                                   std::vector<instruction> &instructions,
+                                   symbol_table::symbol_table &table)
+{
+    auto result = process_expression(exp, instructions, table);
+    return std::visit(visitor{
+                        [](const plain_operand &obj) -> val { return obj.dst; },
+                        [&](const dereferenced_pointer &ptr) -> val {
+                            auto dst = make_temporary_variable(parser::get_type(exp), table);
+                            instructions.emplace_back(load(ptr.dst, dst));
+                            return dst;
+                        },
+                      },
+                      result);
 }
 
 void process_return_node(const wccff::parser::return_node &stmt,
                          std::vector<instruction> &instructions,
                          symbol_table::symbol_table &table)
 {
-    auto node = return_statement{ process_expression(stmt.e, instructions, table) };
+    auto node = return_statement{ process_expression_and_convert(stmt.e, instructions, table) };
     instructions.emplace_back(return_statement{ node });
 }
 
@@ -437,14 +482,14 @@ void process_break_statement(const parser::break_statement &node, std::vector<in
     instructions.emplace_back(jump_statement{ label });
 }
 
-val process_cast_expression(const std::unique_ptr<parser::cast_expression> &node,
-                            std::vector<instruction> &instructions,
-                            symbol_table::symbol_table &table)
+exp_result process_cast_expression(const std::unique_ptr<parser::cast_expression> &node,
+                                   std::vector<instruction> &instructions,
+                                   symbol_table::symbol_table &table)
 {
-    auto src = process_expression(node->exp, instructions, table);
+    auto src = process_expression_and_convert(node->exp, instructions, table);
     if (node->target == get_type(node->exp))
     {
-        return src;
+        return plain_operand{ src };
     }
 
     auto dst = make_temporary_variable(node->target, table);
@@ -488,7 +533,7 @@ val process_cast_expression(const std::unique_ptr<parser::cast_expression> &node
         instructions.emplace_back(zero_extend{ src, dst });
     }
 
-    return dst;
+    return plain_operand{ dst };
 }
 
 void process_compound_statement(const std::unique_ptr<parser::compound_statement> &node,
@@ -522,6 +567,14 @@ void process_declaration(const parser::declaration &node,
                node);
 }
 
+exp_result process_dereference(const std::unique_ptr<parser::dereference> &node,
+                               std::vector<instruction> &instructions,
+                               symbol_table::symbol_table &table)
+{
+    auto result = process_expression_and_convert(node->exp, instructions, table);
+    return dereferenced_pointer{ result };
+}
+
 void process_do_while_statement(const std::unique_ptr<parser::do_while_statement> &node,
                                 std::vector<instruction> &instructions,
                                 symbol_table::symbol_table &table)
@@ -533,7 +586,7 @@ void process_do_while_statement(const std::unique_ptr<parser::do_while_statement
     instructions.emplace_back(label_statement{ start_label });
     process_statement(node->body, instructions, table);
     instructions.emplace_back(label_statement{ continue_label });
-    auto result = process_expression(node->condition, instructions, table);
+    auto result = process_expression_and_convert(node->condition, instructions, table);
     instructions.emplace_back(jump_if_not_zero_statement{ result, start_label });
     instructions.emplace_back(label_statement{ break_label });
 }
@@ -568,7 +621,7 @@ void process_for_statement(const std::unique_ptr<parser::for_statement> &node,
     instructions.emplace_back(label_statement{ start_label });
     if (node->condition.has_value())
     {
-        auto result = process_expression(node->condition.value(), instructions, table);
+        auto result = process_expression_and_convert(node->condition.value(), instructions, table);
         instructions.emplace_back(jump_if_zero_statement{ result, break_label });
     }
 
@@ -577,29 +630,29 @@ void process_for_statement(const std::unique_ptr<parser::for_statement> &node,
     instructions.emplace_back(label_statement{ continue_label });
     if (node->post.has_value())
     {
-        process_expression(node->post.value(), instructions, table);
+        process_expression_and_convert(node->post.value(), instructions, table);
     }
     instructions.emplace_back(jump_statement{ start_label });
     instructions.emplace_back(label_statement{ break_label });
 }
 
-val process_function_call(const std::unique_ptr<parser::function_call> &f,
-                          std::vector<instruction> &instructions,
-                          symbol_table::symbol_table &table)
+exp_result process_function_call(const std::unique_ptr<parser::function_call> &f,
+                                 std::vector<instruction> &instructions,
+                                 symbol_table::symbol_table &table)
 {
     std::vector<val> arguments;
     arguments.reserve(f->arguments.size());
 
     for (const auto &arg : f->arguments)
     {
-        auto r = process_expression(arg, instructions, table);
+        auto r = process_expression_and_convert(arg, instructions, table);
         arguments.emplace_back(r);
     }
 
     auto dst = make_temporary_variable(get_type(f), table);
     instructions.emplace_back(fun_call{ f->name, std::move(arguments), dst });
 
-    return dst;
+    return plain_operand{ dst };
 }
 std::optional<function_definition> process_function_definition(const parser::function_declaration &f,
                                                                symbol_table::symbol_table &table)
@@ -698,7 +751,7 @@ void process_variable_declaration(const wccff::parser::variable_declaration &s,
         return;
     }
 
-    auto src = process_expression(s.init.value(), instructions, table);
+    auto src = process_expression_and_convert(s.init.value(), instructions, table);
     auto dst = var{ s.name };
     instructions.emplace_back(copy_statement{ src, dst });
 }
@@ -711,7 +764,7 @@ void process_while_statement(const std::unique_ptr<parser::while_statement> &nod
     auto break_label = get_loop_break_label(node->label);
 
     instructions.emplace_back(label_statement{ continue_label });
-    auto result = process_expression(node->condition, instructions, table);
+    auto result = process_expression_and_convert(node->condition, instructions, table);
     instructions.emplace_back(jump_if_zero_statement{ result, break_label });
     process_statement(node->body, instructions, table);
     instructions.emplace_back(jump_statement{ continue_label });
@@ -747,6 +800,7 @@ std::string pretty_print(const return_statement &instruction, int32_t ident)
 {
     return wccff::format_indented(ident, "Return({})\n", pretty_print(instruction.val, 0));
 }
+
 std::string pretty_print(const sing_extend &node, int32_t ident)
 {
     return wccff::format_indented(ident,
@@ -762,6 +816,12 @@ std::string pretty_print(const static_variable &top, int32_t ident)
                                   top.global,
                                   wccff::pretty_print(top.init));
 }
+
+std::string pretty_print(const store &i, int32_t ident)
+{
+    return wccff::format_indented(ident, "Store(src{}, dst_ptr({}))\n", pretty_print(i.src), pretty_print(i.dst));
+}
+
 std::string pretty_print(const top_level &top, int32_t ident)
 {
     return std::visit(visitor{ [ident](const function_definition &n) { return pretty_print(n, ident); },
@@ -810,6 +870,31 @@ std::string pretty_print(const double_to_uint &i, int32_t ident)
     return wccff::format_indented(ident, "Double2UInt({}, {})\n", pretty_print(i.src, 0), pretty_print(i.dst, 0));
 }
 
+std::string pretty_print(const fun_call &f, int32_t ident)
+{
+    std::string params;
+    for (const auto &arg : f.args)
+    {
+        params += pretty_print(arg, 0);
+    }
+
+    return wccff::format_indented(ident, "FUNCALL({}, ({}), {})\n", f.fun_name.name, params, pretty_print(f.dst));
+}
+
+std::string pretty_print(const function_definition &f, int ident)
+{
+    return wccff::format_indented(ident,
+                                  "Function({}, global={})\n{}",
+                                  f.name.name,
+                                  f.global,
+                                  pretty_print(f.instructions, ident + 4));
+}
+
+std::string pretty_print(const get_address &i, int32_t ident)
+{
+    return wccff::format_indented(ident, "GetAddress(src{}, dst({}))\n", pretty_print(i.src), pretty_print(i.dst));
+}
+
 std::string pretty_print(const initial &node, int32_t ident)
 {
     return std::visit(
@@ -825,17 +910,6 @@ std::string pretty_print(const initial &node, int32_t ident)
         },
       },
       node);
-}
-
-std::string pretty_print(const fun_call &f, int32_t ident)
-{
-    std::string params;
-    for (const auto &arg : f.args)
-    {
-        params += pretty_print(arg, 0);
-    }
-
-    return wccff::format_indented(ident, "FUNCALL({}, ({}), {})\n", f.fun_name.name, params, pretty_print(f.dst));
 }
 
 std::string pretty_print(const int_to_double &i, int32_t ident)
@@ -860,6 +934,11 @@ std::string pretty_print(const label_statement &i, int32_t ident)
     return wccff::format_indented(ident, "Label({})\n", i.target.name);
 }
 
+std::string pretty_print(const load &i, int32_t ident)
+{
+    return wccff::format_indented(ident, "Load(src_ptr{}, dst({}))\n", pretty_print(i.src), pretty_print(i.dst));
+}
+
 std::string pretty_print(const instruction &instruction, int32_t ident)
 {
     return std::visit(
@@ -870,13 +949,16 @@ std::string pretty_print(const instruction &instruction, int32_t ident)
         [ident](const copy_statement &n) { return pretty_print(n, ident); },
         [ident](const double_to_int &n) { return pretty_print(n, ident); },
         [ident](const double_to_uint &n) { return pretty_print(n, ident); },
+        [ident](const fun_call &n) { return pretty_print(n, ident); },
+        [ident](const get_address &n) { return pretty_print(n, ident); },
         [ident](const int_to_double &n) { return pretty_print(n, ident); },
         [ident](const jump_statement &n) { return pretty_print(n, ident); },
         [ident](const jump_if_zero_statement &n) { return pretty_print(n, ident); },
         [ident](const jump_if_not_zero_statement &n) { return pretty_print(n, ident); },
         [ident](const label_statement &n) { return pretty_print(n, ident); },
-        [ident](const fun_call &n) { return pretty_print(n, ident); },
+        [ident](const load &n) { return pretty_print(n, ident); },
         [ident](const sing_extend &n) { return pretty_print(n, ident); },
+        [ident](const store &n) { return pretty_print(n, ident); },
         [ident](const truncate &n) { return pretty_print(n, ident); },
         [ident](const uint_to_double &n) { return pretty_print(n, ident); },
         [ident](const zero_extend &n) { return pretty_print(n, ident); },
@@ -894,15 +976,6 @@ std::string pretty_print(const std::vector<instruction> &instructions, int32_t i
     }
 
     return output;
-}
-
-std::string pretty_print(const function_definition &f, int ident)
-{
-    return wccff::format_indented(ident,
-                                  "Function({}, global={})\n{}",
-                                  f.name.name,
-                                  f.global,
-                                  pretty_print(f.instructions, ident + 4));
 }
 
 std::string pretty_print(const program &p, int ident)

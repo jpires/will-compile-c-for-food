@@ -157,6 +157,7 @@ int32_t get_type_size(const type &t)
         [](const long_type &) { return 8; },
         [](const unsigned_int_type &) { return 4; },
         [](const unsigned_long_type &) { return 8; },
+        [](const std::unique_ptr<pointer> &) { return 8; },
         [](const auto &) -> int32_t { throw std::runtime_error("Trying to get size of non-integral type"); },
       },
       t);
@@ -188,6 +189,7 @@ bool is_signed_type(const type &t)
         [](const long_type &) { return true; },
         [](const unsigned_int_type &) { return false; },
         [](const unsigned_long_type &) { return false; },
+        [](const std::unique_ptr<pointer> &) { return false; },
         [](const auto &) -> bool { throw std::runtime_error("Trying to get signess of non-integral type"); },
       },
       t);
@@ -204,7 +206,7 @@ initial get_default_initial(const type &t)
         [](const unsigned_long_type) -> initial { return long_initial{ 0 }; },
         [](const void_type) -> initial { throw std::runtime_error("void type has no default value"); },
         [](const std::unique_ptr<fun_type> &) -> initial { throw std::runtime_error("fun type has no default value"); },
-        [](const std::unique_ptr<pointer> &) -> initial { throw std::runtime_error("pointer has no default value"); },
+        [](const std::unique_ptr<pointer> &) -> initial { return unsigned_long_initial{ 0 }; },
       },
       t);
 }

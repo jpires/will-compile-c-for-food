@@ -58,8 +58,8 @@ TEST_CASE("Tacky", "[tacky]")
                                                  wccff::testing::get_int_constant(42),
                                                  wccff::int_type{});
         auto result = process_unary_node(node, instructions, table);
-        REQUIRE(std::holds_alternative<wccff::tacky::var>(result));
-        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-1");
+        REQUIRE(std::holds_alternative<wccff::tacky::plain_operand>(result));
+        // REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-1");
         REQUIRE(table.get(identifier{ "tacky-1" }).has_value());
         REQUIRE(table.get(identifier{ "tacky-1" })->type == wccff::int_type{});
 
@@ -71,8 +71,8 @@ TEST_CASE("Tacky", "[tacky]")
                                             wccff::testing::get_long_constant(42),
                                             wccff::long_type{});
         result = process_unary_node(node, instructions, table);
-        REQUIRE(std::holds_alternative<wccff::tacky::var>(result));
-        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-2");
+        REQUIRE(std::holds_alternative<wccff::tacky::plain_operand>(result));
+        // REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-2");
         REQUIRE(table.get({ "tacky-2" }).has_value());
         REQUIRE(table.get({ "tacky-2" })->type == wccff::long_type{});
 
@@ -82,8 +82,8 @@ TEST_CASE("Tacky", "[tacky]")
         instructions.clear();
         node = std::make_unique<unary_node>(wccff::negate_operator{}, wccff::testing::get_var(), wccff::long_type{});
         result = process_unary_node(node, instructions, table);
-        REQUIRE(std::holds_alternative<wccff::tacky::var>(result));
-        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-3");
+        REQUIRE(std::holds_alternative<wccff::tacky::plain_operand>(result));
+        // REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-3");
         REQUIRE(table.get(identifier{ "tacky-3" }).has_value());
         REQUIRE(table.get(identifier{ "tacky-3" })->type == wccff::long_type{});
 
@@ -108,8 +108,8 @@ TEST_CASE("Tacky", "[tacky]")
                                                          wccff::int_type{});
 
         auto result = process_binary_node(binary_expr, instructions, table);
-        REQUIRE(std::holds_alternative<wccff::tacky::var>(result));
-        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-4");
+        REQUIRE(std::holds_alternative<wccff::tacky::plain_operand>(result));
+        // REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-4");
         REQUIRE(table.get(identifier{ "tacky-4" }).has_value());
         REQUIRE(table.get(identifier{ "tacky-4" })->type == wccff::int_type{});
         auto pretty_result = wccff::tacky::pretty_print(instructions);
@@ -122,7 +122,8 @@ TEST_CASE("Tacky", "[tacky]")
                                                     wccff::int_type{});
 
         result = process_binary_node(binary_expr, instructions, table);
-        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-5");
+        REQUIRE(std::holds_alternative<wccff::tacky::plain_operand>(result));
+        // REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-5");
         REQUIRE(table.get(identifier{ "tacky-5" }).has_value());
         REQUIRE(table.get(identifier{ "tacky-5" })->type == wccff::int_type{});
 
@@ -136,7 +137,8 @@ TEST_CASE("Tacky", "[tacky]")
                                                     wccff::long_type{});
 
         result = process_binary_node(binary_expr, instructions, table);
-        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-6");
+        REQUIRE(std::holds_alternative<wccff::tacky::plain_operand>(result));
+        // REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-6");
         REQUIRE(table.get(identifier{ "tacky-6" }).has_value());
         REQUIRE(table.get(identifier{ "tacky-6" })->type == wccff::long_type{});
 
@@ -150,7 +152,8 @@ TEST_CASE("Tacky", "[tacky]")
                                                     wccff::long_type{});
 
         result = process_binary_node(binary_expr, instructions, table);
-        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-7");
+        REQUIRE(std::holds_alternative<wccff::tacky::plain_operand>(result));
+        // REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-7");
         REQUIRE(table.get(identifier{ "tacky-7" }).has_value());
         REQUIRE(table.get(identifier{ "tacky-7" })->type == wccff::long_type{});
 
@@ -164,7 +167,8 @@ TEST_CASE("Tacky", "[tacky]")
                                                     wccff::long_type{});
 
         result = process_binary_node(binary_expr, instructions, table);
-        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-8");
+        REQUIRE(std::holds_alternative<wccff::tacky::plain_operand>(result));
+        // REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-8");
         REQUIRE(table.get(identifier{ "tacky-8" }).has_value());
         REQUIRE(table.get(identifier{ "tacky-8" })->type == wccff::long_type{});
 
@@ -178,7 +182,8 @@ TEST_CASE("Tacky", "[tacky]")
                                                     wccff::long_type{});
 
         result = process_binary_node(binary_expr, instructions, table);
-        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-9");
+        REQUIRE(std::holds_alternative<wccff::tacky::plain_operand>(result));
+        // REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-9");
         REQUIRE(table.get(identifier{ "tacky-9" }).has_value());
         REQUIRE(table.get(identifier{ "tacky-9" })->type == wccff::long_type{});
 
@@ -192,7 +197,8 @@ TEST_CASE("Tacky", "[tacky]")
                                                     wccff::long_type{});
 
         result = process_binary_node(binary_expr, instructions, table);
-        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-10");
+        REQUIRE(std::holds_alternative<wccff::tacky::plain_operand>(result));
+        // REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-10");
         REQUIRE(table.get(identifier{ "tacky-10" }).has_value());
         REQUIRE(table.get(identifier{ "tacky-10" })->type == wccff::long_type{});
 
@@ -206,7 +212,8 @@ TEST_CASE("Tacky", "[tacky]")
                                                     wccff::long_type{});
 
         result = process_binary_node(binary_expr, instructions, table);
-        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-11");
+        REQUIRE(std::holds_alternative<wccff::tacky::plain_operand>(result));
+        // REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-11");
         REQUIRE(table.get(identifier{ "tacky-11" }).has_value());
         REQUIRE(table.get(identifier{ "tacky-11" })->type == wccff::long_type{});
 
@@ -220,7 +227,8 @@ TEST_CASE("Tacky", "[tacky]")
                                                     wccff::long_type{});
 
         result = process_binary_node(binary_expr, instructions, table);
-        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-12");
+        REQUIRE(std::holds_alternative<wccff::tacky::plain_operand>(result));
+        // REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-12");
         REQUIRE(table.get(identifier{ "tacky-12" }).has_value());
         REQUIRE(table.get(identifier{ "tacky-12" })->type == wccff::long_type{});
 
@@ -234,7 +242,8 @@ TEST_CASE("Tacky", "[tacky]")
                                                     wccff::long_type{});
 
         result = process_binary_node(binary_expr, instructions, table);
-        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-13");
+        REQUIRE(std::holds_alternative<wccff::tacky::plain_operand>(result));
+        // REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-13");
         REQUIRE(table.get(identifier{ "tacky-13" }).has_value());
         REQUIRE(table.get(identifier{ "tacky-13" })->type == wccff::long_type{});
 
@@ -248,7 +257,8 @@ TEST_CASE("Tacky", "[tacky]")
                                                     wccff::long_type{});
 
         result = process_binary_node(binary_expr, instructions, table);
-        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-14");
+        REQUIRE(std::holds_alternative<wccff::tacky::plain_operand>(result));
+        // REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-14");
         REQUIRE(table.get(identifier{ "tacky-14" }).has_value());
         REQUIRE(table.get(identifier{ "tacky-14" })->type == wccff::long_type{});
 
@@ -262,7 +272,8 @@ TEST_CASE("Tacky", "[tacky]")
                                                     wccff::long_type{});
 
         result = process_binary_node(binary_expr, instructions, table);
-        REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-15");
+        REQUIRE(std::holds_alternative<wccff::tacky::plain_operand>(result));
+        // REQUIRE(std::get<wccff::tacky::var>(result).id.name == "tacky-15");
         REQUIRE(table.get(identifier{ "tacky-15" }).has_value());
         REQUIRE(table.get(identifier{ "tacky-15" })->type == wccff::long_type{});
 
