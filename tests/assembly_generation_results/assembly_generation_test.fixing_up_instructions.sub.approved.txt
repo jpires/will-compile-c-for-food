@@ -1,14 +1,14 @@
---src = stack; dst = stack; type = long_word--
-		Mov(type(long_word), src(Stack(Imm(8))), dst(R10d))
-		Binary(type(long_word), op(Sub), src(R10d), dst(Stack(Imm(16))))
+--src = memory; dst = memory; type = long_word--
+		Mov(type(long_word), src(Memory(base(bp), offset(8))), dst(R10d))
+		Binary(type(long_word), op(Sub), src(R10d), dst(Memory(base(bp), offset(16))))
 
---src = stack; dst = data; type = long_word--
-		Mov(type(quad_word), src(Stack(Imm(8))), dst(R10d))
+--src = memory; dst = data; type = long_word--
+		Mov(type(quad_word), src(Memory(base(bp), offset(8))), dst(R10d))
 		Binary(type(quad_word), op(Sub), src(R10d), dst(Data(foo_dst)))
 
---src = data; dst = stack; type = long_word--
+--src = data; dst = memory; type = long_word--
 		Mov(type(long_word), src(Data(foo_src)), dst(R10d))
-		Binary(type(long_word), op(Sub), src(R10d), dst(Stack(Imm(16))))
+		Binary(type(long_word), op(Sub), src(R10d), dst(Memory(base(bp), offset(16))))
 
 --src = data; dst = data; type = long_word--
 		Mov(type(quad_word), src(Data(foo_src)), dst(R10d))

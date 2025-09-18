@@ -39,7 +39,7 @@ Function(name(seven_params), is_global(false), stack_size(0)
 		Mov(type(quad_word), src(cx), dst(Pseudo(long_var_2)))
 		Mov(type(long_word), src(R8d), dst(Pseudo(unsigned_int_var_1)))
 		Mov(type(long_word), src(R9d), dst(Pseudo(unsigned_int_var_2)))
-		Mov(type(quad_word), src(Stack(Imm(16))), dst(Pseudo(unsigned_long_var_1)))
+		Mov(type(quad_word), src(Memory(base(bp), offset(16))), dst(Pseudo(unsigned_long_var_1)))
 		Mov(type(quad_word), src(Imm(1)), dst(ax))
 		Ret
 )----fun_name = no_params; global = false; params = NONE; body = double_body
@@ -71,7 +71,7 @@ Function(name(nine_params), is_global(false), stack_size(0)
 		Mov(type(double_asm), src(XMM5), dst(Pseudo(double_var_6)))
 		Mov(type(double_asm), src(XMM6), dst(Pseudo(double_var_7)))
 		Mov(type(double_asm), src(XMM7), dst(Pseudo(double_var_8)))
-		Mov(type(double_asm), src(Stack(Imm(16))), dst(Pseudo(double_var_9)))
+		Mov(type(double_asm), src(Memory(base(bp), offset(16))), dst(Pseudo(double_var_9)))
 		Mov(type(double_asm), src(Data(double_constant_0)), dst(XMM0))
 		Ret
 )

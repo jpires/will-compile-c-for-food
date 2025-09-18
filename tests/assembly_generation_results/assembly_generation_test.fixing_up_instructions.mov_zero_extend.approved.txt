@@ -5,7 +5,7 @@
 		Mov(type(long_word), src(ax), dst(cx))
 
 --src = pseudo; dst = reg--
-		Mov(type(long_word), src(Stack(Imm(8))), dst(cx))
+		Mov(type(long_word), src(Memory(base(bp), offset(8))), dst(cx))
 
 --src = data; dst = reg--
 		Mov(type(long_word), src(Data(data_src)), dst(cx))
@@ -14,29 +14,29 @@
 		Mov(type(long_word), src(Imm(42)), dst(R11d))
 		Mov(type(quad_word), src(R11d), dst(Data(data_dst)))
 
---src = immediate; dst = stack--
+--src = immediate; dst = memory--
 		Mov(type(long_word), src(Imm(42)), dst(R11d))
-		Mov(type(quad_word), src(R11d), dst(Stack(Imm(16))))
+		Mov(type(quad_word), src(R11d), dst(Memory(base(bp), offset(16))))
 
 --src = reg; dst = data--
 		Mov(type(long_word), src(ax), dst(R11d))
 		Mov(type(quad_word), src(R11d), dst(Data(data_dst)))
 
---src = reg; dst = stack--
+--src = reg; dst = memory--
 		Mov(type(long_word), src(ax), dst(R11d))
-		Mov(type(quad_word), src(R11d), dst(Stack(Imm(16))))
+		Mov(type(quad_word), src(R11d), dst(Memory(base(bp), offset(16))))
 
---src = stack; dst = data--
-		Mov(type(long_word), src(Stack(Imm(8))), dst(R11d))
+--src = memory; dst = data--
+		Mov(type(long_word), src(Memory(base(bp), offset(8))), dst(R11d))
 		Mov(type(quad_word), src(R11d), dst(Data(data_dst)))
 
---src = stack; dst = stack--
-		Mov(type(long_word), src(Stack(Imm(8))), dst(R11d))
-		Mov(type(quad_word), src(R11d), dst(Stack(Imm(16))))
+--src = memory; dst = memory--
+		Mov(type(long_word), src(Memory(base(bp), offset(8))), dst(R11d))
+		Mov(type(quad_word), src(R11d), dst(Memory(base(bp), offset(16))))
 
---src = data; dst = stack--
+--src = data; dst = memory--
 		Mov(type(long_word), src(Data(data_src)), dst(R11d))
-		Mov(type(quad_word), src(R11d), dst(Stack(Imm(16))))
+		Mov(type(quad_word), src(R11d), dst(Memory(base(bp), offset(16))))
 
 --src = data; dst = data--
 		Mov(type(long_word), src(Data(data_src)), dst(R11d))

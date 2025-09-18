@@ -7,16 +7,16 @@
 		CVTSI2SD(type(quad_word), src(R10d), dst(XMM15))
 		Mov(type(double_asm), src(XMM15), dst(Data(data_dst)))
 
---src = immediate; dst = stack; type = long_word--
+--src = immediate; dst = memory; type = long_word--
 		Mov(type(long_word), src(Imm(8)), dst(R10d))
 		CVTSI2SD(type(long_word), src(R10d), dst(XMM15))
-		Mov(type(double_asm), src(XMM15), dst(Stack(Imm(8))))
+		Mov(type(double_asm), src(XMM15), dst(Memory(base(bp), offset(16))))
 
 --src = reg; dst = data_dst; type = long_word--
 		CVTSI2SD(type(quad_word), src(ax), dst(XMM15))
 		Mov(type(double_asm), src(XMM15), dst(Data(data_dst)))
 
---src = reg; dst = stack; type = long_word--
+--src = reg; dst = memory; type = long_word--
 		CVTSI2SD(type(long_word), src(ax), dst(XMM15))
-		Mov(type(double_asm), src(XMM15), dst(Stack(Imm(8))))
+		Mov(type(double_asm), src(XMM15), dst(Memory(base(bp), offset(16))))
 

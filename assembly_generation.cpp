@@ -62,7 +62,7 @@ assembly_type get_assembly_type(const tacky::var &v, const wccff::symbol_table::
         [](const wccff::unsigned_long_type &) -> assembly_type { return quad_word{}; },
         [](const wccff::void_type &) -> assembly_type { throw std::logic_error("Not implemented"); },
         [](const std::unique_ptr<fun_type> &) -> assembly_type { throw std::logic_error("Not implemented"); },
-        [](const std::unique_ptr<pointer> &) -> assembly_type { throw std::logic_error("Not implemented"); },
+        [](const std::unique_ptr<pointer> &) -> assembly_type { return quad_word{}; },
       },
       s.value().type);
 }
@@ -147,7 +147,21 @@ operand convert_pseudo(pseudo &r, wccff::symbol_table::backend_symbol_table &t)
         return data{ r.name };
     }
 
-    return stack{ t.get_symbol_offset(r.name) };
+    return memory{ BP{}, t.get_symbol_offset(r.name) };
+}
+
+void replace_pseudo_registers(lea &i, wccff::symbol_table::backend_symbol_table &t)
+{
+    if (std::holds_alternative<pseudo>(i.src))
+    {
+        auto r = std::get<pseudo>(i.src);
+        i.src = convert_pseudo(r, t);
+    }
+    if (std::holds_alternative<pseudo>(i.dst))
+    {
+        auto r = std::get<pseudo>(i.dst);
+        i.dst = convert_pseudo(r, t);
+    }
 }
 
 void replace_pseudo_registers(mov_instruction &i, wccff::symbol_table::backend_symbol_table &t)
@@ -317,6 +331,7 @@ void replace_pseudo_registers(function &f, wccff::symbol_table::backend_symbol_t
                      [](jmpcc &) { /*Nothing to do */ },
                      [&t](setcc &inst) { replace_pseudo_registers(inst, t); },
                      [](label &) { /*Nothing to do */ },
+                     [&t](lea &inst) { replace_pseudo_registers(inst, t); },
                      [&t](push &inst) { replace_pseudo_registers(inst, t); },
                      [](call &) { /*Nothing to do */ },
                      [](ret_instruction &) { /*Nothing to do */ },
@@ -359,7 +374,7 @@ bool is_larger_immediate(const operand &op)
 
 bool is_memory_operand(const operand &o)
 {
-    return std::holds_alternative<stack>(o) || std::holds_alternative<data>(o);
+    return std::holds_alternative<memory>(o) || std::holds_alternative<data>(o);
 }
 
 void assembly_generation::process_binary_statement_double(const tacky::binary_statement &stmt)
@@ -607,6 +622,11 @@ void assembly_generation::process(const tacky::double_to_uint &stmt)
     }
 }
 
+void assembly_generation::process(const tacky::get_address &stmt)
+{
+    m_instructions.emplace_back(lea{ .src = process(stmt.src), .dst = process(stmt.dst) });
+}
+
 void assembly_generation::process(const tacky::fun_call &i)
 {
     std::array<reg, 6> int_regs = { di{}, si{}, dx{}, cx{}, R8{}, R9{} };
@@ -692,7 +712,7 @@ function assembly_generation::process(const tacky::function_definition &f)
     int32_t offset = 16;
     for (const auto &[type, dst] : args_pos[2])
     {
-        m_instructions.emplace_back(mov_instruction{ stack{ offset }, dst, type });
+        m_instructions.emplace_back(mov_instruction{ memory{ BP{}, offset }, dst, type });
         offset += 8;
     }
 
@@ -712,14 +732,17 @@ void assembly_generation::process(const tacky::instruction &i)
                  [&](const tacky::copy_statement &n) { process(n); },
                  [&](const tacky::double_to_int &n) { process(n); },
                  [&](const tacky::double_to_uint &n) { process(n); },
+                 [&](const tacky::get_address &n) { process(n); },
                  [&](const tacky::fun_call &n) { process(n); },
                  [&](const tacky::int_to_double &n) { process(n); },
                  [&](const tacky::jump_if_not_zero_statement &n) { process(n); },
                  [&](const tacky::jump_if_zero_statement &n) { process(n); },
                  [&](const tacky::jump_statement &n) { process(n); },
                  [&](const tacky::label_statement &n) { process(n); },
+                 [&](const tacky::load &n) { process(n); },
                  [&](const tacky::return_statement &n) { process(n); },
                  [&](const tacky::sing_extend &n) { process(n); },
+                 [&](const tacky::store &n) { process(n); },
                  [&](const tacky::truncate &n) { process(n); },
                  [&](const tacky::uint_to_double &n) { process(n); },
                  [&](const tacky::unary_statement &n) { process(n); },
@@ -768,6 +791,15 @@ void assembly_generation::process(const tacky::label_statement &stmt)
 {
     m_instructions.emplace_back(label{ stmt.target });
 }
+
+void assembly_generation::process(const tacky::load &stmt)
+{
+    auto dst_type = get_assembly_type(stmt.dst, m_table);
+    m_instructions.emplace_back(mov_instruction{ .src = process(stmt.src), .dst = ax{}, .type = quad_word{} });
+    m_instructions.emplace_back(
+      mov_instruction{ .src = memory{ ax{}, 0 }, .dst = process(stmt.dst), .type = dst_type });
+}
+
 program assembly_generation::process(const tacky::program &program)
 {
     std::vector<top_level> top_levels;
@@ -808,11 +840,21 @@ static_variable assembly_generation::process(const tacky::static_variable &f)
                               [](const wccff::long_type &) { return 8; },
                               [](const wccff::unsigned_int_type &) { return 4; },
                               [](const wccff::unsigned_long_type &) { return 8; },
+                              [](const std::unique_ptr<wccff::pointer> &) { return 8; },
                               [](const auto &) -> int32_t { throw std::logic_error("Not implemented"); },
                             },
                             m_table.get(f.name).value().type);
     return { f.name, f.global, align, f.init };
 }
+
+void assembly_generation::process(const tacky::store &stmt)
+{
+    auto src_type = get_assembly_type(stmt.src, m_table);
+    m_instructions.emplace_back(mov_instruction{ .src = process(stmt.dst), .dst = ax{}, .type = quad_word{} });
+    m_instructions.emplace_back(
+      mov_instruction{ .src = process(stmt.src), .dst = memory{ ax{}, 0 }, .type = src_type });
+}
+
 top_level assembly_generation::process(const tacky::top_level &f)
 {
     return std::visit(visitor{ [&](const tacky::function_definition &node) -> top_level { return process(node); },
@@ -953,6 +995,19 @@ std::array<std::vector<std::pair<assembly_type, operand>>, 3> assembly_generatio
         }
     }
     return { int_regs_args, double_regs_args, stack_args };
+}
+
+std::optional<std::vector<instruction>> fixing_up_instructions11(const lea &n)
+{
+    if (is_memory_operand(n.dst))
+    {
+        std::vector<instruction> ret_insts;
+        ret_insts.emplace_back(lea{ n.src, R10{} });
+        ret_insts.emplace_back(mov_instruction{ R10{}, n.dst, quad_word{} });
+        return ret_insts;
+    }
+
+    return std::nullopt;
 }
 
 std::optional<std::vector<instruction>> fixing_up_instructions11(const mov_instruction &n)
@@ -1371,9 +1426,11 @@ std::optional<std::vector<instruction>> fixing_up_instructions1(const instructio
         [](const jmpcc &) -> std::optional<std::vector<instruction>> { return std::nullopt; },
         [](const setcc &) -> std::optional<std::vector<instruction>> { return std::nullopt; },
         [](const label &) -> std::optional<std::vector<instruction>> { return std::nullopt; },
+        [](const lea &i) -> std::optional<std::vector<instruction>> { return fixing_up_instructions11(i); },
         [](const push &i) -> std::optional<std::vector<instruction>> { return fixing_up_instructions11(i); },
         [](const call &) -> std::optional<std::vector<instruction>> { return std::nullopt; },
-        [](const ret_instruction &) -> std::optional<std::vector<instruction>> { return std::nullopt; } },
+        [](const ret_instruction &) -> std::optional<std::vector<instruction>> { return std::nullopt; },
+      },
       node);
 }
 void fixing_up_instructions(std::vector<instruction> &node)
@@ -1564,6 +1621,7 @@ std::string pretty_print(const instruction &node)
                         [](const jmpcc &n) { return pretty_print(n); },
                         [](const setcc &n) { return pretty_print(n); },
                         [](const label &n) { return pretty_print(n); },
+                        [](const lea &n) { return pretty_print(n); },
                         [](const push &n) { return pretty_print(n); },
                         [](const call &n) { return pretty_print(n); },
                         [](const ret_instruction &n) { return pretty_print(n); },
@@ -1584,6 +1642,16 @@ std::string pretty_print(const jmpcc &node)
 std::string pretty_print(const label &node)
 {
     return fmt::format("Label({})", pretty_print(node.name));
+}
+
+std::string pretty_print(const lea &node)
+{
+    return fmt::format("Lea(src({}), dst({}))", pretty_print(node.src), pretty_print(node.dst));
+}
+
+std::string pretty_print(const memory &node)
+{
+    return fmt::format("Memory(base({}), offset({}))", pretty_print(node.base), node.offset);
 }
 
 std::string pretty_print(const mov_instruction &node)
@@ -1610,7 +1678,7 @@ std::string pretty_print(const operand &node)
                         [](const immediate &n) { return pretty_print(n); },
                         [](const reg &n) { return pretty_print(n); },
                         [](const pseudo &n) { return pretty_print(n); },
-                        [](const stack &n) { return pretty_print(n); },
+                        [](const memory &n) { return pretty_print(n); },
                         [](const data &n) { return pretty_print(n); },
                       },
                       node);
@@ -1639,17 +1707,17 @@ std::string pretty_print(const push &node)
 std::string pretty_print(const reg &node)
 {
     return std::visit(visitor{
-                        [](const ax &) { return "ax"; },          [](const cx &) { return "cx"; },
-                        [](const dx &) { return "dx"; },          [](const di &) { return "di"; },
-                        [](const si &) { return "si"; },          [](const R8 &) { return "R8d"; },
-                        [](const R9 &) { return "R9d"; },         [](const R10 &) { return "R10d"; },
-                        [](const R11 &) { return "R11d"; },       [](const SP &) { return "sp"; },
-                        [](const XMM0 &) { return "XMM0"; },      [](const XMM1 &) { return "XMM1"; },
-                        [](const XMM2 &) { return "XMM2"; },      [](const XMM3 &) { return "XMM3"; },
-                        [](const XMM4 &) { return "XMM4"; },      [](const XMM5 &) { return "XMM5"; },
-                        [](const XMM6 &) { return "XMM6"; },      [](const XMM7 &) { return "XMM7"; },
-                        [](const XMM14 &) { return "XMM14"; },    [](const XMM15 &) { return "XMM15"; },
-                        [](const auto &) { return "WRONG_REG"; },
+                        [](const ax &) { return "ax"; },       [](const cx &) { return "cx"; },
+                        [](const dx &) { return "dx"; },       [](const di &) { return "di"; },
+                        [](const si &) { return "si"; },       [](const R8 &) { return "R8d"; },
+                        [](const R9 &) { return "R9d"; },      [](const R10 &) { return "R10d"; },
+                        [](const R11 &) { return "R11d"; },    [](const SP &) { return "sp"; },
+                        [](const BP &) { return "bp"; },       [](const XMM0 &) { return "XMM0"; },
+                        [](const XMM1 &) { return "XMM1"; },   [](const XMM2 &) { return "XMM2"; },
+                        [](const XMM3 &) { return "XMM3"; },   [](const XMM4 &) { return "XMM4"; },
+                        [](const XMM5 &) { return "XMM5"; },   [](const XMM6 &) { return "XMM6"; },
+                        [](const XMM7 &) { return "XMM7"; },   [](const XMM14 &) { return "XMM14"; },
+                        [](const XMM15 &) { return "XMM15"; }, [](const auto &) { return "WRONG_REG"; },
                       },
                       node);
 }
@@ -1672,11 +1740,6 @@ std::string pretty_print(const top_level &node)
                         [](const static_constant &n) -> std::string { return pretty_print(n); },
                       },
                       node);
-}
-
-std::string pretty_print(const stack &node)
-{
-    return fmt::format("Stack({})", pretty_print(node.value));
 }
 
 std::string pretty_print(const static_constant &node)

@@ -43,6 +43,7 @@ assembly_type backend_symbol_table::get_assembly_type(const wccff::type &t)
                         [](const long_type &) -> assembly_type { return quad_word{}; },
                         [](const unsigned_int_type &) -> assembly_type { return long_word{}; },
                         [](const unsigned_long_type &) -> assembly_type { return quad_word{}; },
+                        [](const std::unique_ptr<pointer> &) -> assembly_type { return quad_word{}; },
                         [](const auto &) -> assembly_type { throw std::logic_error("Not implemented"); },
                       },
                       t);

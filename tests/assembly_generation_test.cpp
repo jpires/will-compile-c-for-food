@@ -1,6 +1,7 @@
 #include "../assembly_generation.h"
 #include "../parser.h"
 #include "../tacky.h"
+#include "assembly_generation_helpers.h"
 #include <ApprovalTests.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <ctll/parser.hpp>
@@ -939,17 +940,18 @@ TEST_CASE("helpers", "[assembly_generation]")
 {
     SECTION("is_larger_immediate")
     {
+        using wccff::assembly_generation::BP;
         using wccff::assembly_generation::data;
         using wccff::assembly_generation::immediate;
         using wccff::assembly_generation::is_larger_immediate;
+        using wccff::assembly_generation::memory;
         using wccff::assembly_generation::pseudo;
         using wccff::assembly_generation::R10;
-        using wccff::assembly_generation::stack;
 
         REQUIRE(is_larger_immediate(data{ "data" }) == false);
         REQUIRE(is_larger_immediate(R10{}) == false);
         REQUIRE(is_larger_immediate(pseudo{ "pseudo" }) == false);
-        REQUIRE(is_larger_immediate(stack{ 16 }) == false);
+        REQUIRE(is_larger_immediate(memory{ BP{}, 16 }) == false);
 
         REQUIRE(is_larger_immediate(immediate{ 0 }) == false);
         REQUIRE(is_larger_immediate(immediate{ std::numeric_limits<int32_t>::max() }) == false);
@@ -965,6 +967,7 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
     using wccff::long_word;
     using wccff::quad_word;
     using wccff::assembly_generation::ax;
+    using wccff::assembly_generation::BP;
     using wccff::assembly_generation::XMM0;
     using wccff::assembly_generation::XMM1;
 
@@ -972,7 +975,10 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
     using wccff::assembly_generation::data;
     using wccff::assembly_generation::immediate;
     using wccff::assembly_generation::pretty_print;
-    using wccff::assembly_generation::stack;
+    using wccff::testing::get_dst_memory;
+    using wccff::testing::get_lhs_memory;
+    using wccff::testing::get_rhs_memory;
+    using wccff::testing::get_src_memory;
 
     auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("assembly_generation_results");
 
@@ -989,7 +995,7 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
             binary b1{ .op = add{}, .src = immediate{ 42 }, .dst = data{ "data" }, .type = quad_word{} };
             REQUIRE(fixing_up_instructions_binary(b1).has_value() == false);
 
-            binary b2{ .op = add{}, .src = immediate{ 42 }, .dst = stack{ 16 }, .type = long_word{} };
+            binary b2{ .op = add{}, .src = immediate{ 42 }, .dst = get_dst_memory(), .type = long_word{} };
             REQUIRE(fixing_up_instructions_binary(b2).has_value() == false);
 
             binary b3{ .op = add{}, .src = ax{}, .dst = cx{}, .type = long_word{} };
@@ -998,31 +1004,31 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
             binary b4{ .op = add{}, .src = ax{}, .dst = data{ "data" }, .type = quad_word{} };
             REQUIRE(fixing_up_instructions_binary(b4).has_value() == false);
 
-            binary b5{ .op = add{}, .src = ax{}, .dst = stack{ 16 }, .type = long_word{} };
+            binary b5{ .op = add{}, .src = ax{}, .dst = get_dst_memory(), .type = long_word{} };
             REQUIRE(fixing_up_instructions_binary(b5).has_value() == false);
 
             binary b6{ .op = add{}, .src = data{ "data" }, .dst = cx{}, .type = quad_word{} };
             REQUIRE(fixing_up_instructions_binary(b6).has_value() == false);
 
-            binary b7{ .op = add{}, .src = stack{ 16 }, .dst = cx{}, .type = long_word{} };
+            binary b7{ .op = add{}, .src = get_src_memory(), .dst = cx{}, .type = long_word{} };
             REQUIRE(fixing_up_instructions_binary(b7).has_value() == false);
         }
 
         std::string result;
-        result += "--src = stack; dst = stack; type = long_word--\n";
-        binary b{ .op = add{}, .src = stack{ 8 }, .dst = stack{ 16 }, .type = long_word{} };
+        result += "--src = memory; dst = memory; type = long_word--\n";
+        binary b{ .op = add{}, .src = get_src_memory(), .dst = get_dst_memory(), .type = long_word{} };
         auto b_result = fixing_up_instructions_binary(b);
         REQUIRE(b_result.has_value());
         result += pretty_print(b_result.value());
 
-        result += "\n--src = stack; dst = data; type = long_word--\n";
-        binary b1{ .op = add{}, .src = stack{ 8 }, .dst = data{ "foo_dst" }, .type = quad_word{} };
+        result += "\n--src = memory; dst = data; type = long_word--\n";
+        binary b1{ .op = add{}, .src = get_src_memory(), .dst = data{ "foo_dst" }, .type = quad_word{} };
         auto b1_result = fixing_up_instructions_binary(b1);
         REQUIRE(b1_result.has_value());
         result += pretty_print(b1_result.value());
 
-        result += "\n--src = data; dst = stack; type = long_word--\n";
-        binary b2{ .op = add{}, .src = data{ "foo_src" }, .dst = stack{ 16 }, .type = long_word{} };
+        result += "\n--src = data; dst = memory; type = long_word--\n";
+        binary b2{ .op = add{}, .src = data{ "foo_src" }, .dst = get_dst_memory(), .type = long_word{} };
         auto b2_result = fixing_up_instructions_binary(b2);
         REQUIRE(b2_result.has_value());
         result += pretty_print(b2_result.value());
@@ -1050,7 +1056,7 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
             cmp c2{ .lhs = immediate{ 42 }, .rhs = data{ "data_dst" }, .type = quad_word{} };
             REQUIRE(fixing_up_instructions11(c2).has_value() == false);
 
-            cmp c3{ .lhs = immediate{ 42 }, .rhs = stack{ 16 }, .type = quad_word{} };
+            cmp c3{ .lhs = immediate{ 42 }, .rhs = get_rhs_memory(), .type = quad_word{} };
             REQUIRE(fixing_up_instructions11(c3).has_value() == false);
 
             cmp c4{ .lhs = cx{}, .rhs = ax{}, .type = quad_word{} };
@@ -1059,13 +1065,13 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
             cmp c5{ .lhs = cx{}, .rhs = data{ "data_dst" }, .type = quad_word{} };
             REQUIRE(fixing_up_instructions11(c5).has_value() == false);
 
-            cmp c6{ .lhs = cx{}, .rhs = stack{ 16 }, .type = quad_word{} };
+            cmp c6{ .lhs = cx{}, .rhs = get_rhs_memory(), .type = quad_word{} };
             REQUIRE(fixing_up_instructions11(c6).has_value() == false);
 
             cmp c7{ .lhs = data{ "data_src" }, .rhs = ax{}, .type = quad_word{} };
             REQUIRE(fixing_up_instructions11(c7).has_value() == false);
 
-            cmp c8{ .lhs = stack{ 8 }, .rhs = ax{}, .type = quad_word{} };
+            cmp c8{ .lhs = get_lhs_memory(), .rhs = ax{}, .type = quad_word{} };
             REQUIRE(fixing_up_instructions11(c8).has_value() == false);
 
             cmp c9{ .lhs = XMM0{}, .rhs = XMM1{}, .type = wccff::double_asm{} };
@@ -1074,25 +1080,25 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
             cmp c10{ .lhs = data{ "data_src" }, .rhs = XMM1{}, .type = wccff::double_asm{} };
             REQUIRE(fixing_up_instructions11(c10).has_value() == false);
 
-            cmp c11{ .lhs = stack{ 8 }, .rhs = XMM1{}, .type = wccff::double_asm{} };
+            cmp c11{ .lhs = get_lhs_memory(), .rhs = XMM1{}, .type = wccff::double_asm{} };
             REQUIRE(fixing_up_instructions11(c11).has_value() == false);
         }
 
         std::string result;
-        result += "--lhs = stack; rhs = stack; type = long_word--\n";
-        cmp c1{ .lhs = stack{ 8 }, .rhs = stack{ 16 }, .type = long_word{} };
+        result += "--lhs = memory; rhs = memory; type = long_word--\n";
+        cmp c1{ .lhs = get_lhs_memory(), .rhs = get_rhs_memory(), .type = long_word{} };
         auto c1_result = fixing_up_instructions11(c1);
         REQUIRE(c1_result.has_value());
         result += pretty_print(c1_result.value());
 
-        result += "\n--lhs = stack; rhs = data; type = quad_word--\n";
-        cmp c2{ .lhs = stack{ 8 }, .rhs = data{ "data_rhs" }, .type = quad_word{} };
+        result += "\n--lhs = memory; rhs = data; type = quad_word--\n";
+        cmp c2{ .lhs = get_lhs_memory(), .rhs = data{ "data_rhs" }, .type = quad_word{} };
         auto c2_result = fixing_up_instructions11(c2);
         REQUIRE(c2_result.has_value());
         result += pretty_print(c2_result.value());
 
-        result += "\n--lhs = data; rhs = stack; type = long_word--\n";
-        cmp c3{ .lhs = data{ "data_lhs" }, .rhs = stack{ 16 }, .type = long_word{} };
+        result += "\n--lhs = data; rhs = memory; type = long_word--\n";
+        cmp c3{ .lhs = data{ "data_lhs" }, .rhs = get_rhs_memory(), .type = long_word{} };
         auto c3_result = fixing_up_instructions11(c3);
         REQUIRE(c3_result.has_value());
         result += pretty_print(c3_result.value());
@@ -1121,8 +1127,8 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
         REQUIRE(c7_result.has_value());
         result += pretty_print(c7_result.value());
 
-        result += "\n--lhs = stack; rhs = immediate; type = long_word--\n";
-        cmp c8{ .lhs = stack{ 8 }, .rhs = immediate{ 55 }, .type = long_word{} };
+        result += "\n--lhs = memory; rhs = immediate; type = long_word--\n";
+        cmp c8{ .lhs = get_lhs_memory(), .rhs = immediate{ 55 }, .type = long_word{} };
         auto c8_result = fixing_up_instructions11(c8);
         REQUIRE(c8_result.has_value());
         result += pretty_print(c8_result.value());
@@ -1142,8 +1148,8 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
         REQUIRE(c10_result.has_value());
         result += pretty_print(c10_result.value());
 
-        result += "\n--lhs = big immediate; rhs = stack; type = long_word--\n";
-        cmp c11{ .lhs = immediate{ long_immediate }, .rhs = stack{ 16 }, .type = quad_word{} };
+        result += "\n--lhs = big immediate; rhs = memory; type = long_word--\n";
+        cmp c11{ .lhs = immediate{ long_immediate }, .rhs = get_rhs_memory(), .type = quad_word{} };
         auto c11_result = fixing_up_instructions11(c11);
         REQUIRE(c11_result.has_value());
         result += pretty_print(c11_result.value());
@@ -1160,8 +1166,8 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
         REQUIRE(c13_result.has_value());
         result += pretty_print(c13_result.value());
 
-        result += "\n--lhs = reg; rhs = stack; type = double_asm--\n";
-        cmp c14{ .lhs = XMM0{}, .rhs = stack{ 16 }, .type = wccff::double_asm{} };
+        result += "\n--lhs = reg; rhs = memory; type = double_asm--\n";
+        cmp c14{ .lhs = XMM0{}, .rhs = get_rhs_memory(), .type = wccff::double_asm{} };
         auto c14_result = fixing_up_instructions11(c14);
         REQUIRE(c14_result.has_value());
         result += pretty_print(c14_result.value());
@@ -1172,8 +1178,8 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
         REQUIRE(c15_result.has_value());
         result += pretty_print(c15_result.value());
 
-        result += "\n--lhs = immediate; rhs = stack; type = double_asm--\n";
-        cmp c16{ .lhs = immediate{ 8 }, .rhs = stack{ 16 }, .type = wccff::double_asm{} };
+        result += "\n--lhs = immediate; rhs = memory; type = double_asm--\n";
+        cmp c16{ .lhs = immediate{ 8 }, .rhs = get_rhs_memory(), .type = wccff::double_asm{} };
         auto c16_result = fixing_up_instructions11(c16);
         REQUIRE(c16_result.has_value());
         result += pretty_print(c16_result.value());
@@ -1184,8 +1190,8 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
         REQUIRE(c17_result.has_value());
         result += pretty_print(c17_result.value());
 
-        result += "\n--lhs = data; rhs = stack; type = double_asm--\n";
-        cmp c18{ .lhs = data{ "data_src" }, .rhs = stack{ 16 }, .type = wccff::double_asm{} };
+        result += "\n--lhs = data; rhs = memory; type = double_asm--\n";
+        cmp c18{ .lhs = data{ "data_src" }, .rhs = get_rhs_memory(), .type = wccff::double_asm{} };
         auto c18_result = fixing_up_instructions11(c18);
         REQUIRE(c18_result.has_value());
         result += pretty_print(c18_result.value());
@@ -1197,7 +1203,6 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
     {
         using wccff::assembly_generation::cvtsi2sd;
         using wccff::assembly_generation::fixing_up_instructions11;
-        using wccff::assembly_generation::XMM1;
 
         SECTION("No Fixing needed")
         {
@@ -1207,7 +1212,7 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
             cvtsi2sd b2{ .src = data{ "data_src" }, .dst = XMM1{}, .src_type = quad_word{} };
             REQUIRE(fixing_up_instructions11(b2).has_value() == false);
 
-            cvtsi2sd b3{ .src = stack{ 8 }, .dst = XMM1{}, .src_type = long_word{} };
+            cvtsi2sd b3{ .src = get_src_memory(), .dst = XMM1{}, .src_type = long_word{} };
             REQUIRE(fixing_up_instructions11(b3).has_value() == false);
         }
         std::string result;
@@ -1224,8 +1229,8 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
         REQUIRE(b2_result.has_value());
         result += pretty_print(b2_result.value());
 
-        result += "\n--src = immediate; dst = stack; type = long_word--\n";
-        cvtsi2sd b3{ .src = immediate{ 8 }, .dst = stack{ 8 }, .src_type = long_word{} };
+        result += "\n--src = immediate; dst = memory; type = long_word--\n";
+        cvtsi2sd b3{ .src = immediate{ 8 }, .dst = get_dst_memory(), .src_type = long_word{} };
         auto b3_result = fixing_up_instructions11(b3);
         REQUIRE(b3_result.has_value());
         result += pretty_print(b3_result.value());
@@ -1236,8 +1241,8 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
         REQUIRE(b4_result.has_value());
         result += pretty_print(b4_result.value());
 
-        result += "\n--src = reg; dst = stack; type = long_word--\n";
-        cvtsi2sd b5{ .src = ax{}, .dst = stack{ 8 }, .src_type = long_word{} };
+        result += "\n--src = reg; dst = memory; type = long_word--\n";
+        cvtsi2sd b5{ .src = ax{}, .dst = get_dst_memory(), .src_type = long_word{} };
         auto b5_result = fixing_up_instructions11(b5);
         REQUIRE(b5_result.has_value());
         result += pretty_print(b5_result.value());
@@ -1249,7 +1254,6 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
     {
         using wccff::assembly_generation::cvttsd2si;
         using wccff::assembly_generation::fixing_up_instructions11;
-        using wccff::assembly_generation::XMM1;
 
         SECTION("No Fixing needed")
         {
@@ -1259,7 +1263,7 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
             cvttsd2si b2{ .src = data{ "data_src" }, .dst = ax{}, .dst_type = quad_word{} };
             REQUIRE(fixing_up_instructions11(b2).has_value() == false);
 
-            cvttsd2si b3{ .src = stack{ 8 }, .dst = ax{}, .dst_type = long_word{} };
+            cvttsd2si b3{ .src = get_src_memory(), .dst = ax{}, .dst_type = long_word{} };
             REQUIRE(fixing_up_instructions11(b3).has_value() == false);
         }
         std::string result;
@@ -1270,8 +1274,8 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
         REQUIRE(b1_result.has_value());
         result += pretty_print(b1_result.value());
 
-        result += "\n--src = reg; dst = stack; type = long_word--\n";
-        cvttsd2si b2{ .src = XMM1{}, .dst = stack{ 8 }, .dst_type = quad_word{} };
+        result += "\n--src = reg; dst = memory; type = long_word--\n";
+        cvttsd2si b2{ .src = XMM1{}, .dst = get_dst_memory(), .dst_type = quad_word{} };
         auto b2_result = fixing_up_instructions11(b2);
         REQUIRE(b2_result.has_value());
         result += pretty_print(b2_result.value());
@@ -1293,7 +1297,7 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
             binary b1{ .op = mul{}, .src = ax{}, .dst = cx{}, .type = long_word{} };
             REQUIRE(fixing_up_instructions_binary(b1).has_value() == false);
 
-            binary b2{ .op = mul{}, .src = stack{ 16 }, .dst = cx{}, .type = long_word{} };
+            binary b2{ .op = mul{}, .src = get_src_memory(), .dst = cx{}, .type = long_word{} };
             REQUIRE(fixing_up_instructions_binary(b2).has_value() == false);
 
             binary b3{ .op = mul{}, .src = data{ "foo" }, .dst = cx{}, .type = long_word{} };
@@ -1305,15 +1309,15 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
             binary b5{ .op = mul{}, .src = ax{}, .dst = cx{}, .type = quad_word{} };
             REQUIRE(fixing_up_instructions_binary(b5).has_value() == false);
 
-            binary b6{ .op = mul{}, .src = stack{ 16 }, .dst = cx{}, .type = quad_word{} };
+            binary b6{ .op = mul{}, .src = get_src_memory(), .dst = cx{}, .type = quad_word{} };
             REQUIRE(fixing_up_instructions_binary(b6).has_value() == false);
 
             binary b7{ .op = mul{}, .src = data{ "foo" }, .dst = cx{}, .type = quad_word{} };
             REQUIRE(fixing_up_instructions_binary(b7).has_value() == false);
         }
         std::string result;
-        result += "--dst = stack; type = long_word--\n";
-        binary b{ .op = mul{}, .src = immediate{ 42 }, .dst = stack{ 16 }, .type = long_word{} };
+        result += "--dst = memory; type = long_word--\n";
+        binary b{ .op = mul{}, .src = immediate{ 42 }, .dst = get_dst_memory(), .type = long_word{} };
         auto b_result = fixing_up_instructions_binary(b);
         REQUIRE(b_result.has_value());
         result += pretty_print(b_result.value());
@@ -1324,8 +1328,8 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
         REQUIRE(b1_result.has_value());
         result += pretty_print(b1_result.value());
 
-        result += "\n--dst = stack; type = quad_word--\n";
-        binary b2{ .op = mul{}, .src = immediate{ 42 }, .dst = stack{ 16 }, .type = quad_word{} };
+        result += "\n--dst = memory; type = quad_word--\n";
+        binary b2{ .op = mul{}, .src = immediate{ 42 }, .dst = get_dst_memory(), .type = quad_word{} };
         auto b2_result = fixing_up_instructions_binary(b2);
         REQUIRE(b2_result.has_value());
         result += pretty_print(b2_result.value());
@@ -1350,8 +1354,8 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
         REQUIRE(b5_result.has_value());
         result += pretty_print(b5_result.value());
 
-        result += "\n--src = long immediate; dst = stack; type = quad_word--\n";
-        binary b6{ .op = mul{}, .src = immediate{ long_value }, .dst = stack{ 16 }, .type = quad_word{} };
+        result += "\n--src = long immediate; dst = memory; type = quad_word--\n";
+        binary b6{ .op = mul{}, .src = immediate{ long_value }, .dst = get_dst_memory(), .type = quad_word{} };
         auto b6_result = fixing_up_instructions_binary(b6);
         REQUIRE(b6_result.has_value());
         result += pretty_print(b6_result.value());
@@ -1376,7 +1380,7 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
             mov_instruction b2{ .src = immediate{ 42 }, .dst = data{ "data_dst" }, .type = quad_word{} };
             REQUIRE(fixing_up_instructions11(b2).has_value() == false);
 
-            mov_instruction b3{ .src = immediate{ 42 }, .dst = stack{ 16 }, .type = long_word{} };
+            mov_instruction b3{ .src = immediate{ 42 }, .dst = get_dst_memory(), .type = long_word{} };
             REQUIRE(fixing_up_instructions11(b3).has_value() == false);
 
             mov_instruction b4{ .src = immediate{ long_value }, .dst = cx{}, .type = quad_word{} };
@@ -1388,13 +1392,13 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
             mov_instruction b6{ .src = ax{}, .dst = data{ "data_dst" }, .type = long_word{} };
             REQUIRE(fixing_up_instructions11(b6).has_value() == false);
 
-            mov_instruction b7{ .src = ax{}, .dst = stack{ 16 }, .type = quad_word{} };
+            mov_instruction b7{ .src = ax{}, .dst = get_dst_memory(), .type = quad_word{} };
             REQUIRE(fixing_up_instructions11(b7).has_value() == false);
 
             mov_instruction b8{ .src = data{ "data_src" }, .dst = cx{}, .type = long_word{} };
             REQUIRE(fixing_up_instructions11(b8).has_value() == false);
 
-            mov_instruction b9{ .src = stack{ 8 }, .dst = cx{}, .type = quad_word{} };
+            mov_instruction b9{ .src = get_src_memory(), .dst = cx{}, .type = quad_word{} };
             REQUIRE(fixing_up_instructions11(b9).has_value() == false);
         }
 
@@ -1406,26 +1410,26 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
         REQUIRE(b1_result.has_value());
         result += pretty_print(b1_result.value());
 
-        result += "\n--src = data; dst = stack; type = quad_word--\n";
-        mov_instruction b2{ .src = data{ "data_src" }, .dst = stack{ 16 }, .type = quad_word{} };
+        result += "\n--src = data; dst = memory; type = quad_word--\n";
+        mov_instruction b2{ .src = data{ "data_src" }, .dst = get_dst_memory(), .type = quad_word{} };
         auto b2_result = fixing_up_instructions11(b2);
         REQUIRE(b2_result.has_value());
         result += pretty_print(b2_result.value());
 
-        result += "\n--src = stack; dst = data; type = long_word--\n";
-        mov_instruction b3{ .src = stack{ 8 }, .dst = data{ "data_dst" }, .type = long_word{} };
+        result += "\n--src = memory; dst = data; type = long_word--\n";
+        mov_instruction b3{ .src = get_src_memory(), .dst = data{ "data_dst" }, .type = long_word{} };
         auto b3_result = fixing_up_instructions11(b3);
         REQUIRE(b3_result.has_value());
         result += pretty_print(b3_result.value());
 
-        result += "\n--src = stack; dst = stack; type = quad_word--\n";
-        mov_instruction b4{ .src = stack{ 8 }, .dst = stack{ 16 }, .type = quad_word{} };
+        result += "\n--src = memory; dst = memory; type = quad_word--\n";
+        mov_instruction b4{ .src = get_src_memory(), .dst = get_dst_memory(), .type = quad_word{} };
         auto b4_result = fixing_up_instructions11(b4);
         REQUIRE(b4_result.has_value());
         result += pretty_print(b4_result.value());
 
-        result += "\n--src = large immediate; dst = stack; type = quad_word--\n";
-        mov_instruction b5{ .src = immediate{ long_value }, .dst = stack{ 16 }, .type = quad_word{} };
+        result += "\n--src = large immediate; dst = memory; type = quad_word--\n";
+        mov_instruction b5{ .src = immediate{ long_value }, .dst = get_dst_memory(), .type = quad_word{} };
         auto b5_result = fixing_up_instructions11(b5);
         REQUIRE(b5_result.has_value());
         result += pretty_print(b5_result.value());
@@ -1436,8 +1440,8 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
         REQUIRE(b6_result.has_value());
         result += pretty_print(b6_result.value());
 
-        result += "\n--src = large immediate; dst = stack; type = long_word--\n";
-        mov_instruction b7{ .src = immediate{ long_value }, .dst = stack{ 16 }, .type = long_word{} };
+        result += "\n--src = large immediate; dst = memory; type = long_word--\n";
+        mov_instruction b7{ .src = immediate{ long_value }, .dst = get_dst_memory(), .type = long_word{} };
         auto b7_result = fixing_up_instructions11(b7);
         REQUIRE(b7_result.has_value());
         result += pretty_print(b7_result.value());
@@ -1476,7 +1480,7 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
         result += pretty_print(b2_result.value());
 
         result += "\n--src = pseudo; dst = reg--\n";
-        mov_zero_extend b3{ .src = stack{ 8 }, .dst = cx{} };
+        mov_zero_extend b3{ .src = get_src_memory(), .dst = cx{} };
         auto b3_result = fixing_up_instructions11(b3);
         REQUIRE(b3_result.has_value());
         result += pretty_print(b3_result.value());
@@ -1493,8 +1497,8 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
         REQUIRE(b5_result.has_value());
         result += pretty_print(b5_result.value());
 
-        result += "\n--src = immediate; dst = stack--\n";
-        mov_zero_extend b6{ .src = immediate{ 42 }, .dst = stack{ 16 } };
+        result += "\n--src = immediate; dst = memory--\n";
+        mov_zero_extend b6{ .src = immediate{ 42 }, .dst = get_dst_memory() };
         auto b6_result = fixing_up_instructions11(b6);
         REQUIRE(b6_result.has_value());
         result += pretty_print(b6_result.value());
@@ -1505,26 +1509,26 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
         REQUIRE(b7_result.has_value());
         result += pretty_print(b7_result.value());
 
-        result += "\n--src = reg; dst = stack--\n";
-        mov_zero_extend b8{ .src = ax{}, .dst = stack{ 16 } };
+        result += "\n--src = reg; dst = memory--\n";
+        mov_zero_extend b8{ .src = ax{}, .dst = get_dst_memory() };
         auto b8_result = fixing_up_instructions11(b8);
         REQUIRE(b8_result.has_value());
         result += pretty_print(b8_result.value());
 
-        result += "\n--src = stack; dst = data--\n";
-        mov_zero_extend b9{ .src = stack{ 8 }, .dst = data{ "data_dst" } };
+        result += "\n--src = memory; dst = data--\n";
+        mov_zero_extend b9{ .src = get_src_memory(), .dst = data{ "data_dst" } };
         auto b9_result = fixing_up_instructions11(b9);
         REQUIRE(b9_result.has_value());
         result += pretty_print(b9_result.value());
 
-        result += "\n--src = stack; dst = stack--\n";
-        mov_zero_extend b10{ .src = stack{ 8 }, .dst = stack{ 16 } };
+        result += "\n--src = memory; dst = memory--\n";
+        mov_zero_extend b10{ .src = get_src_memory(), .dst = get_dst_memory() };
         auto b10_result = fixing_up_instructions11(b10);
         REQUIRE(b10_result.has_value());
         result += pretty_print(b10_result.value());
 
-        result += "\n--src = data; dst = stack--\n";
-        mov_zero_extend b11{ .src = data{ "data_src" }, .dst = stack{ 16 } };
+        result += "\n--src = data; dst = memory--\n";
+        mov_zero_extend b11{ .src = data{ "data_src" }, .dst = get_dst_memory() };
         auto b11_result = fixing_up_instructions11(b11);
         REQUIRE(b11_result.has_value());
         result += pretty_print(b11_result.value());
@@ -1551,7 +1555,7 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
             movx b2{ .src = data{ "data_src" }, .dst = cx{} };
             REQUIRE(fixing_up_instructions11(b2).has_value() == false);
 
-            movx b3{ .src = stack{ 8 }, .dst = cx{} };
+            movx b3{ .src = get_src_memory(), .dst = cx{} };
             REQUIRE(fixing_up_instructions11(b3).has_value() == false);
         }
 
@@ -1568,8 +1572,8 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
         REQUIRE(b2_result.has_value());
         result += pretty_print(b2_result.value());
 
-        result += "\n--src = immediate; dst = stack--\n";
-        movx b3{ .src = immediate{ 42 }, .dst = stack{ 16 } };
+        result += "\n--src = immediate; dst = memory--\n";
+        movx b3{ .src = immediate{ 42 }, .dst = get_dst_memory() };
         auto b3_result = fixing_up_instructions11(b3);
         REQUIRE(b3_result.has_value());
         result += pretty_print(b3_result.value());
@@ -1580,8 +1584,8 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
         REQUIRE(b4_result.has_value());
         result += pretty_print(b4_result.value());
 
-        result += "\n--src = reg; dst = stack--\n";
-        movx b5{ .src = ax{}, .dst = stack{ 16 } };
+        result += "\n--src = reg; dst = memory--\n";
+        movx b5{ .src = ax{}, .dst = get_dst_memory() };
         auto b5_result = fixing_up_instructions11(b5);
         REQUIRE(b5_result.has_value());
         result += pretty_print(b5_result.value());
@@ -1601,7 +1605,7 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
             push p2{ .src = immediate{ 42 } };
             REQUIRE(fixing_up_instructions11(p2).has_value() == false);
 
-            push p3{ .src = stack{ 8 } };
+            push p3{ .src = get_src_memory() };
             REQUIRE(fixing_up_instructions11(p3).has_value() == false);
 
             push p4{ .src = data{ "data_src" } };
@@ -1634,7 +1638,7 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
             binary b1{ .op = sub{}, .src = immediate{ 42 }, .dst = data{ "data" }, .type = quad_word{} };
             REQUIRE(fixing_up_instructions_binary(b1).has_value() == false);
 
-            binary b2{ .op = sub{}, .src = immediate{ 42 }, .dst = stack{ 16 }, .type = long_word{} };
+            binary b2{ .op = sub{}, .src = immediate{ 42 }, .dst = get_dst_memory(), .type = long_word{} };
             REQUIRE(fixing_up_instructions_binary(b2).has_value() == false);
 
             binary b3{ .op = sub{}, .src = ax{}, .dst = cx{}, .type = long_word{} };
@@ -1643,31 +1647,31 @@ TEST_CASE("fixing_up_instructions", "[assembly_generation]")
             binary b4{ .op = sub{}, .src = ax{}, .dst = data{ "data" }, .type = quad_word{} };
             REQUIRE(fixing_up_instructions_binary(b4).has_value() == false);
 
-            binary b5{ .op = sub{}, .src = ax{}, .dst = stack{ 16 }, .type = long_word{} };
+            binary b5{ .op = sub{}, .src = ax{}, .dst = get_dst_memory(), .type = long_word{} };
             REQUIRE(fixing_up_instructions_binary(b5).has_value() == false);
 
             binary b6{ .op = sub{}, .src = data{ "data" }, .dst = cx{}, .type = quad_word{} };
             REQUIRE(fixing_up_instructions_binary(b6).has_value() == false);
 
-            binary b7{ .op = sub{}, .src = stack{ 16 }, .dst = cx{}, .type = long_word{} };
+            binary b7{ .op = sub{}, .src = get_src_memory(), .dst = cx{}, .type = long_word{} };
             REQUIRE(fixing_up_instructions_binary(b7).has_value() == false);
         }
 
         std::string result;
-        result += "--src = stack; dst = stack; type = long_word--\n";
-        binary b{ .op = sub{}, .src = stack{ 8 }, .dst = stack{ 16 }, .type = long_word{} };
+        result += "--src = memory; dst = memory; type = long_word--\n";
+        binary b{ .op = sub{}, .src = get_src_memory(), .dst = get_dst_memory(), .type = long_word{} };
         auto b_result = fixing_up_instructions_binary(b);
         REQUIRE(b_result.has_value());
         result += pretty_print(b_result.value());
 
-        result += "\n--src = stack; dst = data; type = long_word--\n";
-        binary b1{ .op = sub{}, .src = stack{ 8 }, .dst = data{ "foo_dst" }, .type = quad_word{} };
+        result += "\n--src = memory; dst = data; type = long_word--\n";
+        binary b1{ .op = sub{}, .src = get_src_memory(), .dst = data{ "foo_dst" }, .type = quad_word{} };
         auto b1_result = fixing_up_instructions_binary(b1);
         REQUIRE(b1_result.has_value());
         result += pretty_print(b1_result.value());
 
-        result += "\n--src = data; dst = stack; type = long_word--\n";
-        binary b2{ .op = sub{}, .src = data{ "foo_src" }, .dst = stack{ 16 }, .type = long_word{} };
+        result += "\n--src = data; dst = memory; type = long_word--\n";
+        binary b2{ .op = sub{}, .src = data{ "foo_src" }, .dst = get_dst_memory(), .type = long_word{} };
         auto b2_result = fixing_up_instructions_binary(b2);
         REQUIRE(b2_result.has_value());
         result += pretty_print(b2_result.value());
@@ -1692,6 +1696,7 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     using wccff::assembly_generation::B;
     using wccff::assembly_generation::BE;
     using wccff::assembly_generation::binary;
+    using wccff::assembly_generation::BP;
     using wccff::assembly_generation::call;
     using wccff::assembly_generation::cmp;
     using wccff::assembly_generation::cvtsi2sd;
@@ -1714,9 +1719,21 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     using wccff::assembly_generation::pseudo;
     using wccff::assembly_generation::R10;
     using wccff::assembly_generation::R11;
-    using wccff::assembly_generation::stack;
     using wccff::assembly_generation::static_variable;
     using wccff::assembly_generation::unary;
+    using wccff::testing::get_dst_data;
+    using wccff::testing::get_dst_immediate;
+    using wccff::testing::get_dst_memory;
+    using wccff::testing::get_dst_pseudo;
+    using wccff::testing::get_dst_reg;
+    using wccff::testing::get_lhs_memory;
+    using wccff::testing::get_rhs_memory;
+    using wccff::testing::get_src_data;
+    using wccff::testing::get_src_immediate;
+    using wccff::testing::get_src_memory;
+    using wccff::testing::get_src_pseudo;
+    using wccff::testing::get_src_reg;
+
     auto directoryDisposer = ApprovalTests::Approvals::useApprovalsSubdirectory("assembly_generation_results");
 
     std::string result;
@@ -1747,7 +1764,7 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(binary{ .op = wccff::assembly_generation::binary_and{},
                                    .src = immediate{ 42 },
-                                   .dst = stack{ 50 },
+                                   .dst = get_dst_memory(),
                                    .type = wccff::quad_word{} });
     result += '\n';
     result += pretty_print(binary{ .op = wccff::assembly_generation::binary_or{},
@@ -1768,8 +1785,10 @@ TEST_CASE("pretty_print", "[assembly_generation]")
                                    .dst = pseudo{ "bar" },
                                    .type = wccff::quad_word{} });
     result += '\n';
-    result += pretty_print(
-      binary{ .op = wccff::assembly_generation::add{}, .src = R10{}, .dst = stack{ 50 }, .type = wccff::quad_word{} });
+    result += pretty_print(binary{ .op = wccff::assembly_generation::add{},
+                                   .src = R10{},
+                                   .dst = get_dst_memory(),
+                                   .type = wccff::quad_word{} });
     result += '\n';
     result += pretty_print(binary{ .op = wccff::assembly_generation::add{},
                                    .src = R10{},
@@ -1794,7 +1813,7 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(binary{ .op = wccff::assembly_generation::binary_or{},
                                    .src = pseudo{ "bar" },
-                                   .dst = stack{ 50 },
+                                   .dst = get_dst_memory(),
                                    .type = wccff::quad_word{} });
     result += '\n';
     result += pretty_print(binary{ .op = wccff::assembly_generation::binary_xor{},
@@ -1804,27 +1823,27 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
 
     result += pretty_print(binary{ .op = wccff::assembly_generation::left_shift{},
-                                   .src = stack{ 50 },
+                                   .src = get_dst_memory(),
                                    .dst = immediate{ 42 },
                                    .type = wccff::quad_word{} });
     result += '\n';
     result += pretty_print(binary{ .op = wccff::assembly_generation::right_shift{},
-                                   .src = stack{ 50 },
+                                   .src = get_dst_memory(),
                                    .dst = R11{},
                                    .type = wccff::long_word{} });
     result += '\n';
     result += pretty_print(binary{ .op = wccff::assembly_generation::add{},
-                                   .src = stack{ 50 },
+                                   .src = get_dst_memory(),
                                    .dst = pseudo{ "bar" },
                                    .type = wccff::quad_word{} });
     result += '\n';
     result += pretty_print(binary{ .op = wccff::assembly_generation::sub{},
-                                   .src = stack{ 50 },
-                                   .dst = stack{ 50 },
+                                   .src = get_src_memory(),
+                                   .dst = get_dst_memory(),
                                    .type = wccff::quad_word{} });
     result += '\n';
     result += pretty_print(binary{ .op = wccff::assembly_generation::mul{},
-                                   .src = stack{ 50 },
+                                   .src = get_src_memory(),
                                    .dst = data{ "bar" },
                                    .type = wccff::quad_word{} });
     result += '\n';
@@ -1846,7 +1865,7 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(binary{ .op = wccff::assembly_generation::left_shift{},
                                    .src = data{ "bar" },
-                                   .dst = stack{ 50 },
+                                   .dst = get_dst_memory(),
                                    .type = wccff::quad_word{} });
     result += '\n';
     result += pretty_print(binary{ .op = wccff::assembly_generation::right_shift{},
@@ -1894,7 +1913,7 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(cmp{ .lhs = immediate{ 42 }, .rhs = pseudo{ "xpto" }, .type = wccff::long_word{} });
     result += '\n';
-    result += pretty_print(cmp{ .lhs = immediate{ 42 }, .rhs = stack{ 50 }, .type = wccff::quad_word{} });
+    result += pretty_print(cmp{ .lhs = immediate{ 42 }, .rhs = get_rhs_memory(), .type = wccff::quad_word{} });
     result += '\n';
     result += pretty_print(cmp{ .lhs = immediate{ 42 }, .rhs = data{ "bar" }, .type = wccff::long_word{} });
     result += '\n';
@@ -1904,7 +1923,7 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(cmp{ .lhs = R10{}, .rhs = pseudo{ "bar" }, .type = wccff::quad_word{} });
     result += '\n';
-    result += pretty_print(cmp{ .lhs = R10{}, .rhs = stack{ 50 }, .type = wccff::quad_word{} });
+    result += pretty_print(cmp{ .lhs = R10{}, .rhs = get_rhs_memory(), .type = wccff::quad_word{} });
     result += '\n';
     result += pretty_print(cmp{ .lhs = R10{}, .rhs = data{ "bar" }, .type = wccff::quad_word{} });
     result += '\n';
@@ -1915,20 +1934,20 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(cmp{ .lhs = pseudo{ "bar" }, .rhs = pseudo{ "bar" }, .type = wccff::quad_word{} });
     result += '\n';
-    result += pretty_print(cmp{ .lhs = pseudo{ "bar" }, .rhs = stack{ 50 }, .type = wccff::quad_word{} });
+    result += pretty_print(cmp{ .lhs = pseudo{ "bar" }, .rhs = get_rhs_memory(), .type = wccff::quad_word{} });
     result += '\n';
     result += pretty_print(cmp{ .lhs = pseudo{ "bar" }, .rhs = data{ "bar" }, .type = wccff::quad_word{} });
     result += '\n';
 
-    result += pretty_print(cmp{ .lhs = stack{ 50 }, .rhs = immediate{ 42 }, .type = wccff::quad_word{} });
+    result += pretty_print(cmp{ .lhs = get_lhs_memory(), .rhs = immediate{ 42 }, .type = wccff::quad_word{} });
     result += '\n';
-    result += pretty_print(cmp{ .lhs = stack{ 50 }, .rhs = R11{}, .type = wccff::long_word{} });
+    result += pretty_print(cmp{ .lhs = get_lhs_memory(), .rhs = R11{}, .type = wccff::long_word{} });
     result += '\n';
-    result += pretty_print(cmp{ .lhs = stack{ 50 }, .rhs = pseudo{ "bar" }, .type = wccff::quad_word{} });
+    result += pretty_print(cmp{ .lhs = get_lhs_memory(), .rhs = pseudo{ "bar" }, .type = wccff::quad_word{} });
     result += '\n';
-    result += pretty_print(cmp{ .lhs = stack{ 50 }, .rhs = stack{ 50 }, .type = wccff::quad_word{} });
+    result += pretty_print(cmp{ .lhs = get_lhs_memory(), .rhs = get_rhs_memory(), .type = wccff::quad_word{} });
     result += '\n';
-    result += pretty_print(cmp{ .lhs = stack{ 50 }, .rhs = data{ "bar" }, .type = wccff::quad_word{} });
+    result += pretty_print(cmp{ .lhs = get_lhs_memory(), .rhs = data{ "bar" }, .type = wccff::quad_word{} });
     result += '\n';
 
     result += pretty_print(cmp{ .lhs = data{ "bar" }, .rhs = immediate{ 42 }, .type = wccff::quad_word{} });
@@ -1937,7 +1956,7 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(cmp{ .lhs = data{ "bar" }, .rhs = pseudo{ "bar" }, .type = wccff::quad_word{} });
     result += '\n';
-    result += pretty_print(cmp{ .lhs = data{ "bar" }, .rhs = stack{ 50 }, .type = wccff::quad_word{} });
+    result += pretty_print(cmp{ .lhs = data{ "bar" }, .rhs = get_rhs_memory(), .type = wccff::quad_word{} });
     result += '\n';
     result += pretty_print(cmp{ .lhs = data{ "bar" }, .rhs = data{ "bar" }, .type = wccff::quad_word{} });
     result += '\n';
@@ -1963,7 +1982,7 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(cvtsi2sd{ .src = immediate{ 42 }, .dst = pseudo{ "bar" }, .src_type = quad_word{} });
     result += '\n';
-    result += pretty_print(cvtsi2sd{ .src = immediate{ 42 }, .dst = stack{ 50 }, .src_type = long_word{} });
+    result += pretty_print(cvtsi2sd{ .src = immediate{ 42 }, .dst = get_dst_memory(), .src_type = long_word{} });
     result += '\n';
     result += pretty_print(cvtsi2sd{ .src = immediate{ 42 }, .dst = data{ "bar" }, .src_type = quad_word{} });
     result += '\n';
@@ -1972,7 +1991,7 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(cvtsi2sd{ .src = R10{}, .dst = pseudo{ "bar" }, .src_type = quad_word{} });
     result += '\n';
-    result += pretty_print(cvtsi2sd{ .src = R10{}, .dst = stack{ 50 }, .src_type = long_word{} });
+    result += pretty_print(cvtsi2sd{ .src = R10{}, .dst = get_dst_memory(), .src_type = long_word{} });
     result += '\n';
     result += pretty_print(cvtsi2sd{ .src = R10{}, .dst = data{ "bar" }, .src_type = quad_word{} });
     result += '\n';
@@ -1981,25 +2000,25 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(cvtsi2sd{ .src = pseudo{ "bar" }, .dst = pseudo{ "bar" }, .src_type = quad_word{} });
     result += '\n';
-    result += pretty_print(cvtsi2sd{ .src = pseudo{ "bar" }, .dst = stack{ 50 }, .src_type = long_word{} });
+    result += pretty_print(cvtsi2sd{ .src = pseudo{ "bar" }, .dst = get_dst_memory(), .src_type = long_word{} });
     result += '\n';
     result += pretty_print(cvtsi2sd{ .src = pseudo{ "bar" }, .dst = data{ "bar" }, .src_type = quad_word{} });
     result += '\n';
 
-    result += pretty_print(cvtsi2sd{ .src = stack{ 50 }, .dst = R11{}, .src_type = long_word{} });
+    result += pretty_print(cvtsi2sd{ .src = get_src_memory(), .dst = R11{}, .src_type = long_word{} });
     result += '\n';
-    result += pretty_print(cvtsi2sd{ .src = stack{ 50 }, .dst = pseudo{ "bar" }, .src_type = quad_word{} });
+    result += pretty_print(cvtsi2sd{ .src = get_src_memory(), .dst = pseudo{ "bar" }, .src_type = quad_word{} });
     result += '\n';
-    result += pretty_print(cvtsi2sd{ .src = stack{ 50 }, .dst = stack{ 50 }, .src_type = long_word{} });
+    result += pretty_print(cvtsi2sd{ .src = get_src_memory(), .dst = get_dst_memory(), .src_type = long_word{} });
     result += '\n';
-    result += pretty_print(cvtsi2sd{ .src = stack{ 50 }, .dst = data{ "bar" }, .src_type = quad_word{} });
+    result += pretty_print(cvtsi2sd{ .src = get_src_memory(), .dst = data{ "bar" }, .src_type = quad_word{} });
     result += '\n';
 
     result += pretty_print(cvtsi2sd{ .src = data{ "bar" }, .dst = R11{}, .src_type = long_word{} });
     result += '\n';
     result += pretty_print(cvtsi2sd{ .src = data{ "bar" }, .dst = pseudo{ "bar" }, .src_type = quad_word{} });
     result += '\n';
-    result += pretty_print(cvtsi2sd{ .src = data{ "bar" }, .dst = stack{ 50 }, .src_type = long_word{} });
+    result += pretty_print(cvtsi2sd{ .src = data{ "bar" }, .dst = get_dst_memory(), .src_type = long_word{} });
     result += '\n';
     result += pretty_print(cvtsi2sd{ .src = data{ "bar" }, .dst = data{ "bar" }, .src_type = quad_word{} });
     result += '\n';
@@ -2010,7 +2029,7 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(cvttsd2si{ .src = immediate{ 42 }, .dst = pseudo{ "bar" }, .dst_type = quad_word{} });
     result += '\n';
-    result += pretty_print(cvttsd2si{ .src = immediate{ 42 }, .dst = stack{ 50 }, .dst_type = long_word{} });
+    result += pretty_print(cvttsd2si{ .src = immediate{ 42 }, .dst = get_dst_memory(), .dst_type = long_word{} });
     result += '\n';
     result += pretty_print(cvttsd2si{ .src = immediate{ 42 }, .dst = data{ "bar" }, .dst_type = quad_word{} });
     result += '\n';
@@ -2019,7 +2038,7 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(cvttsd2si{ .src = R10{}, .dst = pseudo{ "bar" }, .dst_type = quad_word{} });
     result += '\n';
-    result += pretty_print(cvttsd2si{ .src = R10{}, .dst = stack{ 50 }, .dst_type = long_word{} });
+    result += pretty_print(cvttsd2si{ .src = R10{}, .dst = get_dst_memory(), .dst_type = long_word{} });
     result += '\n';
     result += pretty_print(cvttsd2si{ .src = R10{}, .dst = data{ "bar" }, .dst_type = quad_word{} });
     result += '\n';
@@ -2028,25 +2047,25 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(cvttsd2si{ .src = pseudo{ "bar" }, .dst = pseudo{ "bar" }, .dst_type = quad_word{} });
     result += '\n';
-    result += pretty_print(cvttsd2si{ .src = pseudo{ "bar" }, .dst = stack{ 50 }, .dst_type = long_word{} });
+    result += pretty_print(cvttsd2si{ .src = pseudo{ "bar" }, .dst = get_dst_memory(), .dst_type = long_word{} });
     result += '\n';
     result += pretty_print(cvttsd2si{ .src = pseudo{ "bar" }, .dst = data{ "bar" }, .dst_type = quad_word{} });
     result += '\n';
 
-    result += pretty_print(cvttsd2si{ .src = stack{ 50 }, .dst = R11{}, .dst_type = long_word{} });
+    result += pretty_print(cvttsd2si{ .src = get_src_memory(), .dst = R11{}, .dst_type = long_word{} });
     result += '\n';
-    result += pretty_print(cvttsd2si{ .src = stack{ 50 }, .dst = pseudo{ "bar" }, .dst_type = quad_word{} });
+    result += pretty_print(cvttsd2si{ .src = get_src_memory(), .dst = pseudo{ "bar" }, .dst_type = quad_word{} });
     result += '\n';
-    result += pretty_print(cvttsd2si{ .src = stack{ 50 }, .dst = stack{ 50 }, .dst_type = long_word{} });
+    result += pretty_print(cvttsd2si{ .src = get_src_memory(), .dst = get_dst_memory(), .dst_type = long_word{} });
     result += '\n';
-    result += pretty_print(cvttsd2si{ .src = stack{ 50 }, .dst = data{ "bar" }, .dst_type = quad_word{} });
+    result += pretty_print(cvttsd2si{ .src = get_src_memory(), .dst = data{ "bar" }, .dst_type = quad_word{} });
     result += '\n';
 
     result += pretty_print(cvttsd2si{ .src = data{ "bar" }, .dst = R11{}, .dst_type = long_word{} });
     result += '\n';
     result += pretty_print(cvttsd2si{ .src = data{ "bar" }, .dst = pseudo{ "bar" }, .dst_type = quad_word{} });
     result += '\n';
-    result += pretty_print(cvttsd2si{ .src = data{ "bar" }, .dst = stack{ 50 }, .dst_type = long_word{} });
+    result += pretty_print(cvttsd2si{ .src = data{ "bar" }, .dst = get_dst_memory(), .dst_type = long_word{} });
     result += '\n';
     result += pretty_print(cvttsd2si{ .src = data{ "bar" }, .dst = data{ "bar" }, .dst_type = quad_word{} });
     result += '\n';
@@ -2064,7 +2083,7 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(wccff::assembly_generation::div{ .src = pseudo{ "bar" }, .type = quad_word{} });
     result += '\n';
-    result += pretty_print(wccff::assembly_generation::div{ .src = stack{ 50 }, .type = quad_word{} });
+    result += pretty_print(wccff::assembly_generation::div{ .src = get_src_memory(), .type = quad_word{} });
     result += '\n';
     result += pretty_print(wccff::assembly_generation::div{ .src = data{ "bar" }, .type = quad_word{} });
     result += '\n';
@@ -2099,7 +2118,7 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(wccff::assembly_generation::idiv{ .src = pseudo{ "bar" }, .type = quad_word{} });
     result += '\n';
-    result += pretty_print(wccff::assembly_generation::idiv{ .src = stack{ 50 }, .type = quad_word{} });
+    result += pretty_print(wccff::assembly_generation::idiv{ .src = get_src_memory(), .type = quad_word{} });
     result += '\n';
     result += pretty_print(wccff::assembly_generation::idiv{ .src = data{ "bar" }, .type = quad_word{} });
     result += '\n';
@@ -2126,6 +2145,68 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += pretty_print(wccff::assembly_generation::label{ "label_name" });
     result += '\n';
 
+    // lea
+    result += "--lea--\n";
+    result += pretty_print(wccff::assembly_generation::lea{ .src = get_src_immediate(), .dst = get_dst_immediate() });
+    result += '\n';
+    result += pretty_print(wccff::assembly_generation::lea{ .src = get_src_immediate(), .dst = get_dst_reg() });
+    result += '\n';
+    result += pretty_print(wccff::assembly_generation::lea{ .src = get_src_immediate(), .dst = get_dst_pseudo() });
+    result += '\n';
+    result += pretty_print(wccff::assembly_generation::lea{ .src = get_src_immediate(), .dst = get_dst_memory() });
+    result += '\n';
+    result += pretty_print(wccff::assembly_generation::lea{ .src = get_src_immediate(), .dst = get_dst_data() });
+    result += '\n';
+
+    result += pretty_print(wccff::assembly_generation::lea{ .src = get_src_reg(), .dst = get_dst_immediate() });
+    result += '\n';
+    result += pretty_print(wccff::assembly_generation::lea{ .src = get_src_reg(), .dst = get_dst_reg() });
+    result += '\n';
+    result += pretty_print(wccff::assembly_generation::lea{ .src = get_src_reg(), .dst = get_dst_pseudo() });
+    result += '\n';
+    result += pretty_print(wccff::assembly_generation::lea{ .src = get_src_reg(), .dst = get_dst_memory() });
+    result += '\n';
+    result += pretty_print(wccff::assembly_generation::lea{ .src = get_src_reg(), .dst = get_dst_data() });
+    result += '\n';
+
+    result += pretty_print(wccff::assembly_generation::lea{ .src = get_src_pseudo(), .dst = get_dst_immediate() });
+    result += '\n';
+    result += pretty_print(wccff::assembly_generation::lea{ .src = get_src_pseudo(), .dst = get_dst_reg() });
+    result += '\n';
+    result += pretty_print(wccff::assembly_generation::lea{ .src = get_src_pseudo(), .dst = get_dst_pseudo() });
+    result += '\n';
+    result += pretty_print(wccff::assembly_generation::lea{ .src = get_src_pseudo(), .dst = get_dst_memory() });
+    result += '\n';
+    result += pretty_print(wccff::assembly_generation::lea{ .src = get_src_pseudo(), .dst = get_dst_data() });
+    result += '\n';
+
+    result += pretty_print(wccff::assembly_generation::lea{ .src = get_src_memory(), .dst = get_dst_immediate() });
+    result += '\n';
+    result += pretty_print(wccff::assembly_generation::lea{ .src = get_src_memory(), .dst = get_dst_reg() });
+    result += '\n';
+    result += pretty_print(wccff::assembly_generation::lea{ .src = get_src_memory(), .dst = get_dst_pseudo() });
+    result += '\n';
+    result += pretty_print(wccff::assembly_generation::lea{ .src = get_src_memory(), .dst = get_dst_memory() });
+    result += '\n';
+    result += pretty_print(wccff::assembly_generation::lea{ .src = get_src_memory(), .dst = get_dst_data() });
+    result += '\n';
+
+    result += pretty_print(wccff::assembly_generation::lea{ .src = get_src_data(), .dst = get_dst_immediate() });
+    result += '\n';
+    result += pretty_print(wccff::assembly_generation::lea{ .src = get_src_data(), .dst = get_dst_reg() });
+    result += '\n';
+    result += pretty_print(wccff::assembly_generation::lea{ .src = get_src_data(), .dst = get_dst_pseudo() });
+    result += '\n';
+    result += pretty_print(wccff::assembly_generation::lea{ .src = get_src_data(), .dst = get_dst_memory() });
+    result += '\n';
+    result += pretty_print(wccff::assembly_generation::lea{ .src = get_src_data(), .dst = get_dst_data() });
+    result += '\n';
+
+    // memory
+    result += "--memory--\n";
+    result += pretty_print(get_src_memory());
+    result += '\n';
+
     // mov
     result += "--mov--\n";
     result += pretty_print(mov_instruction{ .src = immediate{ 42 }, .dst = immediate{ 55 }, .type = long_word{} });
@@ -2134,7 +2215,7 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(mov_instruction{ .src = immediate{ 42 }, .dst = pseudo{ "pseu_dst" }, .type = long_word{} });
     result += '\n';
-    result += pretty_print(mov_instruction{ .src = immediate{ 42 }, .dst = stack{ -32 }, .type = long_word{} });
+    result += pretty_print(mov_instruction{ .src = immediate{ 42 }, .dst = get_dst_memory(), .type = long_word{} });
     result += '\n';
     result += pretty_print(mov_instruction{ .src = immediate{ 42 }, .dst = data{ "data_dst" }, .type = long_word{} });
     result += '\n';
@@ -2145,7 +2226,7 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(mov_instruction{ .src = R10{}, .dst = pseudo{ "pseu_dst" }, .type = long_word{} });
     result += '\n';
-    result += pretty_print(mov_instruction{ .src = R10{}, .dst = stack{ -32 }, .type = long_word{} });
+    result += pretty_print(mov_instruction{ .src = R10{}, .dst = get_dst_memory(), .type = long_word{} });
     result += '\n';
     result += pretty_print(mov_instruction{ .src = R10{}, .dst = data{ "data_dst" }, .type = long_word{} });
     result += '\n';
@@ -2156,20 +2237,21 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(mov_instruction{ .src = pseudo{ "src" }, .dst = pseudo{ "pseu_dst" }, .type = long_word{} });
     result += '\n';
-    result += pretty_print(mov_instruction{ .src = pseudo{ "src" }, .dst = stack{ -32 }, .type = long_word{} });
+    result += pretty_print(mov_instruction{ .src = pseudo{ "src" }, .dst = get_dst_memory(), .type = long_word{} });
     result += '\n';
     result += pretty_print(mov_instruction{ .src = pseudo{ "src" }, .dst = data{ "data_dst" }, .type = long_word{} });
     result += '\n';
 
-    result += pretty_print(mov_instruction{ .src = stack{ -40 }, .dst = immediate{ 55 }, .type = long_word{} });
+    result += pretty_print(mov_instruction{ .src = get_src_memory(), .dst = immediate{ 55 }, .type = long_word{} });
     result += '\n';
-    result += pretty_print(mov_instruction{ .src = stack{ -40 }, .dst = R10{}, .type = quad_word{} });
+    result += pretty_print(mov_instruction{ .src = get_src_memory(), .dst = R10{}, .type = quad_word{} });
     result += '\n';
-    result += pretty_print(mov_instruction{ .src = stack{ -40 }, .dst = pseudo{ "pseu_dst" }, .type = long_word{} });
+    result += pretty_print(
+      mov_instruction{ .src = get_src_memory(), .dst = pseudo{ "pseu_dst" }, .type = long_word{} });
     result += '\n';
-    result += pretty_print(mov_instruction{ .src = stack{ -40 }, .dst = stack{ -32 }, .type = long_word{} });
+    result += pretty_print(mov_instruction{ .src = get_src_memory(), .dst = get_dst_memory(), .type = long_word{} });
     result += '\n';
-    result += pretty_print(mov_instruction{ .src = stack{ -40 }, .dst = data{ "data_dst" }, .type = long_word{} });
+    result += pretty_print(mov_instruction{ .src = get_src_memory(), .dst = data{ "data_dst" }, .type = long_word{} });
     result += '\n';
 
     result += pretty_print(mov_instruction{ .src = data{ "data_src" }, .dst = immediate{ 55 }, .type = long_word{} });
@@ -2178,7 +2260,7 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(mov_instruction{ .src = data{ "data_src" }, .dst = pseudo{ "dst" }, .type = long_word{} });
     result += '\n';
-    result += pretty_print(mov_instruction{ .src = data{ "data_src" }, .dst = stack{ -32 }, .type = long_word{} });
+    result += pretty_print(mov_instruction{ .src = data{ "data_src" }, .dst = get_dst_memory(), .type = long_word{} });
     result += '\n';
     result += pretty_print(
       mov_instruction{ .src = data{ "data_src" }, .dst = data{ "data_dst" }, .type = long_word{} });
@@ -2192,7 +2274,7 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(mov_zero_extend{ .src = immediate{ 42 }, .dst = pseudo{ "pseu_dst" } });
     result += '\n';
-    result += pretty_print(mov_zero_extend{ .src = immediate{ 42 }, .dst = stack{ -32 } });
+    result += pretty_print(mov_zero_extend{ .src = immediate{ 42 }, .dst = get_dst_memory() });
     result += '\n';
     result += pretty_print(mov_zero_extend{ .src = immediate{ 42 }, .dst = data{ "data_dst" } });
     result += '\n';
@@ -2203,7 +2285,7 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(mov_zero_extend{ .src = R10{}, .dst = pseudo{ "pseu_dst" } });
     result += '\n';
-    result += pretty_print(mov_zero_extend{ .src = R10{}, .dst = stack{ -32 } });
+    result += pretty_print(mov_zero_extend{ .src = R10{}, .dst = get_dst_memory() });
     result += '\n';
     result += pretty_print(mov_zero_extend{ .src = R10{}, .dst = data{ "data_dst" } });
     result += '\n';
@@ -2214,20 +2296,20 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(mov_zero_extend{ .src = pseudo{ "src" }, .dst = pseudo{ "pseu_dst" } });
     result += '\n';
-    result += pretty_print(mov_zero_extend{ .src = pseudo{ "src" }, .dst = stack{ -32 } });
+    result += pretty_print(mov_zero_extend{ .src = pseudo{ "src" }, .dst = get_dst_memory() });
     result += '\n';
     result += pretty_print(mov_zero_extend{ .src = pseudo{ "src" }, .dst = data{ "data_dst" } });
     result += '\n';
 
-    result += pretty_print(mov_zero_extend{ .src = stack{ -40 }, .dst = immediate{ 55 } });
+    result += pretty_print(mov_zero_extend{ .src = get_src_memory(), .dst = immediate{ 55 } });
     result += '\n';
-    result += pretty_print(mov_zero_extend{ .src = stack{ -40 }, .dst = R10{} });
+    result += pretty_print(mov_zero_extend{ .src = get_src_memory(), .dst = R10{} });
     result += '\n';
-    result += pretty_print(mov_zero_extend{ .src = stack{ -40 }, .dst = pseudo{ "pseu_dst" } });
+    result += pretty_print(mov_zero_extend{ .src = get_src_memory(), .dst = pseudo{ "pseu_dst" } });
     result += '\n';
-    result += pretty_print(mov_zero_extend{ .src = stack{ -40 }, .dst = stack{ -32 } });
+    result += pretty_print(mov_zero_extend{ .src = get_src_memory(), .dst = get_dst_memory() });
     result += '\n';
-    result += pretty_print(mov_zero_extend{ .src = stack{ -40 }, .dst = data{ "data_dst" } });
+    result += pretty_print(mov_zero_extend{ .src = get_src_memory(), .dst = data{ "data_dst" } });
     result += '\n';
 
     result += pretty_print(mov_zero_extend{ .src = data{ "data_src" }, .dst = immediate{ 55 } });
@@ -2236,7 +2318,7 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(mov_zero_extend{ .src = data{ "data_src" }, .dst = pseudo{ "dst" } });
     result += '\n';
-    result += pretty_print(mov_zero_extend{ .src = data{ "data_src" }, .dst = stack{ -32 } });
+    result += pretty_print(mov_zero_extend{ .src = data{ "data_src" }, .dst = get_dst_memory() });
     result += '\n';
     result += pretty_print(mov_zero_extend{ .src = data{ "data_src" }, .dst = data{ "data_dst" } });
     result += '\n';
@@ -2249,7 +2331,7 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(movx{ .src = immediate{ 42 }, .dst = pseudo{ "pseu_dst" } });
     result += '\n';
-    result += pretty_print(movx{ .src = immediate{ 42 }, .dst = stack{ -32 } });
+    result += pretty_print(movx{ .src = immediate{ 42 }, .dst = get_dst_memory() });
     result += '\n';
     result += pretty_print(movx{ .src = immediate{ 42 }, .dst = data{ "data_dst" } });
     result += '\n';
@@ -2260,7 +2342,7 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(movx{ .src = R10{}, .dst = pseudo{ "pseu_dst" } });
     result += '\n';
-    result += pretty_print(movx{ .src = R10{}, .dst = stack{ -32 } });
+    result += pretty_print(movx{ .src = R10{}, .dst = get_dst_memory() });
     result += '\n';
     result += pretty_print(movx{ .src = R10{}, .dst = data{ "data_dst" } });
     result += '\n';
@@ -2271,20 +2353,20 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(movx{ .src = pseudo{ "src" }, .dst = pseudo{ "pseu_dst" } });
     result += '\n';
-    result += pretty_print(movx{ .src = pseudo{ "src" }, .dst = stack{ -32 } });
+    result += pretty_print(movx{ .src = pseudo{ "src" }, .dst = get_dst_memory() });
     result += '\n';
     result += pretty_print(movx{ .src = pseudo{ "src" }, .dst = data{ "data_dst" } });
     result += '\n';
 
-    result += pretty_print(movx{ .src = stack{ -40 }, .dst = immediate{ 55 } });
+    result += pretty_print(movx{ .src = get_src_memory(), .dst = immediate{ 55 } });
     result += '\n';
-    result += pretty_print(movx{ .src = stack{ -40 }, .dst = R10{} });
+    result += pretty_print(movx{ .src = get_src_memory(), .dst = R10{} });
     result += '\n';
-    result += pretty_print(movx{ .src = stack{ -40 }, .dst = pseudo{ "pseu_dst" } });
+    result += pretty_print(movx{ .src = get_src_memory(), .dst = pseudo{ "pseu_dst" } });
     result += '\n';
-    result += pretty_print(movx{ .src = stack{ -40 }, .dst = stack{ -32 } });
+    result += pretty_print(movx{ .src = get_src_memory(), .dst = get_dst_memory() });
     result += '\n';
-    result += pretty_print(movx{ .src = stack{ -40 }, .dst = data{ "data_dst" } });
+    result += pretty_print(movx{ .src = get_src_memory(), .dst = data{ "data_dst" } });
     result += '\n';
 
     result += pretty_print(movx{ .src = data{ "data_src" }, .dst = immediate{ 55 } });
@@ -2293,7 +2375,7 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(movx{ .src = data{ "data_src" }, .dst = pseudo{ "dst" } });
     result += '\n';
-    result += pretty_print(movx{ .src = data{ "data_src" }, .dst = stack{ -32 } });
+    result += pretty_print(movx{ .src = data{ "data_src" }, .dst = get_dst_memory() });
     result += '\n';
     result += pretty_print(movx{ .src = data{ "data_src" }, .dst = data{ "data_dst" } });
     result += '\n';
@@ -2306,7 +2388,7 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(wccff::assembly_generation::operand{ pseudo{ "pseudo_name" } });
     result += '\n';
-    result += pretty_print(wccff::assembly_generation::operand{ stack{ 42 } });
+    result += pretty_print(wccff::assembly_generation::operand{ get_dst_memory() });
     result += '\n';
     result += pretty_print(wccff::assembly_generation::operand{ data{ "data_name" } });
     result += '\n';
@@ -2324,7 +2406,7 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(wccff::assembly_generation::push{ pseudo{ "pseudo_name" } });
     result += '\n';
-    result += pretty_print(wccff::assembly_generation::push{ stack{ 42 } });
+    result += pretty_print(wccff::assembly_generation::push{ .src = get_src_memory() });
     result += '\n';
     result += pretty_print(wccff::assembly_generation::push{ data{ "data_name" } });
     result += '\n';
@@ -2378,7 +2460,7 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(wccff::assembly_generation::setcc{ .cond = G{}, .dst = pseudo{ "pseudo_name" } });
     result += '\n';
-    result += pretty_print(wccff::assembly_generation::setcc{ .cond = GE{}, .dst = stack{ 42 } });
+    result += pretty_print(wccff::assembly_generation::setcc{ .cond = GE{}, .dst = get_dst_memory() });
     result += '\n';
     result += pretty_print(wccff::assembly_generation::setcc{ .cond = L{}, .dst = data{ "data_name" } });
     result += '\n';
@@ -2386,16 +2468,11 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(wccff::assembly_generation::setcc{ .cond = A{}, .dst = pseudo{ "pseudo_name" } });
     result += '\n';
-    result += pretty_print(wccff::assembly_generation::setcc{ .cond = AE{}, .dst = stack{ 42 } });
+    result += pretty_print(wccff::assembly_generation::setcc{ .cond = AE{}, .dst = get_dst_memory() });
     result += '\n';
     result += pretty_print(wccff::assembly_generation::setcc{ .cond = B{}, .dst = data{ "data_name" } });
     result += '\n';
     result += pretty_print(wccff::assembly_generation::setcc{ .cond = BE{}, .dst = data{ "data_name" } });
-    result += '\n';
-
-    // stack
-    result += "--stack--\n";
-    result += pretty_print(stack{ immediate{ 16 } });
     result += '\n';
 
     // static_variable
@@ -2427,7 +2504,7 @@ TEST_CASE("pretty_print", "[assembly_generation]")
     result += '\n';
     result += pretty_print(unary{ .op = not_op{}, .dst = pseudo{ "pseudo_name" }, .type = long_word{} });
     result += '\n';
-    result += pretty_print(unary{ .op = neg_op{}, .dst = stack{ 16 }, .type = quad_word{} });
+    result += pretty_print(unary{ .op = neg_op{}, .dst = get_dst_memory(), .type = quad_word{} });
     result += '\n';
     result += pretty_print(unary{ .op = not_op{}, .dst = data{ "pseudo_name" }, .type = long_word{} });
     result += '\n';

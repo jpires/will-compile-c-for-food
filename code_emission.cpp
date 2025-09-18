@@ -108,9 +108,9 @@ std::string process_pseudo(const assembly_generation::pseudo &node)
 {
     return "ERROR";
 }
-std::string process_stack(const assembly_generation::stack &node)
+std::string process_stack(const assembly_generation::memory &node)
 {
-    return fmt::format("{}(%rbp)", node.value.value);
+    return fmt::format("{}(%rbp)", node.offset);
 }
 std::string process_data(const assembly_generation::data &node)
 {
@@ -140,7 +140,7 @@ std::string process_operand(const assembly_generation::operand &operand, operand
                         [](const assembly_generation::immediate &immediate) { return process_immediate(immediate); },
                         [size](const assembly_generation::reg &reg) { return process_register(reg, size); },
                         [](const assembly_generation::pseudo &reg) { return process_pseudo(reg); },
-                        [](const assembly_generation::stack &reg) { return process_stack(reg); },
+                        [](const assembly_generation::memory &reg) { return process_stack(reg); },
                         [](const assembly_generation::data &reg) { return process_data(reg); },
                       },
                       operand);

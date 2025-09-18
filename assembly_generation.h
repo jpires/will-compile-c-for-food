@@ -65,6 +65,9 @@ struct R11
 struct SP
 {
 };
+struct BP
+{
+};
 struct XMM0
 {
 };
@@ -96,23 +99,26 @@ struct XMM15
 {
 };
 
-using reg =
-  std::variant<ax, cx, dx, di, si, R8, R9, R10, R11, SP, XMM0, XMM1, XMM2, XMM3, XMM4, XMM5, XMM6, XMM7, XMM14, XMM15>;
+using reg = std::
+  variant<ax, cx, dx, di, si, R8, R9, R10, R11, SP, BP, XMM0, XMM1, XMM2, XMM3, XMM4, XMM5, XMM6, XMM7, XMM14, XMM15>;
 
 struct pseudo
 {
     identifier name;
 };
-struct stack
+
+struct memory
 {
-    immediate value;
+    reg base;
+    int64_t offset;
 };
+
 struct data
 {
     identifier name;
 };
 
-using operand = std::variant<immediate, reg, pseudo, stack, data>;
+using operand = std::variant<immediate, reg, pseudo, memory, data>;
 
 struct neg_op
 {
@@ -269,6 +275,12 @@ struct label
     identifier name;
 };
 
+struct lea
+{
+    operand src;
+    operand dst;
+};
+
 struct mov_instruction
 {
     operand src;
@@ -300,24 +312,25 @@ struct call
 {
     identifier fun_name;
 };
-using instruction = std::variant<mov_instruction,
-                                 movx,
-                                 mov_zero_extend,
-                                 unary,
-                                 binary,
+using instruction = std::variant<binary,
+                                 call,
+                                 cdq,
                                  cmp,
                                  cvtsi2sd,
                                  cvttsd2si,
-                                 idiv,
                                  div,
-                                 cdq,
+                                 idiv,
                                  jmp,
                                  jmpcc,
-                                 setcc,
                                  label,
+                                 lea,
+                                 mov_instruction,
+                                 mov_zero_extend,
+                                 movx,
                                  push,
-                                 call,
-                                 ret_instruction>;
+                                 ret_instruction,
+                                 setcc,
+                                 unary>;
 
 struct function
 {
@@ -376,6 +389,7 @@ class assembly_generation
     operand process(const double_constant &stmt);
     void process(const tacky::double_to_int &stmt);
     void process(const tacky::double_to_uint &stmt);
+    void process(const tacky::get_address &stmt);
     void process(const tacky::fun_call &i);
     function process(const tacky::function_definition &f);
     void process(const tacky::int_to_double &stmt);
@@ -384,10 +398,12 @@ class assembly_generation
     void process(const tacky::jump_if_zero_statement &stmt);
     void process(const tacky::jump_statement &stmt);
     void process(const tacky::label_statement &stmt);
+    void process(const tacky::load &stmt);
     program process(const tacky::program &program);
     void process(const tacky::return_statement &stmt);
     void process(const tacky::sing_extend &i);
     static_variable process(const tacky::static_variable &f);
+    void process(const tacky::store &f);
     top_level process(const tacky::top_level &f);
     void process(const tacky::truncate &i);
     void process(const tacky::uint_to_double &stmt);
@@ -419,6 +435,7 @@ std::optional<std::vector<instruction>> fixing_up_instructions_binary(const bina
 std::optional<std::vector<instruction>> fixing_up_instructions11(const cmp &n);
 std::optional<std::vector<instruction>> fixing_up_instructions11(const cvtsi2sd &n);
 std::optional<std::vector<instruction>> fixing_up_instructions11(const cvttsd2si &n);
+std::optional<std::vector<instruction>> fixing_up_instructions11(const lea &n);
 std::optional<std::vector<instruction>> fixing_up_instructions11(const mov_instruction &n);
 std::optional<std::vector<instruction>> fixing_up_instructions11(const mov_zero_extend &n);
 std::optional<std::vector<instruction>> fixing_up_instructions11(const movx &n);
@@ -447,6 +464,8 @@ std::string pretty_print(const instruction &node);
 std::string pretty_print(const jmp &node);
 std::string pretty_print(const jmpcc &node);
 std::string pretty_print(const label &node);
+std::string pretty_print(const lea &node);
+std::string pretty_print(const memory &node);
 std::string pretty_print(const mov_instruction &node);
 std::string pretty_print(const mov_zero_extend &node);
 std::string pretty_print(const movx &node);
@@ -458,7 +477,6 @@ std::string pretty_print(const reg &node);
 std::string pretty_print(const ret_instruction &node);
 std::string pretty_print(const setcc &node);
 std::string pretty_print(const top_level &node);
-std::string pretty_print(const stack &node);
 std::string pretty_print(const static_constant &node);
 std::string pretty_print(const static_variable &node);
 std::string pretty_print(const std::vector<instruction> &node);

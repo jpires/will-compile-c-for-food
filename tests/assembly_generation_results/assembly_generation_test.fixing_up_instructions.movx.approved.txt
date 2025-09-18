@@ -7,16 +7,16 @@
 		Movx(src(R10d), dst(R11d))
 		Mov(type(quad_word), src(R11d), dst(Data(data_dst)))
 
---src = immediate; dst = stack--
+--src = immediate; dst = memory--
 		Mov(type(long_word), src(Imm(42)), dst(R10d))
 		Movx(src(R10d), dst(R11d))
-		Mov(type(quad_word), src(R11d), dst(Stack(Imm(16))))
+		Mov(type(quad_word), src(R11d), dst(Memory(base(bp), offset(16))))
 
 --src = reg; dst = data--
 		Movx(src(ax), dst(R10d))
 		Mov(type(quad_word), src(R10d), dst(Data(data_dst)))
 
---src = reg; dst = stack--
+--src = reg; dst = memory--
 		Movx(src(ax), dst(R10d))
-		Mov(type(quad_word), src(R10d), dst(Stack(Imm(16))))
+		Mov(type(quad_word), src(R10d), dst(Memory(base(bp), offset(16))))
 
