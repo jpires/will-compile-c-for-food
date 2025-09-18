@@ -75,6 +75,7 @@ std::string process_register(const assembly_generation::reg &node, operand_size 
                             [](const assembly_generation::R10 &) -> std::string { return "%r10"; },
                             [](const assembly_generation::R11 &) -> std::string { return "%r11"; },
                             [](const assembly_generation::SP &) -> std::string { return "%rsp"; },
+                            [](const assembly_generation::BP &) -> std::string { return "%rbp"; },
                             [](const assembly_generation::XMM0 &) -> std::string { return "%xmm0"; },
                             [](const assembly_generation::XMM1 &) -> std::string { return "%xmm1"; },
                             [](const assembly_generation::XMM2 &) -> std::string { return "%xmm2"; },
@@ -110,7 +111,7 @@ std::string process_pseudo(const assembly_generation::pseudo &node)
 }
 std::string process_stack(const assembly_generation::memory &node)
 {
-    return fmt::format("{}(%rbp)", node.offset);
+    return fmt::format("{}({})", node.offset, process_register(node.base, operand_size::eight_bytes));
 }
 std::string process_data(const assembly_generation::data &node)
 {
@@ -329,6 +330,13 @@ std::string process_label(const assembly_generation::label &node)
 {
     return fmt::format("L{}:", process_identifier(node.name));
 }
+
+std::string process_lea(const assembly_generation::lea &node)
+{
+    return fmt::format("leaq {}, {}",
+                       process_operand(node.src, operand_size::eight_bytes),
+                       process_operand(node.dst, operand_size::eight_bytes));
+}
 std::string process_push(const assembly_generation::push &node)
 {
     return fmt::format("pushq {}", process_operand(node.src, operand_size::eight_bytes));
@@ -355,6 +363,7 @@ std::string process_instruction(const assembly_generation::instruction &instruct
                         [](const assembly_generation::jmpcc &node) { return process_jmpcc(node); },
                         [](const assembly_generation::setcc &node) { return process_setcc(node); },
                         [](const assembly_generation::label &node) { return process_label(node); },
+                        [](const assembly_generation::lea &node) { return process_lea(node); },
                         [](const assembly_generation::push &node) -> std::string { return process_push(node); },
                         [](const assembly_generation::call &node) -> std::string { return process_call(node); },
                         [](const assembly_generation::ret_instruction &ret) { return process_ret_instruction(ret); },
