@@ -9,10 +9,8 @@ For Loop(
                 IntConstant(10)
          )
          EMPTY EXPRESSION
-         Assign(Var(i)
-                Binary(Plus
-                       Var(i)
-                       IntConstant(1)
-                )
+         Assign(Compound Plus
+                Var(i)
+                IntConstant(1)
          )
 )

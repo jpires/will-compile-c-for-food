@@ -101,6 +101,16 @@ class symbol_table
         m_table[name.name] = s;
     }
 
+    identifier create_temporary_variable(const type &t)
+    {
+        auto name = identifier{ fmt::format("tmp_var.{}", m_temporary_counter++) };
+        symbol s{ local_attributes{}, name, copy_type(t) };
+        m_table[name.name] = s;
+        return name;
+    }
+
+    identifier get_temporary_name() { return { fmt::format("tmp_var.{}", m_temporary_counter++) }; }
+
     std::optional<symbol> get(const identifier &name) const
     {
         const auto it = m_table.find(name.name);
@@ -123,6 +133,7 @@ class symbol_table
 
   private:
     std::unordered_map<std::string, symbol> m_table;
+    int32_t m_temporary_counter{ 0 };
 };
 
 struct obj_entry

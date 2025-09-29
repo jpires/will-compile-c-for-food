@@ -1,3 +1,4 @@
-Assign(IntConstant(55)
+Assign(Assignment
+       IntConstant(55)
        Var(var_name)
 )

@@ -4,16 +4,12 @@ For Loop(
                 Var(a)
                 IntConstant(10)
          )
-         Assign(Var(a)
-                Binary(Plus
-                       Var(a)
-                       IntConstant(1)
-                )
+         Assign(Compound Plus
+                Var(a)
+                IntConstant(1)
          )
-         Assign(Var(i)
-                Binary(Plus
-                       Var(i)
-                       IntConstant(1)
-                )
+         Assign(Compound Plus
+                Var(i)
+                IntConstant(1)
          )
 )

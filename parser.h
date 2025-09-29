@@ -173,8 +173,9 @@ struct address_of
 };
 struct assignment_node
 {
-    assignment_node(expression lhs_, expression rhs_);
-    assignment_node(expression lhs_, expression rhs_, std::optional<type> type_);
+    assignment_node(assign_operator op_, expression lhs_, expression rhs_);
+    assignment_node(assign_operator op_, expression lhs_, expression rhs_, std::optional<type> type_);
+    assign_operator op;
     expression lhs;
     expression rhs;
     std::optional<type> type;

@@ -44,18 +44,6 @@ struct identifier
 struct assignment_operator
 {
 };
-/// \brief &
-struct bitwise_and_operator
-{
-};
-/// \brief |
-struct bitwise_or_operator
-{
-};
-/// \brief ^
-struct bitwise_xor_operator
-{
-};
 /// \brief &=
 struct compound_bitwise_and_operator
 {
@@ -94,6 +82,34 @@ struct compound_right_shift_operator
 };
 /// \brief -=
 struct compound_subtract_operator
+{
+};
+
+using assign_operator = std::variant<assignment_operator,
+                                     compound_bitwise_and_operator,
+                                     compound_bitwise_or_operator,
+                                     compound_bitwise_xor_operator,
+                                     compound_divide_operator,
+                                     compound_left_shift_operator,
+                                     compound_multiply_operator,
+                                     compound_plus_operator,
+                                     compound_remainder_operator,
+                                     compound_right_shift_operator,
+                                     compound_subtract_operator>;
+
+bool is_compound_operation(const assign_operator &node);
+std::string pretty_print(const assign_operator &node, int32_t ident = 0);
+
+/// \brief &
+struct bitwise_and_operator
+{
+};
+/// \brief |
+struct bitwise_or_operator
+{
+};
+/// \brief ^
+struct bitwise_xor_operator
 {
 };
 /// \brief /
@@ -157,20 +173,9 @@ struct subtract_operator
 {
 };
 
-using binary_operator = std::variant<assignment_operator,
-                                     bitwise_and_operator,
+using binary_operator = std::variant<bitwise_and_operator,
                                      bitwise_or_operator,
                                      bitwise_xor_operator,
-                                     compound_bitwise_and_operator,
-                                     compound_bitwise_or_operator,
-                                     compound_bitwise_xor_operator,
-                                     compound_divide_operator,
-                                     compound_left_shift_operator,
-                                     compound_multiply_operator,
-                                     compound_plus_operator,
-                                     compound_remainder_operator,
-                                     compound_right_shift_operator,
-                                     compound_subtract_operator,
                                      divide_operator,
                                      equals_operator,
                                      greater_than_operator,
@@ -187,6 +192,7 @@ using binary_operator = std::variant<assignment_operator,
                                      right_shift_operator,
                                      subtract_operator>;
 
+binary_operator to_binary_operator(const assign_operator &op);
 std::string pretty_print(const binary_operator &node, int32_t ident = 0);
 
 /// \brief ~

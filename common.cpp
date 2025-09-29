@@ -28,15 +28,30 @@ std::string get_not_implemented_message(std::source_location loc)
     return fmt::format("{}: Not implemented", loc.function_name());
 }
 
-std::string pretty_print(const binary_operator &node, int32_t ident)
+bool is_compound_operation(const assign_operator &node)
+{
+    return std::visit(wccff::visitor{
+                        [](const assignment_operator &) { return false; },
+                        [](const compound_bitwise_and_operator &) { return true; },
+                        [](const compound_bitwise_or_operator &) { return true; },
+                        [](const compound_bitwise_xor_operator &) { return true; },
+                        [](const compound_divide_operator &) { return true; },
+                        [](const compound_left_shift_operator &) { return true; },
+                        [](const compound_multiply_operator &) { return true; },
+                        [](const compound_plus_operator &) { return true; },
+                        [](const compound_remainder_operator &) { return true; },
+                        [](const compound_right_shift_operator &) { return true; },
+                        [](const compound_subtract_operator &) { return true; },
+                      },
+                      node);
+}
+
+std::string pretty_print(const assign_operator &node, int32_t ident)
 {
     using wccff::format_indented;
     return std::visit(
       wccff::visitor{
         [ident](const assignment_operator &) { return format_indented(ident, "Assignment"); },
-        [ident](const bitwise_and_operator &) { return format_indented(ident, "Bitwise And"); },
-        [ident](const bitwise_or_operator &) { return format_indented(ident, "Bitwise Or"); },
-        [ident](const bitwise_xor_operator &) { return format_indented(ident, "Bitwise Xor"); },
         [ident](const compound_bitwise_and_operator &) { return format_indented(ident, "Compound Bitwise And"); },
         [ident](const compound_bitwise_or_operator &) { return format_indented(ident, "Compound Bitwise Or"); },
         [ident](const compound_bitwise_xor_operator &) { return format_indented(ident, "Compound Bitwise Xor"); },
@@ -47,6 +62,38 @@ std::string pretty_print(const binary_operator &node, int32_t ident)
         [ident](const compound_remainder_operator &) { return format_indented(ident, "Compound Remainder"); },
         [ident](const compound_right_shift_operator &) { return format_indented(ident, "Compound Right Shift"); },
         [ident](const compound_subtract_operator &) { return format_indented(ident, "Compound Minus"); },
+      },
+      node);
+}
+
+binary_operator to_binary_operator(const assign_operator &op)
+{
+    return std::visit(wccff::visitor{
+                        [](const assign_operator &) -> binary_operator {
+                            throw std::runtime_error("Assign operator cannot be converted to binary operator");
+                        },
+                        [](const compound_bitwise_and_operator &) -> binary_operator { return bitwise_and_operator{}; },
+                        [](const compound_bitwise_or_operator &) -> binary_operator { return bitwise_or_operator{}; },
+                        [](const compound_bitwise_xor_operator &) -> binary_operator { return bitwise_xor_operator{}; },
+                        [](const compound_divide_operator &) -> binary_operator { return divide_operator{}; },
+                        [](const compound_left_shift_operator &) -> binary_operator { return left_shift_operator{}; },
+                        [](const compound_multiply_operator &) -> binary_operator { return multiply_operator{}; },
+                        [](const compound_plus_operator &) -> binary_operator { return plus_operator{}; },
+                        [](const compound_remainder_operator &) -> binary_operator { return remainder_operator{}; },
+                        [](const compound_right_shift_operator &) -> binary_operator { return right_shift_operator{}; },
+                        [](const compound_subtract_operator &) -> binary_operator { return subtract_operator{}; },
+                      },
+                      op);
+}
+
+std::string pretty_print(const binary_operator &node, int32_t ident)
+{
+    using wccff::format_indented;
+    return std::visit(
+      wccff::visitor{
+        [ident](const bitwise_and_operator &) { return format_indented(ident, "Bitwise And"); },
+        [ident](const bitwise_or_operator &) { return format_indented(ident, "Bitwise Or"); },
+        [ident](const bitwise_xor_operator &) { return format_indented(ident, "Bitwise Xor"); },
         [ident](const divide_operator &) { return format_indented(ident, "Divide"); },
         [ident](const equals_operator &) { return format_indented(ident, "Equals"); },
         [ident](const greater_than_operator &) { return format_indented(ident, "Greater Than"); },

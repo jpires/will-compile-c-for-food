@@ -35,13 +35,18 @@ static parser_error generate_unexpected_end_of_tokens(const tokens &tokens)
     return { msg };
 }
 
-assignment_node::assignment_node(expression lhs_, expression rhs_)
-  : lhs(std::move(lhs_))
+assignment_node::assignment_node(assign_operator op_, expression lhs_, expression rhs_)
+  : op(op_)
+  , lhs(std::move(lhs_))
   , rhs(std::move(rhs_))
 {
 }
-assignment_node::assignment_node(expression lhs_, expression rhs_, std::optional<wccff::type> type_)
-  : lhs(std::move(lhs_))
+assignment_node::assignment_node(assign_operator op_,
+                                 expression lhs_,
+                                 expression rhs_,
+                                 std::optional<wccff::type> type_)
+  : op(op_)
+  , lhs(std::move(lhs_))
   , rhs(std::move(rhs_))
   , type(std::move(type_))
 {
@@ -110,7 +115,8 @@ std::unique_ptr<address_of> copy_address_of(const std::unique_ptr<address_of> &n
 
 std::unique_ptr<assignment_node> copy_assignment_node(const std::unique_ptr<assignment_node> &node)
 {
-    return std::make_unique<assignment_node>(copy_expression(node->lhs),
+    return std::make_unique<assignment_node>(node->op,
+                                             copy_expression(node->lhs),
                                              copy_expression(node->rhs),
                                              copy_optional_type(node->type));
 }
@@ -1203,6 +1209,44 @@ std::expected<type, parser_error> parse_type_specifier(tokens &tokens, lexer::to
     return parse_type(type_specifier);
 }
 
+std::expected<assign_operator, parser_error> parse_assign_operator(tokens &tokens)
+{
+    auto t = tokens.get_next_token();
+    if (t.has_value() == false)
+    {
+        return std::unexpected{ generate_unexpected_end_of_tokens(tokens) };
+    }
+
+    switch (t->type)
+    {
+        case lexer::token_type::assignment_operator:
+            return assignment_operator{};
+        case lexer::token_type::compound_plus:
+            return compound_plus_operator{};
+        case lexer::token_type::compound_minus:
+            return compound_subtract_operator{};
+        case lexer::token_type::compound_multiplication:
+            return compound_multiply_operator{};
+        case lexer::token_type::compound_division:
+            return compound_divide_operator{};
+        case lexer::token_type::compound_remainder:
+            return compound_remainder_operator{};
+        case lexer::token_type::compound_bitwise_and:
+            return compound_bitwise_and_operator{};
+        case lexer::token_type::compound_bitwise_or:
+            return compound_bitwise_or_operator{};
+        case lexer::token_type::compound_bitwise_xor:
+            return compound_bitwise_xor_operator{};
+        case lexer::token_type::compound_left_shift:
+            return compound_left_shift_operator{};
+        case lexer::token_type::compound_right_shift:
+            return compound_right_shift_operator{};
+
+        default:
+            auto msg = fmt::format("Expected Assign Operator but found '{}'", t->text);
+            return std::unexpected{ parser_error{ msg } };
+    }
+}
 std::expected<binary_operator, parser_error> parse_binary_operator(tokens &tokens)
 {
     auto t = tokens.get_next_token();
@@ -1249,34 +1293,13 @@ std::expected<binary_operator, parser_error> parse_binary_operator(tokens &token
             return greater_than_operator{};
         case lexer::token_type::greater_than_or_equal_operator:
             return greater_than_or_equal_operator{};
-        case lexer::token_type::assignment_operator:
-            return assignment_operator{};
-        case lexer::token_type::compound_plus:
-            return compound_plus_operator{};
-        case lexer::token_type::compound_minus:
-            return compound_subtract_operator{};
-        case lexer::token_type::compound_multiplication:
-            return compound_multiply_operator{};
-        case lexer::token_type::compound_division:
-            return compound_divide_operator{};
-        case lexer::token_type::compound_remainder:
-            return compound_remainder_operator{};
-        case lexer::token_type::compound_bitwise_and:
-            return compound_bitwise_and_operator{};
-        case lexer::token_type::compound_bitwise_or:
-            return compound_bitwise_or_operator{};
-        case lexer::token_type::compound_bitwise_xor:
-            return compound_bitwise_xor_operator{};
-        case lexer::token_type::compound_left_shift:
-            return compound_left_shift_operator{};
-        case lexer::token_type::compound_right_shift:
-            return compound_right_shift_operator{};
 
         default:
             auto msg = fmt::format("Expected Binary Operator but found '{}'", t->text);
             return std::unexpected{ parser_error{ msg } };
     }
 }
+
 std::expected<std::unique_ptr<unary_node>, parser_error> parse_unary_node(tokens &tokens)
 {
     auto t = tokens.get_next_token();
@@ -1431,36 +1454,6 @@ std::expected<expression, parser_error> parse_factor(tokens &tokens)
 
 std::expected<expression, parser_error> parse_expression(tokens &tokens, int32_t min_precedence)
 {
-    auto is_compound_assignment = [](const binary_operator &op) {
-        return std::visit(visitor{ [](const compound_plus_operator &) { return true; },
-                                   [](const compound_subtract_operator &) { return true; },
-                                   [](const compound_multiply_operator &) { return true; },
-                                   [](const compound_divide_operator &) { return true; },
-                                   [](const compound_remainder_operator &) { return true; },
-                                   [](const compound_bitwise_and_operator &) { return true; },
-                                   [](const compound_bitwise_or_operator &) { return true; },
-                                   [](const compound_bitwise_xor_operator &) { return true; },
-                                   [](const compound_left_shift_operator &) { return true; },
-                                   [](const compound_right_shift_operator &) { return true; },
-                                   [](const auto &) { return false; } },
-                          op);
-    };
-
-    auto compound_assignment_to_single = [](const binary_operator &op) {
-        return std::visit(
-          visitor{ [](const compound_plus_operator &) -> binary_operator { return plus_operator{}; },
-                   [](const compound_subtract_operator &) -> binary_operator { return subtract_operator{}; },
-                   [](const compound_multiply_operator &) -> binary_operator { return multiply_operator{}; },
-                   [](const compound_divide_operator &) -> binary_operator { return divide_operator{}; },
-                   [](const compound_remainder_operator &) -> binary_operator { return remainder_operator{}; },
-                   [](const compound_bitwise_and_operator &) -> binary_operator { return bitwise_and_operator{}; },
-                   [](const compound_bitwise_or_operator &) -> binary_operator { return bitwise_or_operator{}; },
-                   [](const compound_bitwise_xor_operator &) -> binary_operator { return bitwise_xor_operator{}; },
-                   [](const compound_left_shift_operator &) -> binary_operator { return left_shift_operator{}; },
-                   [](const compound_right_shift_operator &) -> binary_operator { return right_shift_operator{}; },
-                   [](const auto &) -> binary_operator { throw std::logic_error{ "Invalid Compound assignment" }; } },
-          op);
-    };
     auto is_right_associative = [](lexer::token_type type) {
         using enum lexer::token_type;
         return type == assignment_operator || type == compound_plus || type == compound_minus ||
@@ -1544,7 +1537,7 @@ std::expected<expression, parser_error> parse_expression(tokens &tokens, int32_t
     {
         if (is_right_associative(next_token.type))
         {
-            auto op = parse_binary_operator(tokens);
+            auto op = parse_assign_operator(tokens);
             if (op.has_value() == false)
             {
                 return std::unexpected{ op.error() };
@@ -1554,18 +1547,7 @@ std::expected<expression, parser_error> parse_expression(tokens &tokens, int32_t
             {
                 return std::unexpected{ right.error() };
             }
-
-            if (is_compound_assignment(op.value()))
-            {
-                auto new_right = std::make_unique<binary_node>(compound_assignment_to_single(op.value()),
-                                                               copy_expression(left.value()),
-                                                               std::move(right.value()));
-                left = std::make_unique<assignment_node>(std::move(left.value()), std::move(new_right));
-            }
-            else
-            {
-                left = std::make_unique<assignment_node>(std::move(left.value()), std::move(right.value()));
-            }
+            left = std::make_unique<assignment_node>(op.value(), std::move(left.value()), std::move(right.value()));
         }
         else if (next_token.type == lexer::token_type::question_mark)
         {
@@ -2040,12 +2022,12 @@ std::string pretty_print(const std::optional<type> &node, int32_t ident)
 
 std::string pretty_print(const std::unique_ptr<assignment_node> &node, int32_t ident)
 {
-    auto prefix = wccff::format_indented(ident, "Assign(");
-    auto left = wccff::format_indented(0, "{}", pretty_print(node->lhs));
+    auto prefix = wccff::format_indented(ident, "Assign({}", pretty_print(node->op));
+    auto left = wccff::format_indented(0, "{}", pretty_print(node->lhs, ident + 7));
     auto right = wccff::format_indented(0, "{}", pretty_print(node->rhs, ident + 7));
     auto sufix = wccff::format_indented(ident, ")");
 
-    return fmt::format("{}{}\n{}\n{}", prefix, left, right, sufix);
+    return fmt::format("{}\n{}\n{}\n{}", prefix, left, right, sufix);
 }
 
 std::string pretty_print(const std::unique_ptr<binary_node> &node, int32_t ident)

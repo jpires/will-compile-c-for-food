@@ -139,250 +139,170 @@ FunctionDecl(f
                      Type(Int)
                      IntConstant(1)
              )
-             Assign(Var(var.d1.17)
-                    Binary(Plus
-                           Var(var.d1.17)
-                           IntConstant(4)
-                    )
+             Assign(Compound Plus
+                    Var(var.d1.17)
+                    IntConstant(4)
              )
-             Assign(Var(var.d1.17)
-                    Binary(Plus
-                           Var(var.d1.17)
-                           LongConstant(42)
-                    )
+             Assign(Compound Plus
+                    Var(var.d1.17)
+                    LongConstant(42)
              )
-             Assign(Var(var.d1.17)
-                    Binary(Subtract
-                           Var(var.d1.17)
-                           IntConstant(4)
-                    )
+             Assign(Compound Minus
+                    Var(var.d1.17)
+                    IntConstant(4)
              )
-             Assign(Var(var.d1.17)
-                    Binary(Subtract
-                           Var(var.d1.17)
-                           LongConstant(42)
-                    )
+             Assign(Compound Minus
+                    Var(var.d1.17)
+                    LongConstant(42)
              )
-             Assign(Var(var.d1.17)
-                    Binary(Multiply
-                           Var(var.d1.17)
-                           IntConstant(4)
-                    )
+             Assign(Compound Multiplication
+                    Var(var.d1.17)
+                    IntConstant(4)
              )
-             Assign(Var(var.d1.17)
-                    Binary(Multiply
-                           Var(var.d1.17)
-                           LongConstant(42)
-                    )
+             Assign(Compound Multiplication
+                    Var(var.d1.17)
+                    LongConstant(42)
              )
-             Assign(Var(var.d1.17)
-                    Binary(Divide
-                           Var(var.d1.17)
-                           IntConstant(4)
-                    )
+             Assign(Compound Division
+                    Var(var.d1.17)
+                    IntConstant(4)
              )
-             Assign(Var(var.d1.17)
-                    Binary(Divide
-                           Var(var.d1.17)
-                           LongConstant(42)
-                    )
+             Assign(Compound Division
+                    Var(var.d1.17)
+                    LongConstant(42)
              )
-             Assign(Var(var.d1.17)
-                    Binary(Remainder
-                           Var(var.d1.17)
-                           IntConstant(4)
-                    )
+             Assign(Compound Remainder
+                    Var(var.d1.17)
+                    IntConstant(4)
              )
-             Assign(Var(var.d1.17)
-                    Binary(Remainder
-                           Var(var.d1.17)
-                           LongConstant(42)
-                    )
+             Assign(Compound Remainder
+                    Var(var.d1.17)
+                    LongConstant(42)
              )
-             Assign(Var(var.d1.17)
-                    Binary(Bitwise And
-                           Var(var.d1.17)
-                           IntConstant(4)
-                    )
+             Assign(Compound Bitwise And
+                    Var(var.d1.17)
+                    IntConstant(4)
              )
-             Assign(Var(var.d1.17)
-                    Binary(Bitwise And
-                           Var(var.d1.17)
-                           LongConstant(42)
-                    )
+             Assign(Compound Bitwise And
+                    Var(var.d1.17)
+                    LongConstant(42)
              )
-             Assign(Var(var.d1.17)
-                    Binary(Bitwise Or
-                           Var(var.d1.17)
-                           IntConstant(4)
-                    )
+             Assign(Compound Bitwise Or
+                    Var(var.d1.17)
+                    IntConstant(4)
              )
-             Assign(Var(var.d1.17)
-                    Binary(Bitwise Or
-                           Var(var.d1.17)
-                           LongConstant(42)
-                    )
+             Assign(Compound Bitwise Or
+                    Var(var.d1.17)
+                    LongConstant(42)
              )
-             Assign(Var(var.d1.17)
-                    Binary(Bitwise Xor
-                           Var(var.d1.17)
-                           IntConstant(4)
-                    )
+             Assign(Compound Bitwise Xor
+                    Var(var.d1.17)
+                    IntConstant(4)
              )
-             Assign(Var(var.d1.17)
-                    Binary(Bitwise Xor
-                           Var(var.d1.17)
-                           LongConstant(42)
-                    )
+             Assign(Compound Bitwise Xor
+                    Var(var.d1.17)
+                    LongConstant(42)
              )
-             Assign(Var(var.d1.17)
-                    Binary(Left Shift
-                           Var(var.d1.17)
-                           IntConstant(4)
-                    )
+             Assign(Compound Left Shift
+                    Var(var.d1.17)
+                    IntConstant(4)
              )
-             Assign(Var(var.d1.17)
-                    Binary(Left Shift
-                           Var(var.d1.17)
-                           LongConstant(42)
-                    )
+             Assign(Compound Left Shift
+                    Var(var.d1.17)
+                    LongConstant(42)
              )
-             Assign(Var(var.d1.17)
-                    Binary(Right Shift
-                           Var(var.d1.17)
-                           IntConstant(4)
-                    )
+             Assign(Compound Right Shift
+                    Var(var.d1.17)
+                    IntConstant(4)
              )
-             Assign(Var(var.d1.17)
-                    Binary(Right Shift
-                           Var(var.d1.17)
-                           LongConstant(42)
-                    )
+             Assign(Compound Right Shift
+                    Var(var.d1.17)
+                    LongConstant(42)
              )
              DeclVar(var.d2.18
                      Storage(none)
                      Type(Long)
                      LongConstant(4)
              )
-             Assign(Var(var.d2.18)
-                    Binary(Plus
-                           Var(var.d2.18)
-                           IntConstant(4)
-                    )
+             Assign(Compound Plus
+                    Var(var.d2.18)
+                    IntConstant(4)
              )
-             Assign(Var(var.d2.18)
-                    Binary(Plus
-                           Var(var.d2.18)
-                           LongConstant(42)
-                    )
+             Assign(Compound Plus
+                    Var(var.d2.18)
+                    LongConstant(42)
              )
-             Assign(Var(var.d2.18)
-                    Binary(Subtract
-                           Var(var.d2.18)
-                           IntConstant(4)
-                    )
+             Assign(Compound Minus
+                    Var(var.d2.18)
+                    IntConstant(4)
              )
-             Assign(Var(var.d2.18)
-                    Binary(Subtract
-                           Var(var.d2.18)
-                           LongConstant(42)
-                    )
+             Assign(Compound Minus
+                    Var(var.d2.18)
+                    LongConstant(42)
              )
-             Assign(Var(var.d2.18)
-                    Binary(Multiply
-                           Var(var.d2.18)
-                           IntConstant(4)
-                    )
+             Assign(Compound Multiplication
+                    Var(var.d2.18)
+                    IntConstant(4)
              )
-             Assign(Var(var.d2.18)
-                    Binary(Multiply
-                           Var(var.d2.18)
-                           LongConstant(42)
-                    )
+             Assign(Compound Multiplication
+                    Var(var.d2.18)
+                    LongConstant(42)
              )
-             Assign(Var(var.d2.18)
-                    Binary(Divide
-                           Var(var.d2.18)
-                           IntConstant(4)
-                    )
+             Assign(Compound Division
+                    Var(var.d2.18)
+                    IntConstant(4)
              )
-             Assign(Var(var.d2.18)
-                    Binary(Divide
-                           Var(var.d2.18)
-                           LongConstant(42)
-                    )
+             Assign(Compound Division
+                    Var(var.d2.18)
+                    LongConstant(42)
              )
-             Assign(Var(var.d2.18)
-                    Binary(Remainder
-                           Var(var.d2.18)
-                           IntConstant(4)
-                    )
+             Assign(Compound Remainder
+                    Var(var.d2.18)
+                    IntConstant(4)
              )
-             Assign(Var(var.d2.18)
-                    Binary(Remainder
-                           Var(var.d2.18)
-                           LongConstant(42)
-                    )
+             Assign(Compound Remainder
+                    Var(var.d2.18)
+                    LongConstant(42)
              )
-             Assign(Var(var.d2.18)
-                    Binary(Bitwise And
-                           Var(var.d2.18)
-                           IntConstant(4)
-                    )
+             Assign(Compound Bitwise And
+                    Var(var.d2.18)
+                    IntConstant(4)
              )
-             Assign(Var(var.d2.18)
-                    Binary(Bitwise And
-                           Var(var.d2.18)
-                           LongConstant(42)
-                    )
+             Assign(Compound Bitwise And
+                    Var(var.d2.18)
+                    LongConstant(42)
              )
-             Assign(Var(var.d2.18)
-                    Binary(Bitwise Or
-                           Var(var.d2.18)
-                           IntConstant(4)
-                    )
+             Assign(Compound Bitwise Or
+                    Var(var.d2.18)
+                    IntConstant(4)
              )
-             Assign(Var(var.d2.18)
-                    Binary(Bitwise Or
-                           Var(var.d2.18)
-                           LongConstant(42)
-                    )
+             Assign(Compound Bitwise Or
+                    Var(var.d2.18)
+                    LongConstant(42)
              )
-             Assign(Var(var.d2.18)
-                    Binary(Bitwise Xor
-                           Var(var.d2.18)
-                           IntConstant(4)
-                    )
+             Assign(Compound Bitwise Xor
+                    Var(var.d2.18)
+                    IntConstant(4)
              )
-             Assign(Var(var.d2.18)
-                    Binary(Bitwise Xor
-                           Var(var.d2.18)
-                           LongConstant(42)
-                    )
+             Assign(Compound Bitwise Xor
+                    Var(var.d2.18)
+                    LongConstant(42)
              )
-             Assign(Var(var.d2.18)
-                    Binary(Left Shift
-                           Var(var.d2.18)
-                           IntConstant(4)
-                    )
+             Assign(Compound Left Shift
+                    Var(var.d2.18)
+                    IntConstant(4)
              )
-             Assign(Var(var.d2.18)
-                    Binary(Left Shift
-                           Var(var.d2.18)
-                           LongConstant(42)
-                    )
+             Assign(Compound Left Shift
+                    Var(var.d2.18)
+                    LongConstant(42)
              )
-             Assign(Var(var.d2.18)
-                    Binary(Right Shift
-                           Var(var.d2.18)
-                           IntConstant(4)
-                    )
+             Assign(Compound Right Shift
+                    Var(var.d2.18)
+                    IntConstant(4)
              )
-             Assign(Var(var.d2.18)
-                    Binary(Right Shift
-                           Var(var.d2.18)
-                           LongConstant(42)
-                    )
+             Assign(Compound Right Shift
+                    Var(var.d2.18)
+                    LongConstant(42)
              )
 )
 

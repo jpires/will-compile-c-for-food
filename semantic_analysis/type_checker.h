@@ -32,7 +32,7 @@ auto process_address_of(const std::unique_ptr<parser::address_of> &node, symbol_
   -> std::expected<std::unique_ptr<parser::address_of>, semantic_error>;
 
 auto process_assignment_node(const std::unique_ptr<parser::assignment_node> &node, symbol_table::symbol_table &table)
-  -> std::expected<std::unique_ptr<parser::assignment_node>, semantic_error>;
+  -> std::expected<std::variant<parser::expression, std::unique_ptr<parser::compound_statement>>, semantic_error>;
 
 auto process_binary_node(const std::unique_ptr<parser::binary_node> &node, symbol_table::symbol_table &table)
   -> std::expected<std::unique_ptr<parser::binary_node>, semantic_error>;
@@ -67,7 +67,7 @@ auto process_do_while_statement(const std::unique_ptr<parser::do_while_statement
   -> std::expected<std::unique_ptr<parser::do_while_statement>, semantic_error>;
 
 auto process_expression(const parser::expression &node, symbol_table::symbol_table &table)
-  -> std::expected<parser::expression, semantic_error>;
+  -> std::expected<std::variant<parser::expression, std::unique_ptr<parser::compound_statement>>, semantic_error>;
 
 auto process_for_init(const parser::for_init &node, symbol_table::symbol_table &table)
   -> std::expected<parser::for_init, semantic_error>;

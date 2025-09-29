@@ -1,9 +1,7 @@
 Do While(
-         Assign(Var(i)
-                Binary(Plus
-                       Var(i)
-                       IntConstant(1)
-                )
+         Assign(Compound Plus
+                Var(i)
+                IntConstant(1)
          )
          Binary(Less Than
                 Var(a)

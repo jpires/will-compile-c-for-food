@@ -1,5 +1,7 @@
-Assign(Var(a)
-       Assign(Var(b)
+Assign(Assignment
+       Var(a)
+       Assign(Assignment
+              Var(b)
               IntConstant(2)
        )
 )
